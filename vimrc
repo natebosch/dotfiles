@@ -79,8 +79,12 @@ if executable('ag')
   " ag is fast enough that CtrlP doesn't need to cache
   let g:ctrlp_use_caching = 0
 endif
+
 " Find word under cursor
 nnoremap <leader>g :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
+set wildmenu
+set wildmode=list:longest
 """""""""""""""""""""""""""""""
 
 
