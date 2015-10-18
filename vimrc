@@ -116,12 +116,13 @@ syntax on
 set nohlsearch
 nnoremap - :set hls!<cr>
 set background=dark " easier on the eyes
-"hi Comment ctermfg=cyan " comments more visible
 colorscheme desert
 hi Search ctermbg=LightBlue
 hi SpellBad ctermbg=LightBlue ctermfg=Red
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
+hi Pmenu ctermbg=LightGrey
+
 " toggle spell check with +
 nnoremap + :set spell!<CR>
 " Check the highlight group under cursor
