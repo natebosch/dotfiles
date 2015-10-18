@@ -67,6 +67,8 @@ set ignorecase  " Case insensitive search
 set smartcase   " Well, sometimes case sensitive
 set magic       " Allow pattern matching wish special chars
 set incsearch   " do incremental searching
+" Replace
+set gdefault    " I usually use /g anyway
 
 " Faster searching
 " The Silver Searcher
