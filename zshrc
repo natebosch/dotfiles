@@ -42,6 +42,10 @@ if [ -d $DOTDIR/.zshrc.d ]
 then
     for config_file ($DOTDIR/.zshrc.d/*) source $config_file
 fi
+if [ -d $DOTDIR/.zshrc.local ]
+then
+    for config_file ($DOTDIR/.zshrc.local/*) source $config_file
+fi
 unset config_file
 
 setopt NO_BEEP      # Never ever beep. Ever
