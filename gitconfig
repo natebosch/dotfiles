@@ -2,30 +2,31 @@
 	name = Nathan Bosch
 	email = nbosch1@gmail.com
 [core]
-    excludesfile = ~/.gitignore
+  excludesfile = ~/.gitignore
 [branch]
-    autosetuprebase = always
+  autosetuprebase = always
 [color]
-    ui = true
+  ui = true
 [color "diff"]
-    meta = yellow
-    func = magenta
+  meta = yellow
+  func = magenta
 [color "status"]
-    added = green
-    untracked = red
-    nobranch = bold red
-    changed = yellow
+  added = green
+  untracked = red
+  nobranch = bold red
+  changed = yellow
 [alias]
-    st = status -sb
-    ci = commit
-    br = branch
-    co = checkout
-    dr = diff --find-copies-harder -U999999999 --no-color
-    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-    lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --all
-    lp = log -p
-    del = !git ls-files --deleted | xargs git rm
-    boast = !git ls-files | egrep -v 'png|min.js|gif|jpg|library' | xargs -n1 git blame -M15 -CCC15 -wfc | sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | trim | sort | uniq -c | sort -n
+  st = status -sb
+  ci = commit
+  br = branch
+  co = checkout
+  dr = diff --find-copies-harder -U999999999 --no-color
+  lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --all
+  lp = log -p
+  del = !git ls-files --deleted | xargs git rm
+  boast = !git ls-files | egrep -v 'png|min.js|gif|jpg|library' | xargs -n1 git blame -M15 -CCC15 -wfc | sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | trim | sort | uniq -c | sort -n
+  u = branch -u @{-1}
 [mergetoool "vimdiff3"]
 	cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
