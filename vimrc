@@ -120,8 +120,10 @@ set nohlsearch
 nnoremap - :set hls!<cr>
 set background=dark " easier on the eyes
 colorscheme desert
-hi Search ctermbg=LightBlue
-hi SpellBad ctermbg=LightBlue ctermfg=Red
+hi Search ctermbg=054
+hi SpellBad ctermbg=237 ctermfg=Red
+hi SpellCap ctermbg=237
+hi MatchParen cterm=bold,reverse
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
 hi Pmenu ctermbg=LightGrey
@@ -250,6 +252,9 @@ let g:ycm_echo_current_diagnostic = 1
 
 " Fugitive shortcuts
 nnoremap <leader>s :Gstatus<cr>
+
+" Toggle paste mode
+nnoremap <leader>y :set paste!<cr>
 """"""""""""""""""""""""""""""""""""""
 
 
