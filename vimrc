@@ -127,6 +127,7 @@ hi MatchParen cterm=bold,reverse
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
 hi Pmenu ctermbg=LightGrey
+hi LineNr ctermfg=DarkGrey
 
 " toggle spell check with +
 nnoremap + :set spell!<CR>
