@@ -294,16 +294,6 @@ autocmd BufReadPost *
 
 
 """""""""""""""""""""""""""""""""""""
-""" Dart
-let dart_style_guide=1 " Indent with dart style guide rules
-let g:ycm_dart_bin_folder_path = '/usr/lib/google-dartlang/bin'
-let g:ycm_dart_analysis_server_flags = '--google3-package-resolution'
-autocmd FileType dart map <buffer> <leader>f :! /google/data/ro/teams/dart/bin/dartfmt -w %<cr>
-"""""""""""""""""""""""""""""""""""""
-
-
-
-"""""""""""""""""""""""""""""""""""""
 """ Local customizations
 if filereadable(glob("~/.localvimrc"))
   source ~/.localvimrc
