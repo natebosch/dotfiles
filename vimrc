@@ -13,7 +13,8 @@ Plugin 'easymotion/vim-easymotion'
 Plugin 'tpope/vim-fugitive'
 Plugin 'airblade/vim-gitgutter'
 Plugin 'tpope/vim-vinegar'
-Plugin 'kien/ctrlp.vim'
+Plugin 'ctrlpvim/ctrlp.vim'
+Plugin 'FelikZ/ctrlp-py-matcher'
 
 call vundle#end()
 """""""""""""""""""""""""""""""""
@@ -82,6 +83,7 @@ if executable('ag')
   " ag is fast enough that CtrlP doesn't need to cache
   let g:ctrlp_use_caching = 0
 endif
+let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
 
 " Find word under cursor
 nnoremap <leader>g :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
