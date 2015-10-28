@@ -15,6 +15,7 @@ Plugin 'airblade/vim-gitgutter'
 Plugin 'tpope/vim-vinegar'
 Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'FelikZ/ctrlp-py-matcher'
+Plugin 'tpope/vim-surround'
 
 call vundle#end()
 """""""""""""""""""""""""""""""""
@@ -202,11 +203,6 @@ vnoremap <C-k> :m '<-2<CR>gv=gv
 " Easier indent visual blocks
 vnoremap > >gv
 vnoremap < <gv
-
-" Quote and unqoute words
-:map <Leader>q" gewi"<Esc>ea"<Esc>
-:map <Leader>q' gewi'<Esc>ea'<Esc>
-:map <Leader>qd daW"=substitute(@@,"'\\\|\"","","g")<CR>P
 
 " Code folding
 set foldmethod=indent
