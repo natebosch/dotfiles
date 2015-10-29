@@ -225,18 +225,21 @@ set hidden
 map <leader>' <c-^>
 
 
-" YCM shortcuts
+""" YCM
+" shortcuts
 nmap <leader>d :YcmCompleter GoToDefinition<CR>
-" Turn off Syntastic gutter markers"
+" Diagnostics but no in the gutter
 let g:ycm_show_diagnostics_ui = 1
 let g:ycm_enable_diagnostic_signs = 0
 let g:ycm_enable_diagnostic_highlighting = 1
 let g:ycm_echo_current_diagnostic = 1
+" Aggressive completion
 let g:ycm_collect_identifiers_from_comments_and_strings = 1
 let g:ycm_complete_in_comments_and_strings = 1
 let g:ycm_filetype_blacklist = {}
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_seed_identifiers_with_syntax = 1
+set omnifunc=syntaxcomplete#Complete
 
 " Fugitive shortcuts
 nnoremap <leader>gs :Gstatus<cr>
