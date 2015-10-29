@@ -27,8 +27,6 @@ call vundle#end()
 """ Keys
 let g:mapleader=" "
 
-nnoremap ; :
-
 " Be able to undo ctrl-u
 inoremap <c-u> <c-g>u<c-u>
 
@@ -86,6 +84,7 @@ let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
 " Find word under cursor
 nnoremap <leader>g :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
+" Command completion
 set wildmenu
 set wildmode=list:longest
 """""""""""""""""""""""""""""""
@@ -200,29 +199,11 @@ nnoremap <leader>o :Ex<cr>
 nnoremap <leader>p :CtrlP<cr>
 
 " Buffers
-" nnoremap <leader>k :buffers<cr>:buffer<space>
-" CtrlP instead
 nnoremap <leader>k :CtrlPBuffer<cr>
 set hidden
 " jump to previous file
-map <leader>l <c-^>
 map <leader>' <c-^>
 
-" Clipboard
-""" Integrate with system and tmux clipboard
-""" Doesn't work :(
-""" http://sunaku.github.io/tmux-yank-osc52.html
-" noremap <silent> <Leader>y y
-"         \ :silent execute
-"         \   '!/bin/echo -n' shellescape(escape(@0, '\'), 1) '<Bar> yank'
-"         \ <Bar>redraw!<Return>
-
-" Convenient command to see the difference between the current buffer and the
-" file it was loaded from, thus the changes you made.
-if !exists(":DiffOrig")
-  command DiffOrig vert new | set bt=nofile | r # | 0d_ | diffthis
-    \ | wincmd p | diffthis
-endif
 
 " YCM shortcuts
 nmap <leader>d :YcmCompleter GoToDefinition<CR>
@@ -242,15 +223,6 @@ nnoremap <leader>y :set paste!<cr>
 
 
 """"""""""""""""""""""""""""""""""""""
-""" vimdiff options
-set diffopt=filler
-
-set tabpagemax=50
-""""""""""""""""""""""""""""""""""""""
-
-
-
-""""""""""""""""""""""""""""""""""""""
 """ filetype plugin indent on needs to be last according to:
 """ https://sites.google.com/a/google.com/vim/ramp-up-your-vim-skills
 
@@ -260,10 +232,6 @@ filetype plugin indent on
 " Widths
 autocmd FileType text setlocal textwidth=79
 autocmd FileType java setlocal textwidth=100
-
-""" Automatically remove trailing whitespace on save
-"""autocmd BufWritePre * :%s/\s\+$//e
-""" Leaves ugly diffs, using git hook for changed lines instead
 
 " When editing a file, always jump to the last known cursor position.
 autocmd BufReadPost *
