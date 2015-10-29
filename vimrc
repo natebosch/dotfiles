@@ -68,7 +68,7 @@ endif
 let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
 
 " Find word under cursor
-nnoremap <leader>g :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 " Command completion
 set wildmenu
@@ -244,7 +244,7 @@ set omnifunc=syntaxcomplete#Complete
 " Fugitive shortcuts
 nnoremap <leader>gs :Gstatus<cr>
 nnoremap <leader>gc :Gcommit<cr>
-nnoremap <leader>gca :Gcommit -a<cr>
+nnoremap <leader>ga :Gcommit -a<cr>
 nnoremap <leader>gd :Gdiff<cr>
 
 " Toggle paste mode
