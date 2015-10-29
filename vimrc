@@ -28,10 +28,6 @@ let g:mapleader=" "
 
 nnoremap ; :
 
-" Ctrl-o emulates return
-cmap <C-o> <CR>
-map <C-o> <CR>
-
 " Be able to undo ctrl-u
 inoremap <c-u> <c-g>u<c-u>
 
