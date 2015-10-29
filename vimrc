@@ -16,6 +16,7 @@ Plugin 'tpope/vim-vinegar'
 Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'FelikZ/ctrlp-py-matcher'
 Plugin 'tpope/vim-surround'
+Plugin 'bling/vim-airline'
 
 call vundle#end()
 """""""""""""""""""""""""""""""""
@@ -161,26 +162,12 @@ if exists("*matchadd")
           \ endif<CR>
 endif
 
-""" Stolen status line
-""" http://stackoverflow.com/questions/5375240/a-more-useful-statusline-in-vim
-set statusline=
-set statusline +=%1*\ %n\ %*            "buffer number
-"set statusline +=%5*%{&ff}%*            "file format
-set statusline +=%3*%y%*                "file type
-set statusline +=%4*\ %<%F%*            "full path
-set statusline +=%2*%m%*                "modified flag
-"set statusline +=%{v:register}          "Show which register is active
-set statusline +=%1*%=%5l%*             "current line
-set statusline +=%2*/%L%*               "total lines
-set statusline +=%1*%4v\ %*             "virtual column number
-"set statusline +=%2*0x%04B\ %*          "character under cursor
-set t_Co=256
-hi User1 ctermfg=Red "ctermbg=grey
-hi User2 ctermfg=DarkRed "ctermbg=grey
-hi User3 ctermfg=Blue "ctermbg=grey
-hi User4 ctermfg=Green "ctermbg=grey
-"hi User5 ctermfg=Blue "ctermbg=grey
-set laststatus=2 " Always show
+" Status line
+set laststatus=2
+let g:airline_theme='bubblegum'
+let g:airline_symbols_branch = ''
+let g:airline_left_sep = ''
+let g:airline_right_sep = ''
 """""""""""""""""""""""""""""
 
 
