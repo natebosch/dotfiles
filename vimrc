@@ -96,6 +96,7 @@ nnoremap ' `
 nnoremap ` '
 
 " Don't really need <c-p> for ctrlp.
+let g:ctrlp_map = ''
 noremap <C-P> <Tab>
 
 " Only use paste mode once
