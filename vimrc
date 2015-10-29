@@ -214,7 +214,10 @@ let g:ycm_enable_diagnostic_highlighting = 1
 let g:ycm_echo_current_diagnostic = 1
 
 " Fugitive shortcuts
-nnoremap <leader>s :Gstatus<cr>
+nnoremap <leader>gs :Gstatus<cr>
+nnoremap <leader>gc :Gcommit<cr>
+nnoremap <leader>gca :Gcommit -a<cr>
+nnoremap <leader>gd :Gdiff<cr>
 
 " Toggle paste mode
 nnoremap <leader>y :set paste!<cr>
