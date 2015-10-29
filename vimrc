@@ -227,7 +227,7 @@ map <leader>' <c-^>
 
 """ YCM
 " shortcuts
-nmap <leader>d :YcmCompleter GoToDefinition<CR>
+nmap <c-]> :YcmCompleter GoToDefinition<CR>
 " Diagnostics but no in the gutter
 let g:ycm_show_diagnostics_ui = 1
 let g:ycm_enable_diagnostic_signs = 0
@@ -258,6 +258,13 @@ nnoremap <leader>y :set paste!<cr>
 augroup widths
   autocmd FileType text setlocal textwidth=79
   autocmd FileType java setlocal textwidth=100
+augroup END
+
+""" Java
+" Eclim completions with YCM
+let g:EclimCompletionMethod = 'omnifunc'
+augroup java
+  autocmd FileType java map <buffer> <c-]> :JavaSearchContext -a edit<cr>
 augroup END
 
 """"""""""""""""""""""""""""""""""""""
