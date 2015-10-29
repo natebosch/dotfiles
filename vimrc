@@ -22,22 +22,10 @@ call vundle#end()
 """""""""""""""""""""""""""""""""
 
 
-
-""""""""""""""""""""""""""""""""
-""" Keys
-let g:mapleader=" "
-
-" Be able to undo ctrl-u
-inoremap <c-u> <c-g>u<c-u>
-
-" Allow backspacing over everything in insert mode
-set backspace=indent,eol,start
-"""""""""""""""""""""""""""""""""""
-
-
-
 """""""""""""""""""""""""""""""""
 """ Convenience
+
+let g:mapleader=" "
 
 " File Backups
 set nobackup " Use git instead!
@@ -56,14 +44,12 @@ set smarttab
 " read a file when it is changed from outside vi
 set autoread
 
-" reload .vimrc when it is edited
-autocmd! bufwritepost .vimrc source ~/.vimrc
-
 " Search
 set ignorecase  " Case insensitive search
 set smartcase   " Well, sometimes case sensitive
 set magic       " Allow pattern matching wish special chars
 set incsearch   " do incremental searching
+set nowrapscan  " Don't wrap, jump up with gg to keep searching
 " Replace
 set gdefault    " I usually use /g anyway
 
@@ -87,6 +73,39 @@ nnoremap <leader>g :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 " Command completion
 set wildmenu
 set wildmode=list:longest
+
+augroup convenience
+  " Nicer handling of comments
+  autocmd FileType,BufNewFile,BufWinEnter * setlocal formatoptions-=o
+        \ formatoptions+=jqn
+  " When editing a file, always jump to the last known cursor position.
+  autocmd BufReadPost *
+        \ if line("'\"") > 1 && line("'\"") <= line("$") |
+        \   exe "normal! g`\"" |
+        \ endif
+augroup END
+
+" Allow backspacing over everything in insert mode
+set backspace=indent,eol,start
+
+" Be able to undo ctrl-u
+inoremap <c-u> <c-g>u<c-u>
+
+" Prefer jumping right to a mark over a line and ' is easier to reach.
+nnoremap ' `
+nnoremap ` '
+
+" Don't really need <c-p> for ctrlp.
+noremap <C-P> <Tab>
+
+" Only use paste mode once
+augroup paste
+  autocmd!
+  autocmd InsertLeave * set nopaste
+augroup END
+
+" Fugitive sometimes likes horizontal diffs
+set diffopt+=vertical
 """""""""""""""""""""""""""""""
 
 
@@ -194,6 +213,7 @@ set foldlevel=1
 
 " Explorer
 let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
+let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
 nnoremap <leader>O :Tex<cr>
 nnoremap <leader>o :Ex<cr>
 nnoremap <leader>p :CtrlP<cr>
@@ -212,6 +232,11 @@ let g:ycm_show_diagnostics_ui = 1
 let g:ycm_enable_diagnostic_signs = 0
 let g:ycm_enable_diagnostic_highlighting = 1
 let g:ycm_echo_current_diagnostic = 1
+let g:ycm_collect_identifiers_from_comments_and_strings = 1
+let g:ycm_complete_in_comments_and_strings = 1
+let g:ycm_filetype_blacklist = {}
+let g:ycm_min_num_of_chars_for_completion = 1
+let g:ycm_seed_identifiers_with_syntax = 1
 
 " Fugitive shortcuts
 nnoremap <leader>gs :Gstatus<cr>
@@ -224,23 +249,14 @@ nnoremap <leader>y :set paste!<cr>
 """"""""""""""""""""""""""""""""""""""
 
 
-
 """"""""""""""""""""""""""""""""""""""
-""" filetype plugin indent on needs to be last according to:
-""" https://sites.google.com/a/google.com/vim/ramp-up-your-vim-skills
+""" Filetype specific
 
-" Enable file type detection with language-dependent indenting.
-filetype plugin indent on
+augroup widths
+  autocmd FileType text setlocal textwidth=79
+  autocmd FileType java setlocal textwidth=100
+augroup END
 
-" Widths
-autocmd FileType text setlocal textwidth=79
-autocmd FileType java setlocal textwidth=100
-
-" When editing a file, always jump to the last known cursor position.
-autocmd BufReadPost *
-  \ if line("'\"") > 1 && line("'\"") <= line("$") |
-  \   exe "normal! g`\"" |
-  \ endif
 """"""""""""""""""""""""""""""""""""""
 
 
@@ -251,3 +267,6 @@ if filereadable(glob("~/.localvimrc"))
   source ~/.localvimrc
 endif
 """""""""""""""""""""""""""""""""""""
+
+" This goes last
+filetype plugin indent on
