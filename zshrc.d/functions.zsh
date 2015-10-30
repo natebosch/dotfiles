@@ -45,3 +45,25 @@ watchfile() {
 
 say() { if [[ "${1}" =~ -[a-z]{2} ]]; then local lang=${1#-}; local text="${*#$1}"; else local lang=${LANG%_*}; local text="$*";fi; mplayer "http://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&q=${text}" &> /dev/null ; }
 
+project () {
+  local project_name=$1
+
+  mkdir -p ~/projects
+  cd ~/projects
+  if [[ -d $project_name ]]; then
+    cd $project_name/google3
+    echo 'Project already exists'
+  else
+    echo "Starting project $project_name"
+    mkdir $project_name
+    cd $project_name
+    if type start_project > /dev/null; then
+      start_project
+    else
+      git init
+    fi
+  fi
+  s $project_name
+}
+compdef '_arguments "1:project name:($(ls ~/projects))"' project
+
