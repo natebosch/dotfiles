@@ -37,3 +37,4 @@ s() {
   fi
   unset new_session,session,nestedsessions
 }
+compdef '_arguments "1:tmux session:($(tmux ls -F \#\{session_name\}))"' s
