@@ -250,6 +250,23 @@ nnoremap <leader>gd :Gdiff<cr>
 
 " Toggle paste mode
 nnoremap <leader>y :set paste!<cr>
+
+" Scratch buffer
+function! ScratchOpen()
+  let scr_bufnr = bufnr('__scratch__')
+  if scr_bufnr == -1
+    enew
+    setlocal filetype=markdown
+    setlocal bufhidden=hide
+    setlocal nobuflisted
+    setlocal buftype=nofile
+    setlocal noswapfile
+    file __scratch__
+  else
+    execute 'buffer ' . scr_bufnr
+  endif
+endfunction
+nnoremap <leader>s :call ScratchOpen()<cr>
 """"""""""""""""""""""""""""""""""""""
 
 
