@@ -72,7 +72,7 @@ nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 " Command completion
 set wildmenu
-set wildmode=list:longest
+set wildmode=longest:full,full
 
 augroup convenience
   " Nicer handling of comments
