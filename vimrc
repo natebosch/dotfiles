@@ -135,8 +135,8 @@ set ruler       " show the cursor position all the time
 
 " Colors
 syntax on
-set nohlsearch
-nnoremap - :set hls!<cr>
+set hlsearch
+nnoremap - :noh<cr>
 set background=dark " easier on the eyes
 colorscheme desert
 hi Search ctermbg=054
