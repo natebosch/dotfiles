@@ -17,6 +17,7 @@ Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'FelikZ/ctrlp-py-matcher'
 Plugin 'tpope/vim-surround'
 Plugin 'bling/vim-airline'
+Plugin 'nelstrom/vim-qargs'
 
 call vundle#end()
 """""""""""""""""""""""""""""""""
