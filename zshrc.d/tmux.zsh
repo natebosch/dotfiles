@@ -22,16 +22,20 @@ s() {
   fi
   new_session=$nestedsessions
   new_session+=($session)
+  if [[ -n $IN_TMUX ]]
+  then
+    tmux rename-window $session
+  fi
   if tmux has -t $session; then
     #session exists, attach to it and detach other clients
     TMUX_SESSION=$new_session tmux -2 a -t $session -d
   else
     #create the session
-    if [[ -n $IN_TMUX ]]
-    then
-      tmux rename-window $session
-    fi
     tmux -2 new -s $session -d
+    if [[ $session == "0" ]]
+    then
+      tmux source-file $DOTDIR/.tmux-root.conf
+    fi
     tmux set-option -t $session default-path "$PWD"
     TMUX_SESSION=$new_session tmux -2 a -t $session -d
   fi
