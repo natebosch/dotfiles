@@ -17,19 +17,6 @@ path=(
        /usr/X11/bin
      )
 path=($^path(N))
-# For paths separated with rather than an array
-function path_add() {
-    old_ifs="$IFS"
-    IFS=":"
-    all_args="$*"
-    # Remove duplicates
-    typeset -U path_dirs
-    path_dirs=(${(s/:/)all_args})
-    echo "$path_dirs"
-    IFS="$old_ifs"
-    unset old_ifs,all_args,path_dirs
-}
-export PYTHONPATH=$(path_add $DOTDIR/.pythonlib $PYTHONPATH)
 
 ## Add custom functions
 if [ -d $DOTDIR/.fpath ]
