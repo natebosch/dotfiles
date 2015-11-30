@@ -1,5 +1,3 @@
-wiki() { dig +short txt $1.wp.dg.cx; }
-
 calc(){ awk "BEGIN{ print $* }" ;}
 
 ipaddr() { 
