@@ -26,17 +26,6 @@ port() {
     esac
 }
 
-checkdns() {
-    HOSTNAME= hostname
-    echo "Hostname: $HOSTNAME"
-    REALIP=`ifconfig $1 | grep "inet addr" | gawk -F: '{print $2}' | gawk '{print $1}'`
-    echo "Actual IP: $REALIP"
-    IP=`dig +short $HOSTNAME`
-    echo "Dig IP: $IP"
-    DIGHOST=`dig +short -x "$IP"`
-    echo "Dig hostname: $DIGHOST"
-}
-
 watchfile() {
     watch -n 30 -d "ls -l $1 | awk '{print \$5}' && ls -lh $1 | awk '{print \$5}' && df -h"
 }
