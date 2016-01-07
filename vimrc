@@ -108,6 +108,8 @@ augroup END
 
 " Fugitive sometimes likes horizontal diffs
 set diffopt+=vertical
+" Avoid piling up fugitive buffers
+autocmd BufReadPost fugitive://* set bufhidden=delete
 """""""""""""""""""""""""""""""
 
 
