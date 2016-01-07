@@ -250,6 +250,7 @@ nnoremap <leader>gs :Gstatus<cr>
 nnoremap <leader>gc :Gcommit<cr>
 nnoremap <leader>ga :Gcommit -a<cr>
 nnoremap <leader>gd :Gdiff<cr>
+nnoremap <leader>gl :Glog --<CR>:cw<CR>
 
 " Toggle paste mode
 nnoremap <leader>y :set paste!<cr>
