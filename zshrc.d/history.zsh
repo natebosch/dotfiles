@@ -8,6 +8,7 @@ SAVEHIST=35000                 # unique events
 HISTFILE=~/.history
 #setopt SHARE_HISTORY
 setopt APPEND_HISTORY
+setopt HIST_FIND_NO_DUPS
 
 # if a line starts with a space, don't save it
 setopt HIST_IGNORE_SPACE
