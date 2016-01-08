@@ -5,7 +5,6 @@ bindkey "^n" history-search-forward
 bindkey "^a" beginning-of-line
 bindkey "^e" end-of-line
 bindkey "^i" expand-or-complete-prefix # ctrl-i acts like tab
-bindkey "^r" history-incremental-search-backward
 bindkey -s "^o" "\n" # run a command with ctrl-o
 bindkey "^f" forward-char
 bindkey "^b" backward-char
