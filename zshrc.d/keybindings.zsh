@@ -6,8 +6,6 @@ bindkey "^a" beginning-of-line
 bindkey "^e" end-of-line
 bindkey "^i" expand-or-complete-prefix # ctrl-i acts like tab
 bindkey -s "^o" "\n" # run a command with ctrl-o
-bindkey "^f" forward-char
-bindkey "^b" backward-char
 bindkey "^w" backward-kill-word
 bindkey "^h" backward-delete-char
 bindkey "^?" backward-delete-char
