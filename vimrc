@@ -13,8 +13,7 @@ Plugin 'easymotion/vim-easymotion'
 Plugin 'tpope/vim-fugitive'
 Plugin 'airblade/vim-gitgutter'
 Plugin 'tpope/vim-vinegar'
-Plugin 'ctrlpvim/ctrlp.vim'
-Plugin 'FelikZ/ctrlp-py-matcher'
+Plugin 'junegunn/fzf.vim'
 Plugin 'tpope/vim-surround'
 Plugin 'bling/vim-airline'
 Plugin 'nelstrom/vim-qargs'
@@ -59,14 +58,7 @@ set gdefault    " I usually use /g anyway
 if executable('ag')
   " Use ag over grep
   set grepprg=ag\ --nogroup\ --nocolor
-
-  " Use ag in CtrlP for listing files. Lightning fast and respects .gitignore
-  let g:ctrlp_user_command = 'ag %s -l --nocolor --nogroup --depth 10 -g ""'
-
-  " ag is fast enough that CtrlP doesn't need to cache
-  let g:ctrlp_use_caching = 0
 endif
-let g:ctrlp_match_func = { 'match': 'pymatcher#PyMatch' }
 
 " Find word under cursor
 nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
@@ -110,6 +102,8 @@ augroup END
 set diffopt+=vertical
 " Avoid piling up fugitive buffers
 autocmd BufReadPost fugitive://* set bufhidden=delete
+
+set rtp+=~/.fzf
 """""""""""""""""""""""""""""""
 
 
@@ -220,13 +214,16 @@ let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
 let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
 nnoremap <leader>O :Tex<cr>
 nnoremap <leader>o :Ex<cr>
-nnoremap <leader>p :CtrlP<cr>
+nnoremap <leader>p :FZF<cr>
 
 " Buffers
-nnoremap <leader>k :CtrlPBuffer<cr>
+nnoremap <leader>k :Buffers<cr>
 set hidden
 " jump to previous file
 map <leader>' <c-^>
+
+" Fuzzy search across open buffers
+nnoremap <leader>f :Lines<cr>
 
 
 """ YCM
@@ -250,7 +247,7 @@ nnoremap <leader>gs :Gstatus<cr>
 nnoremap <leader>gc :Gcommit<cr>
 nnoremap <leader>ga :Gcommit -a<cr>
 nnoremap <leader>gd :Gdiff<cr>
-nnoremap <leader>gl :Glog --<CR>:cw<CR>
+nnoremap <leader>gl :Commits<cr>
 
 " Toggle paste mode
 nnoremap <leader>y :set paste!<cr>
