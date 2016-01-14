@@ -1,24 +1,27 @@
 set nocompatible " vim > vi. Required for other stuff in here
 filetype off
 
+" Load vim-plug
+if empty(glob("~/.vim/autoload/plug.vim"))
+    execute '!curl -fLo ~/.vim/autoload/plug.vim https://raw.github.com/junegunn/vim-plug/master/plug.vim'
+endif
+
 """"""""""""""""""""""""""""""""""
-""" Vundle Plugins
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+""" Vim-plug
+call plug#begin('~/.vim/plugged')
 
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'Valloric/YouCompleteMe'
-Plugin 'dart-lang/dart-vim-plugin'
-Plugin 'easymotion/vim-easymotion'
-Plugin 'tpope/vim-fugitive'
-Plugin 'airblade/vim-gitgutter'
-Plugin 'tpope/vim-vinegar'
-Plugin 'junegunn/fzf.vim'
-Plugin 'tpope/vim-surround'
-Plugin 'bling/vim-airline'
-Plugin 'nelstrom/vim-qargs'
+Plug 'Valloric/YouCompleteMe'
+Plug 'dart-lang/dart-vim-plugin'
+Plug 'easymotion/vim-easymotion'
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
+Plug 'tpope/vim-vinegar'
+Plug 'junegunn/fzf.vim'
+Plug 'tpope/vim-surround'
+Plug 'bling/vim-airline'
+Plug 'nelstrom/vim-qargs'
 
-call vundle#end()
+call plug#end()
 """""""""""""""""""""""""""""""""
 
 
