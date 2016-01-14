@@ -18,6 +18,7 @@ Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-vinegar'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
+Plug 'junegunn/vim-peekaboo'
 Plug 'tpope/vim-surround'
 Plug 'bling/vim-airline'
 Plug 'nelstrom/vim-qargs'
@@ -274,6 +275,9 @@ function! ScratchOpen()
   endif
 endfunction
 nnoremap <leader>s :call ScratchOpen()<cr>
+
+" Peekaboo
+let g:peekaboo_window = 'vertical botright 50new'
 """"""""""""""""""""""""""""""""""""""
 
 
