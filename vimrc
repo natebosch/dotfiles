@@ -214,7 +214,7 @@ let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
 let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
 nnoremap <leader>O :Tex<cr>
 nnoremap <leader>o :Ex<cr>
-nnoremap <leader>p :FZF<cr>
+nnoremap <leader>p :Files<cr>
 
 " Buffers
 nnoremap <leader>k :Buffers<cr>
