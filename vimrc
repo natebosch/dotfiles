@@ -225,6 +225,10 @@ map <leader>' <c-^>
 " Fuzzy search across open buffers
 nnoremap <leader>f :Lines<cr>
 
+" Better history
+nnoremap <leader>: :History:<cr>
+nnoremap <leader>/ :History/<cr>
+
 
 """ YCM
 " shortcuts
