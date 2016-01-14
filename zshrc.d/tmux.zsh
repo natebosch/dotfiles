@@ -21,7 +21,12 @@ s() {
   if [[ -n $TMUX ]] then
     tmux switch-client -t "$session"
   else
-    tmux -2 a -t $session -d
+    # Try to stay in tmux unless detached
+    local exitType
+    exitType=$(tmux -2 a -t $session -d)
+    while [[ "$exitType" == "[exited]" ]] do
+      exitType=$(tmux attach -d)
+    done
   fi
 }
 compdef '_arguments "1:tmux session:($(tmux ls -F \#\{session_name\}))"' s
