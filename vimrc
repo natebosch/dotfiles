@@ -16,6 +16,7 @@ Plug 'easymotion/vim-easymotion'
 Plug 'tpope/vim-fugitive'
 Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-vinegar'
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-surround'
 Plug 'bling/vim-airline'
@@ -105,8 +106,6 @@ augroup END
 set diffopt+=vertical
 " Avoid piling up fugitive buffers
 autocmd BufReadPost fugitive://* set bufhidden=delete
-
-set rtp+=~/.fzf
 """""""""""""""""""""""""""""""
 
 
