@@ -54,3 +54,5 @@ clear
 export REPORTTIME=1     # Wrap long commands with time
 ##* I'd like to do this for long wait commands as well,
 ##  but setting to nonzero only reports command with long CPU time
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
