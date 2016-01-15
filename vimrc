@@ -11,7 +11,13 @@ endif
 """ Vim-plug
 call plug#begin('~/.vim/plugged')
 
-Plug 'Valloric/YouCompleteMe'
+function! BuildYCM(info)
+  if a:info.status == 'installed' || a:info.force
+    !./install.sh
+  endif
+endfunction
+
+Plug 'Valloric/YouCompleteMe', { 'do': function('BuildYCM') }
 Plug 'dart-lang/dart-vim-plugin'
 Plug 'easymotion/vim-easymotion'
 Plug 'tpope/vim-fugitive'
