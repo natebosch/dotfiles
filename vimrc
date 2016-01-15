@@ -30,6 +30,7 @@ Plug 'tpope/vim-surround'
 Plug 'bling/vim-airline'
 Plug 'nelstrom/vim-qargs'
 Plug 'wellle/tmux-complete.vim'
+Plug 'Raimondi/delimitMate'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -118,6 +119,9 @@ autocmd BufReadPost fugitive://* set bufhidden=delete
 
 " Complete from tmux panes in YCM
 let g:tmuxcomplete#trigger = 'omnifunc'
+
+" delimitMate
+let delimitMate_expand_cr = 1
 """""""""""""""""""""""""""""""
 
 
