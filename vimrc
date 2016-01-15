@@ -29,6 +29,7 @@ Plug 'junegunn/vim-peekaboo'
 Plug 'tpope/vim-surround'
 Plug 'bling/vim-airline'
 Plug 'nelstrom/vim-qargs'
+Plug 'wellle/tmux-complete.vim'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -114,6 +115,9 @@ augroup END
 set diffopt+=vertical
 " Avoid piling up fugitive buffers
 autocmd BufReadPost fugitive://* set bufhidden=delete
+
+" Complete from tmux panes in YCM
+let g:tmuxcomplete#trigger = 'omnifunc'
 """""""""""""""""""""""""""""""
 
 
@@ -243,7 +247,7 @@ nnoremap <leader>/ :History/<cr>
 """ YCM
 " shortcuts
 nmap <c-]> :YcmCompleter GoToDefinition<CR>
-" Diagnostics but no in the gutter
+" Diagnostics but not in the gutter
 let g:ycm_show_diagnostics_ui = 1
 let g:ycm_enable_diagnostic_signs = 0
 let g:ycm_enable_diagnostic_highlighting = 1
@@ -254,7 +258,6 @@ let g:ycm_complete_in_comments_and_strings = 1
 let g:ycm_filetype_blacklist = {}
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_seed_identifiers_with_syntax = 1
-set omnifunc=syntaxcomplete#Complete
 
 " Fugitive shortcuts
 nnoremap <leader>gs :Gstatus<cr>
