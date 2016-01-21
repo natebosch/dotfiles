@@ -316,8 +316,8 @@ augroup END
 
 """""""""""""""""""""""""""""""""""""
 """ Local customizations
-if filereadable(glob("~/.localvimrc"))
-  source ~/.localvimrc
+if filereadable(glob("~/.vimrc.local"))
+  source ~/.vimrc.local
 endif
 """""""""""""""""""""""""""""""""""""
 
