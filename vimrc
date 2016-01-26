@@ -17,7 +17,7 @@ function! BuildYCM(info)
   endif
 endfunction
 
-Plug 'Valloric/YouCompleteMe', { 'do': function('BuildYCM') }
+Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
 Plug 'dart-lang/dart-vim-plugin'
 Plug 'easymotion/vim-easymotion'
 Plug 'tpope/vim-fugitive'
