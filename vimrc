@@ -126,7 +126,10 @@ autocmd BufReadPost fugitive://* set bufhidden=delete
 let g:tmuxcomplete#trigger = 'omnifunc'
 
 " delimitMate
-let delimitMate_expand_cr = 1
+let delimitMate_expand_cr = 2
+let delimitMate_expand_inside_quotes = 1
+let delimitMate_jump_expansion = 1
+let delimitMate_excluded_regions = 0
 
 " vim-tmux-navigator config
 let g:tmux_navigator_no_mappings = 1
@@ -335,6 +338,12 @@ let g:EclimCompletionMethod = 'omnifunc'
 augroup java
   autocmd FileType java map <buffer> <c-]> :JavaSearchContext -a edit<cr>
 augroup END
+
+
+""" Dart
+let dart_style_guide=1
+autocmd FileType dart let b:delimitMate_nesting_quotes = ["'"] |
+      \ let b:delimitMate_eol_marker = ";"
 
 """"""""""""""""""""""""""""""""""""""
 
