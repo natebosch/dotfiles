@@ -33,6 +33,7 @@ Plug 'wellle/tmux-complete.vim'
 Plug 'Raimondi/delimitMate'
 Plug 'schickling/vim-bufonly'
 Plug 'tmux-plugins/vim-tmux'
+Plug 'christoomey/vim-tmux-navigator'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
