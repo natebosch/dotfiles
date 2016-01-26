@@ -31,6 +31,7 @@ Plug 'bling/vim-airline'
 Plug 'nelstrom/vim-qargs'
 Plug 'wellle/tmux-complete.vim'
 Plug 'Raimondi/delimitMate'
+Plug 'schickling/vim-bufonly'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
