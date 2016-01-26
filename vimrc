@@ -35,6 +35,7 @@ Plug 'schickling/vim-bufonly'
 Plug 'tmux-plugins/vim-tmux'
 Plug 'christoomey/vim-tmux-navigator'
 Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
+Plug '~/.dartlang-snippets'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
