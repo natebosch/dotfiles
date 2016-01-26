@@ -32,6 +32,7 @@ Plug 'nelstrom/vim-qargs'
 Plug 'wellle/tmux-complete.vim'
 Plug 'Raimondi/delimitMate'
 Plug 'schickling/vim-bufonly'
+Plug 'tmux-plugins/vim-tmux'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
