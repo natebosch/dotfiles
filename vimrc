@@ -125,6 +125,15 @@ let g:tmuxcomplete#trigger = 'omnifunc'
 
 " delimitMate
 let delimitMate_expand_cr = 1
+
+" vim-tmux-navigator config
+let g:tmux_navigator_no_mappings = 1
+
+nnoremap <silent> h :TmuxNavigateLeft<cr>
+nnoremap <silent> j :TmuxNavigateDown<cr>
+nnoremap <silent> k :TmuxNavigateUp<cr>
+nnoremap <silent> l :TmuxNavigateRight<cr>
+nnoremap <silent> / :TmuxNavigatePrevious<cr>
 """""""""""""""""""""""""""""""
 
 
