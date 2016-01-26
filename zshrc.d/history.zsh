@@ -1,16 +1,13 @@
-######################### history options ############################
 setopt EXTENDED_HISTORY        # store time in history
-setopt HIST_EXPIRE_DUPS_FIRST  # unique events are more useful
-setopt HIST_VERIFY	           # Make those history commands nice
+setopt HIST_IGNORE_ALL_DUPS    # don't insert any duplicates
+setopt HIST_IGNORE_SPACE       # don't save commands starting with space
+setopt HIST_NO_STORE           # don't save 'history' commands
+setopt HIST_VERIFY             # don't execute history subsitutions immediately
 setopt INC_APPEND_HISTORY      # immediately insert history into history file
-HISTSIZE=36000                 # spots for duplicates/uniques
-SAVEHIST=35000                 # unique events
-HISTFILE=~/.history
-#setopt SHARE_HISTORY
-setopt APPEND_HISTORY
-setopt HIST_FIND_NO_DUPS
+setopt SHARE_HISTORY           # between open shells
 
-# if a line starts with a space, don't save it
-setopt HIST_IGNORE_SPACE
-setopt HIST_NO_STORE
+HISTSIZE=35000
+SAVEHIST=35000
+HISTFILE=~/.history
+
 
