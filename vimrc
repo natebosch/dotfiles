@@ -34,6 +34,7 @@ Plug 'Raimondi/delimitMate'
 Plug 'schickling/vim-bufonly'
 Plug 'tmux-plugins/vim-tmux'
 Plug 'christoomey/vim-tmux-navigator'
+Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -304,6 +305,18 @@ nnoremap <leader>s :call ScratchOpen()<cr>
 
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
+
+" Ultisnips
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<tab>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+let g:UltiSnipsListSnippets="<c-t>"
+" Fix YCM completion of snippets
+let g:UltiSnipsUsePythonVersion = 2
+" Don't let YCM steal <tab> from ultisnips
+let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
+let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
+
 """"""""""""""""""""""""""""""""""""""
 
 
