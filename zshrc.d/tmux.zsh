@@ -15,18 +15,12 @@ s() {
 
   if (! tmux has -t $session) then
     TMUX="" tmux -2 new -s $session -d
-    TMUX="" tmux set-option -t $session default-path "$PWD"
   fi
 
   if [[ -n $TMUX ]] then
     tmux switch-client -t "$session"
   else
-    # Try to stay in tmux unless detached
-    local exitType
-    exitType=$(tmux -2 a -t $session -d)
-    while [[ "$exitType" == "[exited]" ]] do
-      exitType=$(tmux attach -d)
-    done
+    tmux -2 a -t $session -d
   fi
 }
 compdef '_arguments "1:tmux session:($(tmux ls -F \#\{session_name\}))"' s
