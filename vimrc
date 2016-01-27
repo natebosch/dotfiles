@@ -236,6 +236,9 @@ inoremap <C-k> <Esc>:m .-2<CR>==gi
 vnoremap <C-j> :m '>+1<CR>gv=gv
 vnoremap <C-k> :m '<-2<CR>gv=gv
 
+" Get a new line even if there are characters past the cursor
+inoremap <NL> <Esc>o
+
 " Easier indent visual blocks
 vnoremap > >gv
 vnoremap < <gv
