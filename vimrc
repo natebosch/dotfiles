@@ -38,6 +38,7 @@ Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
 Plug '~/.dartlang-snippets'
 Plug '~/.ng2-dart-snippets'
 Plug 'tmux-plugins/vim-tmux-focus-events'
+Plug 'tpope/vim-repeat'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
