@@ -348,8 +348,7 @@ augroup END
 
 """ Dart
 let dart_style_guide=1
-autocmd FileType dart let b:delimitMate_nesting_quotes = ["'"] |
-      \ let b:delimitMate_eol_marker = ";"
+autocmd FileType dart let b:delimitMate_nesting_quotes = ["'"]
 
 """"""""""""""""""""""""""""""""""""""
 
