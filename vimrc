@@ -269,7 +269,7 @@ nnoremap <leader>/ :History/<cr>
 
 """ YCM
 " shortcuts
-nmap <c-]> :YcmCompleter GoToDefinition<CR>
+nmap gd :YcmCompleter GoToDefinition<CR>
 " Diagnostics but not in the gutter
 let g:ycm_show_diagnostics_ui = 1
 let g:ycm_enable_diagnostic_signs = 0
