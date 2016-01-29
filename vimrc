@@ -130,14 +130,6 @@ let delimitMate_expand_inside_quotes = 1
 let delimitMate_jump_expansion = 1
 let delimitMate_excluded_regions = 0
 
-" vim-tmux-navigator config
-let g:tmux_navigator_no_mappings = 1
-
-nnoremap <silent> h :TmuxNavigateLeft<cr>
-nnoremap <silent> j :TmuxNavigateDown<cr>
-nnoremap <silent> k :TmuxNavigateUp<cr>
-nnoremap <silent> l :TmuxNavigateRight<cr>
-nnoremap <silent> / :TmuxNavigatePrevious<cr>
 """""""""""""""""""""""""""""""
 
 
@@ -226,15 +218,10 @@ let g:airline_right_sep = ''
 """ Tools
 
 " Move lines or blocks of text up/down
-nnoremap <C-j> :m .+1<CR>==
-nnoremap <C-k> :m .-2<CR>==
 inoremap <C-j> <Esc>:m .+1<CR>==gi
 inoremap <C-k> <Esc>:m .-2<CR>==gi
 vnoremap <C-j> :m '>+1<CR>gv=gv
 vnoremap <C-k> :m '<-2<CR>gv=gv
-
-" Get a new line even if there are characters past the cursor
-inoremap <NL> <Esc>o
 
 " Easier indent visual blocks
 vnoremap > >gv
