@@ -346,6 +346,9 @@ augroup END
 let dart_style_guide=1
 autocmd FileType dart let b:delimitMate_nesting_quotes = ["'"]
 
+""" Markdown
+autocmd FileType markdown let b:delimitMate_nesting_quotes = ["`"]
+
 """"""""""""""""""""""""""""""""""""""
 
 
