@@ -27,7 +27,7 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'junegunn/vim-peekaboo'
 Plug 'tpope/vim-surround'
-Plug 'bling/vim-airline'
+Plug 'vim-airline/vim-airline' | Plug 'vim-airline/vim-airline-themes'
 Plug 'nelstrom/vim-qargs'
 Plug 'wellle/tmux-complete.vim'
 Plug 'Raimondi/delimitMate'
@@ -41,7 +41,6 @@ Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
 Plug 'mbbill/undotree'
-Plug '~/.vim-extra'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
