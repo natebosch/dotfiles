@@ -39,6 +39,7 @@ Plug '~/.dartlang-snippets'
 Plug '~/.ng2-dart-snippets'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tpope/vim-repeat'
+Plug 'leafgarland/typescript-vim'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
