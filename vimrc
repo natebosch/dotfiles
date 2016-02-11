@@ -41,6 +41,7 @@ Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
 Plug 'mbbill/undotree'
+Plug '~/.vim-extra'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -154,7 +155,6 @@ let delimitMate_excluded_regions = 0
 " Line numbers
 set number
 set numberwidth=4
-highlight LineNr ctermfg=grey
 function! g:ToggleNuMode()
     if(&rnu == 1)
         set nonu
@@ -175,15 +175,9 @@ syntax on
 set hlsearch
 nnoremap - :noh<cr>
 set background=dark " easier on the eyes
-colorscheme desert
-hi Search ctermbg=054
-hi SpellBad ctermbg=237 ctermfg=Red
-hi SpellCap ctermbg=237
-hi MatchParen cterm=bold,reverse
+colorscheme nate-day
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
-hi Pmenu ctermbg=LightGrey
-hi LineNr ctermfg=DarkGrey
 
 " toggle spell check with +
 nnoremap + :set spell!<CR>
@@ -198,13 +192,12 @@ set listchars=tab:>-
 
 if exists('+colorcolumn')
     set colorcolumn=+1
-    highlight ColorColumn ctermbg=Grey
 endif
 
-""" Characters past textwidth become red
+""" Characters past textwidth become errors
 """ off by default, toggle with _
 if exists("*matchadd")
-    highlight OverLength ctermbg=darkred ctermfg=white guibg=#592929
+    hi link OverLength Error
     nnoremap <silent> _
           \ :if exists('w:long_line_match') <Bar>
           \   silent! call matchdelete(w:long_line_match) <Bar>
@@ -326,32 +319,6 @@ let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 
 " Undo Tree
 nnoremap <F5> :UndotreeToggle<cr>
-
-""""""""""""""""""""""""""""""""""""""
-
-
-""""""""""""""""""""""""""""""""""""""
-""" Filetype specific
-
-augroup widths
-  autocmd FileType text setlocal textwidth=79
-  autocmd FileType java setlocal textwidth=100
-augroup END
-
-""" Java
-" Eclim completions with YCM
-let g:EclimCompletionMethod = 'omnifunc'
-augroup java
-  autocmd FileType java map <buffer> <c-]> :JavaSearchContext -a edit<cr>
-augroup END
-
-
-""" Dart
-let dart_style_guide=1
-autocmd FileType dart let b:delimitMate_nesting_quotes = ["'"]
-
-""" Markdown
-autocmd FileType markdown let b:delimitMate_nesting_quotes = ["`"]
 
 """"""""""""""""""""""""""""""""""""""
 
