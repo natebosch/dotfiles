@@ -40,6 +40,7 @@ Plug '~/.ng2-dart-snippets'
 Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
+Plug 'mbbill/undotree'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -53,6 +54,14 @@ let g:mapleader=" "
 " File Backups
 set nobackup " Use git instead!
 set directory=$DOTDIR/.vim/tmp/ " Swap file location
+
+" Persistent Undo
+let undodir = expand("~/.vim/undo")
+if !isdirectory(undodir)
+  call mkdir(undodir)
+endif
+set undodir=~/.vim/undo
+set undofile
 
 " Commands
 set history=300 " keep 300 lines of command line history
@@ -310,6 +319,9 @@ let g:UltiSnipsUsePythonVersion = 2
 " Don't let YCM steal <tab> from ultisnips
 let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
 let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
+
+" Undo Tree
+nnoremap <F5> :UndotreeToggle<cr>
 
 """"""""""""""""""""""""""""""""""""""
 
