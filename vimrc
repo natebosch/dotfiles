@@ -42,6 +42,7 @@ Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
 Plug 'mbbill/undotree'
 Plug 'jreybert/vimagit'
+Plug 'zirrostig/vim-schlepp'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -225,10 +226,13 @@ let g:airline_right_sep = ''
 """ Tools
 
 " Move lines or blocks of text up/down
+vmap <C-h> <Plug>SchleppLeft
+vmap <C-j> <Plug>SchleppDown
+vmap <C-k> <Plug>SchleppUp
+vmap <C-l> <Plug>SchleppRight
+vmap <C-d> <Plug>SchleppDup
 inoremap <C-j> <Esc>:m .+1<CR>==gi
 inoremap <C-k> <Esc>:m .-2<CR>==gi
-vnoremap <C-j> :m '>+1<CR>gv=gv
-vnoremap <C-k> :m '<-2<CR>gv=gv
 
 " Easier indent visual blocks
 vnoremap > >gv
