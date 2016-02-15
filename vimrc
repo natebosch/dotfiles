@@ -41,6 +41,7 @@ Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
 Plug 'mbbill/undotree'
+Plug 'jreybert/vimagit'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
@@ -236,8 +237,7 @@ vnoremap < <gv
 " Code folding
 set foldmethod=indent
 set foldnestmax=10
-set nofoldenable " don't fold by default
-set foldlevel=1
+set foldlevel=99
 
 " Explorer
 let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
@@ -281,6 +281,7 @@ nnoremap <leader>gc :Gcommit<cr>
 nnoremap <leader>ga :Gcommit -a<cr>
 nnoremap <leader>gd :Gdiff<cr>
 nnoremap <leader>gl :Commits<cr>
+nnoremap <leader>gp :MagitOnly<cr>
 
 " Toggle paste mode
 nnoremap <leader>y :set paste!<cr>
