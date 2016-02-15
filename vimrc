@@ -44,6 +44,7 @@ Plug 'mbbill/undotree'
 Plug 'jreybert/vimagit'
 Plug 'zirrostig/vim-schlepp'
 Plug 'chip/vim-fat-finger'
+Plug 'davidbeckingsale/writegood.vim'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
