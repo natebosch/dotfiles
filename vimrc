@@ -43,6 +43,7 @@ Plug 'leafgarland/typescript-vim'
 Plug 'mbbill/undotree'
 Plug 'jreybert/vimagit'
 Plug 'zirrostig/vim-schlepp'
+Plug 'chip/vim-fat-finger'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
