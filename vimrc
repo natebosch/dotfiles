@@ -45,6 +45,7 @@ Plug 'jreybert/vimagit'
 Plug 'zirrostig/vim-schlepp'
 Plug 'chip/vim-fat-finger'
 Plug 'davidbeckingsale/writegood.vim'
+Plug 'ap/vim-css-color'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
