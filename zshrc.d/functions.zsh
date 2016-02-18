@@ -38,7 +38,7 @@ project () {
   mkdir -p ~/projects
   cd ~/projects
   if [[ -d $project_name ]]; then
-    cd $project_name/google3
+    cd $project_name/$PROJECT_ROOT
     echo 'Project already exists'
   else
     echo "Starting project $project_name"
