@@ -100,9 +100,6 @@ if executable('ag')
   set grepprg=ag\ --nogroup\ --nocolor
 endif
 
-" Find word under cursor
-nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
-
 " Command completion
 set wildmenu
 set wildmode=longest:full,full
@@ -123,6 +120,10 @@ set backspace=indent,eol,start
 
 " Be able to undo ctrl-u
 inoremap <c-u> <c-g>u<c-u>
+
+" Easier indent visual blocks
+vnoremap > >gv
+vnoremap < <gv
 
 " Prefer jumping right to a mark over a line and ' is easier to reach.
 nnoremap ' `
@@ -148,6 +149,44 @@ let delimitMate_expand_inside_quotes = 1
 let delimitMate_jump_expansion = 1
 let delimitMate_excluded_regions = 0
 
+" Code folding
+set foldmethod=indent
+set foldnestmax=10
+set foldlevel=99
+
+" Explorer
+let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
+let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
+
+" Allow hiding unsaved buffers
+set hidden
+
+""" YCM
+" Diagnostics but not in the gutter
+let g:ycm_show_diagnostics_ui = 1
+let g:ycm_enable_diagnostic_signs = 0
+let g:ycm_enable_diagnostic_highlighting = 1
+let g:ycm_echo_current_diagnostic = 1
+" Aggressive completion
+let g:ycm_collect_identifiers_from_comments_and_strings = 1
+let g:ycm_complete_in_comments_and_strings = 1
+let g:ycm_filetype_blacklist = {}
+let g:ycm_min_num_of_chars_for_completion = 1
+let g:ycm_seed_identifiers_with_syntax = 1
+
+" Peekaboo
+let g:peekaboo_window = 'vertical botright 50new'
+
+" Ultisnips
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<tab>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+let g:UltiSnipsListSnippets="<c-t>"
+" Fix YCM completion of snippets
+let g:UltiSnipsUsePythonVersion = 2
+" Don't let YCM steal <tab> from ultisnips
+let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
+let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 """""""""""""""""""""""""""""""
 
 
@@ -168,7 +207,6 @@ function! g:ToggleNuMode()
         set nu
     endif
 endfunc
-nnoremap \ :call g:ToggleNuMode()<CR>
 
 set scrolloff=3 " Always show at lease 3 lines above/below cursor
 set ruler       " show the cursor position all the time
@@ -176,18 +214,11 @@ set ruler       " show the cursor position all the time
 " Colors
 syntax on
 set hlsearch
-nnoremap - :noh<cr>
 set background=dark " easier on the eyes
 colorscheme nate-day
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
 
-" toggle spell check with +
-nnoremap + :set spell!<CR>
-" Check the highlight group under cursor
-map <leader>? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name") . '> trans<'
-\ . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-\ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 " See tabs
 set list
 set listchars=tab:>-
@@ -195,23 +226,6 @@ set listchars=tab:>-
 
 if exists('+colorcolumn')
     set colorcolumn=+1
-endif
-
-""" Characters past textwidth become errors
-""" off by default, toggle with _
-if exists("*matchadd")
-    hi link OverLength Error
-    nnoremap <silent> _
-          \ :if exists('w:long_line_match') <Bar>
-          \   silent! call matchdelete(w:long_line_match) <Bar>
-          \   unlet w:long_line_match <Bar>
-          \ elseif &textwidth > 0 <Bar>
-          \   let w:long_line_match =
-          \       matchadd('OverLength', '\%>'.&tw.'v.\+', -1) <Bar>
-          \ else <Bar>
-          \   let w:long_line_match =
-          \       matchadd('OverLength', '\%>80v.\+', -1) <Bar>
-          \ endif<CR>
 endif
 
 " Status line
@@ -225,7 +239,35 @@ let g:airline_right_sep = ''
 
 
 """""""""""""""""""""""""""""
-""" Tools
+""" Tools/Key Maps
+
+" Find word under cursor
+nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
+
+" Visual Tweaks
+nnoremap <leader>vn :call g:ToggleNuMode()<CR>
+nnoremap <leader>vs :set spell!<CR>
+nnoremap - :noh<cr>
+nnoremap <leader>vu :UndotreeToggle<cr>
+" Check the highlight group under cursor
+nnoremap <leader>v? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name")
+      \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+" Toggle error matching for past width
+if exists("*matchadd")
+    hi link OverLength Error
+    nnoremap <silent> <leader>vl
+          \ :if exists('w:long_line_match') <Bar>
+          \   silent! call matchdelete(w:long_line_match) <Bar>
+          \   unlet w:long_line_match <Bar>
+          \ elseif &textwidth > 0 <Bar>
+          \   let w:long_line_match =
+          \       matchadd('OverLength', '\%>'.&tw.'v.\+', -1) <Bar>
+          \ else <Bar>
+          \   let w:long_line_match =
+          \       matchadd('OverLength', '\%>80v.\+', -1) <Bar>
+          \ endif<CR>
+endif
 
 " Move lines or blocks of text up/down
 vmap <C-h> <Plug>SchleppLeft
@@ -236,52 +278,18 @@ vmap <C-d> <Plug>SchleppDup
 inoremap <C-j> <Esc>:m .+1<CR>==gi
 inoremap <C-k> <Esc>:m .-2<CR>==gi
 
-" Easier indent visual blocks
-vnoremap > >gv
-vnoremap < <gv
-
-" Code folding
-set foldmethod=indent
-set foldnestmax=10
-set foldlevel=99
-
-" Explorer
-let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
-let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
-nnoremap <leader>O :Tex<cr>
+" File/Buffer/Code navigation
 nnoremap <leader>o :Ex<cr>
-nnoremap <leader>p :Files<cr>
+nnoremap <leader>lf :Files<cr>
+nnoremap <leader>lb :Buffers<cr>
+nnoremap <leader>ll :Lines<cr>
+nnoremap gd :YcmCompleter GoToDefinition<CR>
 
-" Buffers
-nnoremap <leader>k :Buffers<cr>
-set hidden
-" jump to previous file
-map <leader>' <c-^>
-
-" Fuzzy search across open buffers
-nnoremap <leader>f :Lines<cr>
-
-" Better history
+" Fuzzy history search
 nnoremap <leader>: :History:<cr>
 nnoremap <leader>/ :History/<cr>
 
-
-""" YCM
-" shortcuts
-nmap gd :YcmCompleter GoToDefinition<CR>
-" Diagnostics but not in the gutter
-let g:ycm_show_diagnostics_ui = 1
-let g:ycm_enable_diagnostic_signs = 0
-let g:ycm_enable_diagnostic_highlighting = 1
-let g:ycm_echo_current_diagnostic = 1
-" Aggressive completion
-let g:ycm_collect_identifiers_from_comments_and_strings = 1
-let g:ycm_complete_in_comments_and_strings = 1
-let g:ycm_filetype_blacklist = {}
-let g:ycm_min_num_of_chars_for_completion = 1
-let g:ycm_seed_identifiers_with_syntax = 1
-
-" Fugitive shortcuts
+" Git shortcuts
 nnoremap <leader>gs :Gstatus<cr>
 nnoremap <leader>gc :Gcommit<cr>
 nnoremap <leader>ga :Gcommit -a<cr>
@@ -308,24 +316,6 @@ function! ScratchOpen()
   endif
 endfunction
 nnoremap <leader>s :call ScratchOpen()<cr>
-
-" Peekaboo
-let g:peekaboo_window = 'vertical botright 50new'
-
-" Ultisnips
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<tab>"
-let g:UltiSnipsJumpBackwardTrigger="<c-z>"
-let g:UltiSnipsListSnippets="<c-t>"
-" Fix YCM completion of snippets
-let g:UltiSnipsUsePythonVersion = 2
-" Don't let YCM steal <tab> from ultisnips
-let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
-let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
-
-" Undo Tree
-nnoremap <F5> :UndotreeToggle<cr>
-
 """"""""""""""""""""""""""""""""""""""
 
 
