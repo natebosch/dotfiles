@@ -177,6 +177,7 @@ let g:ycm_seed_identifiers_with_syntax = 1
 
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
+let g:peekaboo_delay = 750
 
 " Ultisnips
 let g:UltiSnipsExpandTrigger="<tab>"
