@@ -12,7 +12,7 @@ function git-status() {
     ZSH_THEME_GIT_PROMPT_UNTRACKED="."
     ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}."
 
-    local gitstatus="$ZDOTDIR/.bin/gitstatus.py"
+    local gitstatus="$ZDOTDIR/.gitstatus/gitstatus.py"
     if [ -x $gitstatus ]; then
         _GIT_GIT_STATUS=`python ${gitstatus}`
         __CURRENT_GIT_GIT_STATUS=("${(@f)_GIT_GIT_STATUS}")
