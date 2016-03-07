@@ -47,6 +47,7 @@ Plug 'chip/vim-fat-finger'
 Plug 'davidbeckingsale/writegood.vim'
 Plug 'ap/vim-css-color'
 Plug 'christoomey/vim-sort-motion'
+Plug 'mjbrownie/swapit'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
