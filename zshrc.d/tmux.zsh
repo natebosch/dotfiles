@@ -28,11 +28,24 @@ change_tmux_pwd() {
   local tmp_session_name="${session_name}-old"
   tmux rename-session $tmp_session_name
   tmux new-session -s $session_name -d
+  local has_renumber=$(tmux show-options -g | grep 'renumber-windows on')
+  if [[ -z $has_renumber ]]; then
+    tmux new-window -t $session_name:99
+    tmux kill-window -t $session_name:0
+  fi
   local window_id
   for window_id in $(tmux list-windows -F '#I'); do
-    tmux move-window -s $tmp_session_name:$window_id -t $session_name
+    if [[ -z $has_renumber ]]; then
+      tmux move-window -s $tmp_session_name:$window_id -t $session_name:$window_id
+    else
+      tmux move-window -s $tmp_session_name:$window_id -t $session_name
+    fi
   done
-  tmux kill-window -t $session_name:0
+  if [[ -z $has_renumber ]]; then
+    tmux kill-window -t $session_name:99
+  else
+    tmux kill-window -t $session_name:0
+  fi
   tmux switch-client -t $session_name
 }
 alias here=change_tmux_pwd
