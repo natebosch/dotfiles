@@ -7,6 +7,6 @@ alias tl='tmux ls'
 alias sz="source $DOTDIR/.zshrc"
 alias utc='date -u'
 alias size="stty -a | tr ';' '\n' | egrep 'rows|columns'"
-alias beep="echo "
+alias bell="print -n '\a'"
 alias shuf="awk 'BEGIN{srand();}{print rand()\"\t\"\$1}' | sort -k1 -n | cut -f2-"
 alias trim="sed 's/^ *//;s/ *$//'"
