@@ -14,3 +14,7 @@ hi MatchParen cterm=bold,reverse
 hi Pmenu ctermbg=LightGrey
 hi LineNr ctermfg=DarkGrey
 hi ColorColumn ctermbg=Grey
+hi Special ctermfg=177
+hi Underlined ctermfg=177
+hi Title ctermfg=27 cterm=bold
+hi PreProc ctermfg=33
