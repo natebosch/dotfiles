@@ -33,12 +33,12 @@ change_tmux_pwd() {
     tmux new-window -t $session_name:99
     tmux kill-window -t $session_name:0
   fi
-  local window_id
-  for window_id in $(tmux list-windows -F '#I'); do
+  local win_id
+  for win_id in $(tmux list-windows -F '#I'); do
     if [[ -z $has_renumber ]]; then
-      tmux move-window -s $tmp_session_name:$window_id -t $session_name:$window_id
+      tmux move-window -s $tmp_session_name:$win_id -t $session_name:$win_id
     else
-      tmux move-window -s $tmp_session_name:$window_id -t $session_name
+      tmux move-window -s $tmp_session_name:$win_id -t $session_name
     fi
   done
   if [[ -z $has_renumber ]]; then
