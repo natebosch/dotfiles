@@ -288,6 +288,7 @@ nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
 nnoremap gd :YcmCompleter GoToDefinition<CR>
+nnoremap <leader>x :bp\|bd #<cr>
 
 " Fuzzy history search
 nnoremap <leader>: :History:<cr>
