@@ -3,15 +3,14 @@ s() {
   if (($+1)) then
     session=$1
   else
-    session=$(tmux list-sessions -F "#{session_name}" | fzf --exit-0)
+    session=$(tmux ls -F "#{session_name}" | fzf --print-query | tail -n1)
   fi
 
   if [ -z "$session" ]; then
-    echo "No session specified!"
     return -1
   fi
 
-  if (! tmux has -t $session) then
+  if (! tmux has -t $session 2>/dev/null) then
     TMUX="" tmux -2 new -s $session -d
   fi
 
