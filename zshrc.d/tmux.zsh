@@ -1,26 +1,5 @@
-s() {
-  local session
-  if (($+1)) then
-    session=$1
-  else
-    session=$(tmux ls -F "#{session_name}" | fzf --print-query | tail -n1)
-  fi
-
-  if [ -z "$session" ]; then
-    return -1
-  fi
-
-  if (! tmux has -t $session 2>/dev/null) then
-    TMUX="" tmux -2 new -s $session -d
-  fi
-
-  if [[ -n $TMUX ]] then
-    tmux switch-client -t "$session"
-  else
-    tmux -2 a -t $session -d
-  fi
-}
-compdef '_arguments "1:tmux session:($(tmux ls -F \#\{session_name\}))"' s
+alias s=session_finder
+compdef '_arguments "1:tmux session:($(tmux ls -F \#\{session_name\}))"' session_finder
 
 change_tmux_pwd() {
   local session_name=$(tmux display-message -p '#S')

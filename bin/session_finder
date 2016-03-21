@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [[ $# -eq 1 ]]; then
+  session=$1
+else
+  session=$(tmux ls -F "#{session_name}" | fzf --print-query | tail -n1)
+fi
+
+if [ -z "$session" ]; then
+  exit -1
+fi
+
+if (! tmux has -t $session 2>/dev/null); then
+  TMUX="" tmux -2 new -s $session -d
+fi
+
+if [[ -n $TMUX ]]; then
+  tmux switch-client -t "$session"
+else
+  tmux -2 a -t $session -d
+fi
