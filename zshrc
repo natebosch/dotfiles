@@ -6,6 +6,7 @@ export HOSTNAME=`/bin/hostname`
 export PATH=
 path=(
        $DOTDIR/.bin
+       $DOTDIR/.bin.local
        $DOTDIR/bin
        $DOTDIR/.rvm/bin
        /usr/local/bin
