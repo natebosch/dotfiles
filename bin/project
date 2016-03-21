@@ -1,0 +1,29 @@
+#!/bin/bash
+mkdir -p ~/projects
+
+if [[ $# -eq 1 ]]; then
+  project_name=$1
+else
+  project_name=$(ls --indicator-style=none ~/projects |\
+    fzf --print-query |\
+    tail -n1)
+fi
+if [[ -z $project_name ]]; then
+  exit -1
+fi
+
+cd ~/projects
+if [[ -d $project_name ]]; then
+  cd $project_name/$PROJECT_ROOT
+  session_finder $project_name
+else
+  echo "Starting project $project_name"
+  mkdir $project_name
+  cd $project_name
+  if type start_project > /dev/null; then
+    start_project
+  else
+    git init
+  fi
+fi
+echo Started project $project_name

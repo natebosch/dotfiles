@@ -32,35 +32,5 @@ watchfile() {
 
 say() { if [[ "${1}" =~ -[a-z]{2} ]]; then local lang=${1#-}; local text="${*#$1}"; else local lang=${LANG%_*}; local text="$*";fi; mplayer "http://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&q=${text}" &> /dev/null ; }
 
-project () {
-  mkdir -p ~/projects
-
-  local project_name
-  if (($+1)); then
-    project_name=$1
-  else
-    project_name=$(ls --indicator-style=none ~/projects |\
-      fzf --print-query |\
-      tail -n1)
-  fi
-  if [[ -z $project_name ]]; then
-    return -1
-  fi
-
-  cd ~/projects
-  if [[ -d $project_name ]]; then
-    cd $project_name/$PROJECT_ROOT
-  else
-    echo "Starting project $project_name"
-    mkdir $project_name
-    cd $project_name
-    if type start_project > /dev/null; then
-      start_project
-    else
-      git init
-    fi
-  fi
-  s $project_name
-}
 compdef '_arguments "1:project name:($(ls ~/projects))"' project
 
