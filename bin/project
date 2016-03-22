@@ -13,11 +13,8 @@ if [[ -z $project_name ]]; then
 fi
 
 cd ~/projects
-if [[ -d $project_name ]]; then
-  cd $project_name/$PROJECT_ROOT
-  session_finder $project_name
-else
-  echo "Starting project $project_name"
+if [[ ! -d $project_name ]]; then
+  echo Starting project $project_name
   mkdir $project_name
   cd $project_name
   if type start_project > /dev/null; then
@@ -26,4 +23,5 @@ else
     git init
   fi
 fi
-echo Started project $project_name
+cd ~/projects/$project_name/$PROJECT_ROOT
+session_finder $project_name
