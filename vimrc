@@ -48,6 +48,7 @@ Plug 'davidbeckingsale/writegood.vim'
 Plug 'ap/vim-css-color'
 Plug 'christoomey/vim-sort-motion'
 Plug 'mjbrownie/swapit'
+Plug 'wellle/targets.vim'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
