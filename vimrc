@@ -201,16 +201,6 @@ let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 " Line numbers
 set number
 set numberwidth=4
-function! g:ToggleNuMode()
-    if(&rnu == 1)
-        set nonu
-        set nornu
-    elseif (&nu == 1)
-        set rnu
-    else
-        set nu
-    endif
-endfunc
 
 set scrolloff=3 " Always show at lease 3 lines above/below cursor
 set ruler       " show the cursor position all the time
@@ -249,7 +239,7 @@ let g:airline_right_sep = ''
 nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
 
 " Visual Tweaks
-nnoremap <leader>vn :call g:ToggleNuMode()<CR>
+nnoremap <leader>vn :set number!<CR>
 nnoremap <leader>vs :set spell!<CR>
 nnoremap - :noh<cr>
 nnoremap <leader>vu :UndotreeToggle<cr>
