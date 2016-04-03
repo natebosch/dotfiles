@@ -19,7 +19,7 @@ endfunction
 
 Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
 Plug 'dart-lang/dart-vim-plugin'
-Plug 'easymotion/vim-easymotion'
+Plug 'justinmk/vim-sneak'
 Plug 'tpope/vim-fugitive'
 Plug 'airblade/vim-gitgutter'
 Plug 'tpope/vim-vinegar'
