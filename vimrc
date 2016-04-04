@@ -269,7 +269,7 @@ vmap <C-h> <Plug>SchleppLeft
 vmap <C-j> <Plug>SchleppDown
 vmap <C-k> <Plug>SchleppUp
 vmap <C-l> <Plug>SchleppRight
-vmap <C-d> <Plug>SchleppDup
+vmap D <Plug>SchleppDup
 inoremap <C-j> <Esc>:m .+1<CR>==gi
 inoremap <C-k> <Esc>:m .-2<CR>==gi
 
