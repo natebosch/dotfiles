@@ -150,7 +150,7 @@ let g:tmuxcomplete#trigger = 'omnifunc'
 " delimitMate
 let delimitMate_expand_cr = 2
 let delimitMate_expand_inside_quotes = 1
-let delimitMate_jump_expansion = 1
+let delimitMate_jump_expansion = 0
 let delimitMate_excluded_regions = 0
 
 " Code folding
