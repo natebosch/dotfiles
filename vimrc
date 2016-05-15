@@ -276,6 +276,7 @@ inoremap <C-k> <Esc>:m .-2<CR>==gi
 " File/Buffer/Code navigation
 nnoremap <leader>o :Ex<cr>
 nnoremap <leader>lf :Files<cr>
+nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
 nnoremap gd :YcmCompleter GoToDefinition<CR>
