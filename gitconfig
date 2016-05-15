@@ -39,3 +39,5 @@
 	default = simple
 [mergetool]
 	keepBackup = false
+[init]
+	templatedir = ~/.git-templates
