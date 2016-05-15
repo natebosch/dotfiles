@@ -1,3 +1,4 @@
 vim/*
 !vim/ftplugin
 !vim/colors
+!vim/UltiSnips
