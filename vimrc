@@ -1,4 +1,5 @@
 set nocompatible " vim > vi. Required for other stuff in here
+set rtp+=~/.vim-extra/
 filetype off
 
 " Load vim-plug
