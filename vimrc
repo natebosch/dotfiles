@@ -194,6 +194,10 @@ let g:UltiSnipsUsePythonVersion = 2
 " Don't let YCM steal <tab> from ultisnips
 let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
 let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
+
+" Don't restore cursor to the middle of a git commit
+au FileType gitcommit au! BufEnter COMMIT_EDITMSG 
+      \ call setpos('.', [0, 1, 1, 0])
 """""""""""""""""""""""""""""""
 
 
