@@ -50,6 +50,7 @@ Plug 'ap/vim-css-color'
 Plug 'christoomey/vim-sort-motion'
 Plug 'mjbrownie/swapit'
 Plug 'wellle/targets.vim'
+Plug 'tommcdo/vim-exchange'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
