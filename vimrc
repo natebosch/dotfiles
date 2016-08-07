@@ -18,39 +18,42 @@ function! BuildYCM(info)
   endif
 endfunction
 
-Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
-Plug 'dart-lang/dart-vim-plugin'
-Plug 'justinmk/vim-sneak'
+" Extend default behavior / Stay our of the way
+Plug 'tpope/vim-repeat'
+Plug 'wellle/targets.vim'
+Plug 'christoomey/vim-sort-motion'
+Plug 'tpope/vim-vinegar'
+Plug 'ap/vim-css-color'
+Plug 'chip/vim-fat-finger'
+Plug 'junegunn/vim-peekaboo'
+Plug 'vim-airline/vim-airline' | Plug 'vim-airline/vim-airline-themes'
+
+" Navigation/Organization
+Plug 'christoomey/vim-tmux-navigator'
+Plug 'tmux-plugins/vim-tmux-focus-events'
+Plug 'schickling/vim-bufonly'
+
+" Tools
+Plug 'jreybert/vimagit'
 Plug 'tpope/vim-fugitive'
 Plug 'airblade/vim-gitgutter'
-Plug 'tpope/vim-vinegar'
+Plug 'zirrostig/vim-schlepp'
+Plug 'mjbrownie/swapit'
+Plug 'tpope/vim-surround'
+Plug 'justinmk/vim-sneak'
+Plug 'Raimondi/delimitMate'
+Plug 'tommcdo/vim-exchange'
+Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
+Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
-Plug 'junegunn/vim-peekaboo'
-Plug 'tpope/vim-surround'
-Plug 'vim-airline/vim-airline' | Plug 'vim-airline/vim-airline-themes'
-Plug 'nelstrom/vim-qargs'
-Plug 'wellle/tmux-complete.vim'
-Plug 'Raimondi/delimitMate'
-Plug 'schickling/vim-bufonly'
+
+" Filetype
 Plug 'tmux-plugins/vim-tmux'
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
+Plug 'dart-lang/dart-vim-plugin'
 Plug '~/.dartlang-snippets'
 Plug '~/.ng2-snippets'
-Plug 'tmux-plugins/vim-tmux-focus-events'
-Plug 'tpope/vim-repeat'
 Plug 'leafgarland/typescript-vim'
-Plug 'mbbill/undotree'
-Plug 'jreybert/vimagit'
-Plug 'zirrostig/vim-schlepp'
-Plug 'chip/vim-fat-finger'
-Plug 'davidbeckingsale/writegood.vim'
-Plug 'ap/vim-css-color'
-Plug 'christoomey/vim-sort-motion'
-Plug 'mjbrownie/swapit'
-Plug 'wellle/targets.vim'
-Plug 'tommcdo/vim-exchange'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
