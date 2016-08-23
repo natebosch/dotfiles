@@ -66,6 +66,7 @@ let g:mapleader=" "
 
 " File Backups
 set nobackup " Use git instead!
+set backupcopy=yes
 let swpdir = expand("~/.vim/swp")
 if !isdirectory(swpdir)
   call mkdir(swpdir)
