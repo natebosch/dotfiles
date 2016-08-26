@@ -27,7 +27,7 @@
   del = !git ls-files --deleted | xargs git rm
   boast = !git ls-files | egrep -v 'png|min.js|gif|jpg|library' | xargs -n1 git blame -M15 -CCC15 -wfc | sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | trim | sort | uniq -c | sort -n
   u = branch -u @{-1}
-  files = !git --no-pager diff @{u} --name-only --relative
+  files = !cd "$GIT_PREFIX" && git --no-pager diff @{u} --name-only --relative
 [mergetoool "vimdiff3"]
 	cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
