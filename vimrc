@@ -328,6 +328,41 @@ function! ScratchOpen()
   endif
 endfunction
 nnoremap <leader>s :call ScratchOpen()<cr>
+
+" Word highlighting
+hi Word1 ctermbg=red ctermfg=black
+hi Word2 ctermbg=blue ctermfg=black
+hi Word3 ctermbg=yellow ctermfg=black
+nnoremap <leader>ha :call AddMatchWord('Word1')<cr>
+nnoremap <leader>hA :call ClearMatchWord('Word1')<cr>
+nnoremap <leader>hs :call AddMatchWord('Word2')<cr>
+nnoremap <leader>hS :call ClearMatchWord('Word2')<cr>
+nnoremap <leader>hd :call AddMatchWord('Word3')<cr>
+nnoremap <leader>hD :call ClearMatchWord('Word3')<cr>
+nnoremap <leader>hh :call ClearMatchWords()<cr>
+
+function! ClearMatchWords()
+  for l:i in [1, 2, 3]
+    call ClearMatchWord('Word'.l:i)
+  endfor
+endfunction
+
+function! ClearMatchWord(group)
+  if exists('w:matched_words') && exists('w:matched_words["'.a:group.'"]')
+    call matchdelete(w:matched_words[a:group])
+    unlet w:matched_words[a:group]
+  endif
+endfunction
+
+function! AddMatchWord(group)
+  if !exists('w:matched_words')
+    let w:matched_words={}
+  endif
+  call ClearMatchWord(a:group)
+  let l:let_statement = 'let w:matched_words["'.a:group.'"] = '
+  exe printf(l:let_statement.'matchadd("'.a:group.'", '."'\\<%s\\>')",
+        \escape(expand('<cword>'), '/\'))
+endfunction
 """"""""""""""""""""""""""""""""""""""
 
 
