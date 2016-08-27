@@ -1,6 +1,6 @@
 [user]
-	name = Nate Bosch
-	email = nbosch1@gmail.com
+  name = Nate Bosch
+  email = nbosch1@gmail.com
 [core]
   excludesfile = ~/.gitignore
 [branch]
@@ -20,7 +20,7 @@
   ci = commit
   br = branch
   co = checkout
-  dr = diff --find-copies-harder -U999999999 --no-color
+  d = difftool
   lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
   lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --all
   lp = log -p --show-notes=*
@@ -29,16 +29,18 @@
   u = branch -u @{-1}
   files = !cd "$GIT_PREFIX" && git --no-pager diff @{u} --name-only --relative
 [mergetoool "vimdiff3"]
-	cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
+  cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
-	tool = vimdiff3
+  tool = vimdiff3
 [rebase]
-	autosquash = true
+  autosquash = true
 [credential]
-	helper = cache --timeout=3600
+  helper = cache --timeout=3600
 [push]
-	default = simple
+  default = simple
 [mergetool]
-	keepBackup = false
+  keepBackup = false
 [init]
-	templatedir = ~/.git-templates
+  templatedir = ~/.git-templates
+[difftool]
+  prompt = false
