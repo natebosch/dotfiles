@@ -203,6 +203,10 @@ let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 " Don't restore cursor to the middle of a git commit
 au FileType gitcommit au! BufEnter COMMIT_EDITMSG
       \ call setpos('.', [0, 1, 1, 0])
+
+" Split direction
+set splitright
+set splitbelow
 """""""""""""""""""""""""""""""
 
 
