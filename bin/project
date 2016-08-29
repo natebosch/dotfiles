@@ -23,5 +23,8 @@ if [[ ! -d $project_name ]]; then
     git init
   fi
 fi
-cd ~/projects/$project_name/$PROJECT_ROOT
+cd ~/projects/$project_name
+if [ -d "$PROJECT_ROOT" ]; then
+  cd "$PROJECT_ROOT"
+fi
 session_finder $project_name
