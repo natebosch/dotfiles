@@ -59,3 +59,4 @@ export REPORTTIME=1     # Wrap long commands with time
 ##  but setting to nonzero only reports command with long CPU time
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
