@@ -1,7 +1,5 @@
-export REPORTTIME=20 #don't report time for sourcing this file
 ## Use DOTDIR in other places to locate custom files.
-export DOTDIR=${ZDOTDIR:=$HOME} # Use homedir, but override it when ZDOTDIR is set
-export HOSTNAME=`/bin/hostname`
+export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
 
 export PATH=
 path=(
@@ -20,12 +18,6 @@ path=(
        /usr/lib/dart/bin
      )
 path=($^path(N))
-
-## Add custom functions
-if [ -d $DOTDIR/.fpath ]
-then
-    fpath=( $DOTDIR/.fpath $fpath )
-fi
 
 ## Source all zsh customizations
 if [ -d $DOTDIR/.zshrc.d ]
@@ -51,12 +43,13 @@ KEYTIMEOUT=1
 export EDITOR=$(which vim)
 export VISUAL=$EDITOR   # some programs use this instead of EDITOR
 export PAGER=less       # less is more :)
-export LESS='-i -M -R'  # case insensitive searching, more detailed status line, and colors in less
+export LESS='-i -M -R'  # case insensitive searching, status line, and colors
 
-clear
 export REPORTTIME=1     # Wrap long commands with time
 ##* I'd like to do this for long wait commands as well,
 ##  but setting to nonzero only reports command with long CPU time
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
+
+clear
