@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ -x $(command -v rvm) ]; then
+  echo "Already have RVM"
+  exit
+fi
+
+if [ "$(uname)" == "Darwin" -a ! -x "$(command -v gpg)" ]; then
+  echo "Installing gpg"
+  brew install gpg
+fi
+
+echo "Adding RVM gpg key"
+gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+echo "Running RCM install script"
+curl -sSL https://get.rvm.io | bash -s stable
+echo "Cleaning up crap in zshrc"
+sed -i --follow-symlinks '/Add RVM to PATH/d' ~/.zshrc
+sed -i --follow-symlinks -e :a -e '/^\n*$/{$d;N;};/\n$/ba' ~/.zshrc

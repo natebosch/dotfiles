@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ "$(uname)" == "Darwin" ]; then
+  if [[ "$(command -v vim)" =~ .*brew.* ]]; then
+    echo "Already have a modern vim"
+    exit
+  fi
+  echo "Install vim from brew"
+  brew install vim
+else
+  #TODO install up to date vim for linux
+  echo "WARNING RECENT vim NOT INSTALLED!"
+fi
+
+echo "Installing vim plugins"
+vim +PlugInstall +qall

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ "$(uname)" != "Darwin" -o -x "$(command -v brew)" ]; then
+  echo "Already have brew"
+  exit
+fi
+
+echo "Installing brew"
+cd ~
+mkdir homebrew && curl -L https://github.com/Homebrew/homebrew/tarball/master \
+  | tar xz --strip 1 -C homebrew
+
+echo "Updating brew packages"
+brew update

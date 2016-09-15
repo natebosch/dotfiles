@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ "$SHELL" =~ .*zsh.* ]]; then
+  echo "Already using zsh"
+  exit
+fi
+
+if [ ! -x "$(command -v zsh)" ]; then
+  if [ "$(uname)" == "Darwin" ]; then
+    echo "Installing zsh from brew"
+    brew install zsh
+    echo "Setting defaul shell"
+    sudo dscl . -create /Users/$USER UserShell $(which zsh)
+  else
+    #TODO install zsh for linux
+    echo "WARNING zsh NOT INSTALLED!"
+  fi
+fi
+
+chsh -s `which zsh`

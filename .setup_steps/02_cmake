@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ -x "$(command -v cmake)" ]; then
+  echo "Already have cmake"
+  exit
+fi
+
+if [ "$(uname)" == "Darwin" ]; then
+  brew install cmake
+else
+  #TODO install cmake for linux
+  echo "WARNING cmake NOT INSTALLED!"
+fi

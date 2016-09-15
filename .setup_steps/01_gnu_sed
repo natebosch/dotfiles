@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ "$(uname)" != "Darwin" ] || [[ "$(command -v sed)" =~ .*brew.* ]]; then
+  echo "Already have a modern sed"
+  exit
+fi
+
+echo "Installing sed from brew"
+brew install gnu-sed --with-default-names

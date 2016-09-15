@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -x "$(command -v tmux)" ]; then
+  echo "Already have tmux"
+  #TODO need to check for recent version?
+  exit
+fi
+
+if [ "$(uname)" == "Darwin" ]; then
+  brew install tmux
+else
+  #TODO install tmux for linux
+  echo "WARNING TMUX NOT INSTALLED!"
+fi

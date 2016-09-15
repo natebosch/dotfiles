@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# PATH might be missing some stuff we're about to install
+if [ "$(uname)" == "Darwin" ]; then
+  BREWPATH="$HOME/homebrew/bin"
+  [[ ":$PATH:" != *":$BREWPATH:"* ]] && PATH="$BREWPATH:${PATH}"
+fi
+NEWPATHS=( "$HOME/.rvm/bin" )
+for NEWPATH in ${NEWPATHS[@]}; do
+  [[ ":$PATH:" != *":$NEWPATH:"* ]] && PATH="$NEWPATH:${PATH}"
+done
+for SCRIPT in .setup_steps/*; do
+  if [ -f $SCRIPT -a -x $SCRIPT ]; then
+    $SCRIPT
+  fi
+done
