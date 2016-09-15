@@ -3,8 +3,8 @@ export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
 
 export PATH=
 path=(
-       $DOTDIR/.bin
        $DOTDIR/.bin.local
+       $DOTDIR/.bin
        $DOTDIR/bin
        $DOTDIR/.rvm/bin
        /usr/local/bin
