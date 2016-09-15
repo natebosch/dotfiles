@@ -2,8 +2,8 @@
 
 declare -a bell_sessions
 sessions=($(tmux list-sessions -F '#{session_name}'))
-for session in $sessions; do
-  if [ -n $(tmux list-windows -t $session | grep '!') ]; then
+for session in ${sessions[@]}; do
+  if [ -n "$(tmux list-windows -t $session | grep '\!')" ]; then
     bell_sessions+=$session
   fi
 done
