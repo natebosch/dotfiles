@@ -9,12 +9,11 @@ if [ ! -x "$(command -v zsh)" ]; then
   if [ "$(uname)" == "Darwin" ]; then
     echo "Installing zsh from brew"
     brew install zsh
-    echo "Setting defaul shell"
-    sudo dscl . -create /Users/$USER UserShell $(which zsh)
   else
-    #TODO install zsh for linux
-    echo "WARNING zsh NOT INSTALLED!"
+    echo "Installing zsh from apt"
+    sudo apt install zsh
   fi
 fi
 
+echo "Setting default shell"
 chsh -s `which zsh`

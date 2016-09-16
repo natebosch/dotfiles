@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Look for any version of vim 8, or 7.4 with at least patches up to 1816
+# Look for any version of vim 8, or 7.4 with at least patches up to 1689
 VERSION=$(vim --version | sed -n 's/VIM - Vi IMproved \([0-9\.]\+\) .*/\1/p')
 PATCH=$(vim --version | sed -n 's/Included patches.*-\([0-9]\+\)$/\1/p')
 
@@ -9,17 +9,17 @@ if [ "$VERSION" == "8.0" ]; then
   exit
 fi
 
-if [ "$VERSION" == "7.4" -a $PATCH -ge 1816 ]; then
+if [ "$VERSION" == "7.4" -a $PATCH -ge 1689 ]; then
   echo "ALready have late enough vim 7.4"
   exit
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  echo "Install vim from brew"
+  echo "Installing vim from brew"
   brew install vim
 else
-  #TODO install up to date vim for linux
-  echo "WARNING RECENT vim NOT INSTALLED!"
+  echo "Installing vim from apt"
+  sudo apt-get install vim-nox
 fi
 
 echo "Installing vim plugins"

@@ -6,8 +6,9 @@ if [ -x "$(command -v cmake)" ]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
+  echo "Installing cmake from brew"
   brew install cmake
 else
-  #TODO install cmake for linux
-  echo "WARNING cmake NOT INSTALLED!"
+  echo "Installing cmake from apt"
+  sudo apt install cmake
 fi
