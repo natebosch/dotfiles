@@ -4,7 +4,7 @@ if [ "$(uname)" != "Darwin" ]; then
  exit
 fi
 
-if [ -o -x "$(command -v brew)" ]; then
+if [ -x "$(command -v brew)" ]; then
   echo "Already have brew"
   exit
 fi
