@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 ############################
 # .makelinks
 # This script creates symlinks from the home directory to any desired dotfiles
@@ -25,7 +25,7 @@ for file in $(ls); do
     echo "Removing old link to $file"
     rm ~/.$file
   fi
-  if [[ (-f ~/.$file) || (-d ~/.$file) ]]; then
+  if [ -f ~/.$file -o -d ~/.$file ]; then
     echo "Moving existing $file from ~ to $olddir"
     mv ~/.$file $olddir
   fi
