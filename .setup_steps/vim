@@ -1,10 +1,20 @@
 #!/bin/bash
 
+# Look for any version of vim 8, or 7.4 with at least patches up to 1816
+VERSION=$(vim --version | sed -n 's/VIM - Vi IMproved \([0-9\.]\+\) .*/\1/p')
+PATCH=$(vim --version | sed -n 's/Included patches.*-\([0-9]\+\)$/\1/p')
+
+if [ "$VERSION" == "8.0" ]; then
+  echo "Already have vim 8"
+  exit
+fi
+
+if [ "$VERSION" == "7.4" -a $PATCH -ge 1816 ]; then
+  echo "ALready have late enough vim 7.4"
+  exit
+fi
+
 if [ "$(uname)" == "Darwin" ]; then
-  if [[ "$(command -v vim)" =~ .*brew.* ]]; then
-    echo "Already have a modern vim"
-    exit
-  fi
   echo "Install vim from brew"
   brew install vim
 else
