@@ -15,7 +15,7 @@ path=(
        /usr/local/sbin
        /usr/X11R6/bin
        /usr/X11/bin
-       /usr/lib/dart/bin
+       $DOTDIR/dart-sdk/bin
      )
 path=($^path(N))
 
