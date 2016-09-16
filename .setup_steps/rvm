@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ -x $(command -v rvm) ]; then
-  echo "Already have RVM"
+if [ -x "$(command -v rvm)" ]; then
+  echo "Already have rvm"
   exit
 fi
 
@@ -10,7 +10,7 @@ if [ "$(uname)" == "Darwin" -a ! -x "$(command -v gpg)" ]; then
   brew install gpg
 fi
 
-echo "Adding RVM gpg key"
+echo "Adding rvm gpg key"
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 echo "Running RCM install script"
 curl -sSL https://get.rvm.io | bash -s stable
