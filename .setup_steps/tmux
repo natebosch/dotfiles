@@ -9,6 +9,17 @@ fi
 if [ "$(uname)" == "Darwin" ]; then
   brew install tmux
 else
-  #TODO install tmux for linux
-  echo "WARNING TMUX NOT INSTALLED!"
+  echo "Installing libevent-dev from apt"
+  sudo apt install libevent-dev
+  echo "Installing libcurses-dev from apt"
+  sudo apt install libncurses-dev
+  echo "Downloading tmux 2.2"
+  wget https://github.com/tmux/tmux/releases/download/2.2/tmux-2.2.tar.gz \
+    -O /tmp/tmux.tar.gz
+  cd /tmp
+  echo "Extracting tmux"
+  tar -xzf tmux.tar.gz
+  cd tmux-2.2
+  echo "Installing tmux"
+  ./configure && make && sudo make install
 fi
