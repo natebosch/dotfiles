@@ -22,12 +22,17 @@
   co = checkout
   d = difftool
   lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-  lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative --all
+  lga = !git lg --all
   lp = log -p --show-notes=*
   del = !git ls-files --deleted | xargs git rm
-  boast = !git ls-files | egrep -v 'png|min.js|gif|jpg|library' | xargs -n1 git blame -M15 -CCC15 -wfc | sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | trim | sort | uniq -c | sort -n
+  boast = "!git ls-files | egrep -v 'png|min.js|gif|jpg|library' | \
+      xargs -n1 git blame -M15 -CCC15 -wfc | \
+      sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | sed 's/^ *//;s/ *$//' | \
+      sort | uniq -c | sort -n"
   u = branch -u @{-1}
-  files = !cd "$GIT_PREFIX" && git --no-pager diff @{u} --name-only --relative
+  files = "! [ -z "$GIT_PREFIX" ] || cd $GIT_PREFIX ; \
+      git --no-pager diff @{u} --name-only --relative"
+  start = "!f() { git checkout -b $1 && git branch -u @{-1}; }; f"
 [mergetoool "vimdiff3"]
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
