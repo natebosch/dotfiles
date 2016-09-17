@@ -15,18 +15,19 @@ function git-status() {
   local PROMPT_UNTRACKED="%{$fg[red]%}."
   local PROMPT_CLEAN="%{$fg_bold[green]%}."
 
-  local UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u})
+  local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u})"
 
-  local GIT_AHEAD=$(git rev-list --left-only --count $GIT_BRANCH...$UPSTREAM)
-  local GIT_BEHIND=$(git rev-list --right-only --count $GIT_BRANCH...$UPSTREAM)
-  local GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-  local GIT_CONFLICTS=$(git ls-files --unmerged | cut -f2 | sort -u | wc -l)
-  local GIT_STAGED=$(git diff --cached --numstat | wc -l)
-  local GIT_UNSTAGED=$(git diff --numstat | wc -l)
-  local GIT_UNTRACKED=$(git ls-files -o --exclude-standard | wc -l)
+  local BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+  local GIT_AHEAD="$(git rev-list --left-only --count $BRANCH...$UPSTREAM)"
+  local GIT_BEHIND="$(git rev-list --right-only --count $BRANCH...$UPSTREAM)"
+  local GIT_CONFLICTS="$(git ls-files --unmerged | cut -f2 | sort -u | wc -l \
+    | sed 's/^ *//')"
+  local GIT_STAGED="$(git diff --cached --numstat | wc -l | sed 's/^ *//')"
+  local GIT_UNSTAGED="$(git diff --numstat | wc -l | sed 's/^ *//')"
+  local GIT_UNTRACKED="$(git ls-files -o --exclude-standard | wc -l \
+    | sed 's/^ *//')"
 
-  GIT_STATUS="($GIT_BRANCH"
-  GIT_STATUS="$PROMPT_PREFIX$PROMPT_BRANCH$GIT_BRANCH%{${reset_color}%}"
+  GIT_STATUS="$PROMPT_PREFIX$PROMPT_BRANCH$BRANCH%{${reset_color}%}"
   GIT_STATUS="$GIT_STATUS$PROMPT_SEPARATOR"
   GIT_CLEAN=true
   if [ "$GIT_AHEAD" -ne "0" ]; then
