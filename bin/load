@@ -1,2 +1,6 @@
 #!/bin/bash
-cut -d" " -f1,2,3 /proc/loadavg
+if [ "$(uname)" == "Darwin" ]; then
+  sysctl -n vm.loadavg | sed 's/{ \(.*\) }/\1/'
+else
+  cut -d" " -f1,2,3 /proc/loadavg
+fi
