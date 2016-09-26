@@ -15,7 +15,7 @@ function git-status() {
   local PROMPT_UNTRACKED="%{$fg[red]%}."
   local PROMPT_CLEAN="%{$fg_bold[green]%}."
 
-  local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u})"
+  local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2&>/dev/null)"
 
   local BRANCH="$(git rev-parse --abbrev-ref HEAD)"
   local GIT_AHEAD="$(git rev-list --left-only --count $BRANCH...$UPSTREAM)"
