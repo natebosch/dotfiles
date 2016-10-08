@@ -19,3 +19,7 @@ hi Underlined ctermfg=177
 hi Title ctermfg=27 cterm=bold
 hi PreProc ctermfg=33
 hi Visual ctermbg=None cterm=bold,reverse
+
+hi DiffAdd ctermbg=26 cterm=bold
+hi DiffChange ctermbg=53 cterm=bold
+hi DiffText ctermbg=1 ctermfg=7
