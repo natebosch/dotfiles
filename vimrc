@@ -91,6 +91,9 @@ set shiftwidth=2
 set expandtab
 set smarttab
 
+" Defaults that apply to most filetypes
+set textwidth=80
+
 " read a file when it is changed from outside vi
 set autoread
 
