@@ -51,8 +51,8 @@ Plug 'junegunn/fzf.vim'
 " Filetype
 Plug 'tmux-plugins/vim-tmux'
 Plug 'dart-lang/dart-vim-plugin'
-Plug '~/.dartlang-snippets'
-Plug '~/.ng2-snippets'
+Plug 'natebosch/dartlang-snippets'
+Plug 'natebosch/ng2-snippets'
 Plug 'leafgarland/typescript-vim'
 
 call plug#end()
