@@ -3,20 +3,16 @@ export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
 
 export PATH=
 path=(
-       $DOTDIR/.bin.local
-       $DOTDIR/.bin
-       $DOTDIR/bin
-       $DOTDIR/.rvm/bin
-       /usr/local/bin
-       /usr/bin
-       /bin
-       /usr/sbin
-       /sbin
-       /usr/local/sbin
-       /usr/X11R6/bin
-       /usr/X11/bin
-     )
-path=($^path(N))
+  $DOTDIR/.bin.local
+  $DOTDIR/.bin
+  $DOTDIR/.rvm/bin
+  /usr/local/bin
+  /usr/bin
+  /bin
+  /usr/local/sbin
+  /usr/sbin
+  /sbin
+)
 
 ## Source all zsh customizations
 if [ -d $DOTDIR/.zshrc.d ]
@@ -28,6 +24,9 @@ then
     for config_file ($DOTDIR/.zshrc.local/*) source $config_file
 fi
 unset config_file
+
+# Clean up non-existent path entries
+path=($^path(N))
 
 setopt NO_BEEP      # Never ever beep. Ever
 MAILCHECK=0         # disable mail checking
