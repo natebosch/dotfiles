@@ -15,11 +15,14 @@ function git-status() {
   local PROMPT_UNTRACKED="%{$fg[red]%}."
   local PROMPT_CLEAN="%{$fg_bold[green]%}."
 
-  local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2&>/dev/null)"
+  local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} \
+    2&>/dev/null)"
 
-  local BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-  local GIT_AHEAD="$(git rev-list --left-only --count $BRANCH...$UPSTREAM)"
-  local GIT_BEHIND="$(git rev-list --right-only --count $BRANCH...$UPSTREAM)"
+  local BRANCH="$(git rev-parse --abbrev-ref HEAD 2&>/dev/null)"
+  local GIT_AHEAD="$(git rev-list --left-only --count $BRANCH...$UPSTREAM \
+    2&>/dev/null)"
+  local GIT_BEHIND="$(git rev-list --right-only --count $BRANCH...$UPSTREAM \
+    2&>/dev/null)"
   local GIT_CONFLICTS="$(git ls-files --unmerged | cut -f2 | sort -u | wc -l \
     | sed 's/^ *//')"
   local GIT_STAGED="$(git diff --cached --numstat | wc -l | sed 's/^ *//')"
