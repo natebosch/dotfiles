@@ -14,6 +14,7 @@ path=(
   /sbin
 )
 
+autoload -U compinit && compinit
 ## Source all zsh customizations
 if [ -d $DOTDIR/.zshrc.d ]
 then
@@ -22,6 +23,10 @@ fi
 if [ -d $DOTDIR/.zshrc.local ]
 then
     for config_file ($DOTDIR/.zshrc.local/*) source $config_file
+fi
+if [ -d $DOTDIR/.zshrc.last ]
+then
+    for config_file ($DOTDIR/.zshrc.last/*) source $config_file
 fi
 unset config_file
 
