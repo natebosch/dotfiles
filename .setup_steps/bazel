@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [ -x "$(command -v bazel)" ]; then
+  echo "Already have bazel"
+  exit
+fi
+
+if [ "$(uname)" == "Darwin" ]; then
+  echo "Installing bazel from brew"
+  brew install bazel
+else
+  echo "Installing bazel from apt"
+  BAZEL_REPO="http://storage.googleapis.com/bazel-apt "
+  echo "deb [arch=amd64] $BAZEL_REPO stable jdk1.8" |\
+    sudo tee /etc/apt/sources.list.d/bazel.list
+  curl https://bazel.io/bazel-release.pub.gpg | sudo apt-key add -
+  sudo apt-get update && sudo apt-get install bazel
+
+  # Fetch completion - missing from ubuntu repo
+  mkdir -p $DOTDIR/.zsh/completion
+  GITHUB="https://raw.githubusercontent.com"
+  curl "$GITHUB/bazelbuild/bazel/master/scripts/zsh_completion/_bazel" \
+    -o $DOTDIR/.zsh/completion/_bazel
+fi
+
