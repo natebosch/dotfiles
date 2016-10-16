@@ -43,10 +43,6 @@ export VISUAL=$EDITOR   # some programs use this instead of EDITOR
 export PAGER=less       # less is more :)
 export LESS='-i -M -R'  # case insensitive searching, status line, and colors
 
-export REPORTTIME=1     # Wrap long commands with time
-##* I'd like to do this for long wait commands as well,
-##  but setting to nonzero only reports command with long CPU time
-
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
 
