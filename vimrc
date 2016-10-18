@@ -120,7 +120,7 @@ set wildmode=longest:full,full
 augroup convenience
   " Nicer handling of comments
   autocmd FileType,BufNewFile,BufWinEnter * setlocal formatoptions-=o
-        \ formatoptions+=jqn
+        \ formatoptions+=rjqn
   " When editing a file, always jump to the last known cursor position.
   autocmd BufReadPost *
         \ if line("'\"") > 1 && line("'\"") <= line("$") |
