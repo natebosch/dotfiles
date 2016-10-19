@@ -188,6 +188,11 @@ let g:ycm_filetype_blacklist = {}
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_seed_identifiers_with_syntax = 1
 
+" FZF
+let g:fzf_commits_log_options = '--graph --color=always '
+      \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
+      \.'%C(bold blue)<%an>%Creset"'
+
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
 let g:peekaboo_delay = 750
