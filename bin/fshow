@@ -1,0 +1,23 @@
+#!/bin/bash
+
+SHOW_COMMIT="git --no-pager show --color=always -m"
+
+pick_commits() {
+  git log --color=always --name-only \
+    --format="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b" |
+  sed '/^\s*$/d' | tr '\n\r' '|' | sed 's/|\?\xE2\x98\xA2/\n/g' | tail -n +2 |
+  fzf --ansi --multi --no-sort --reverse --query="$1" --print-query \
+    --preview="echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT"
+}
+
+find_sha() {
+  cut -f1 -d' ' <<< "$1"
+}
+
+while lines=$(pick_commits "$previous_query"); do
+  previous_query=$(head -1 <<< "$lines")
+  results=$(tail -n +2 <<< "$lines")
+  while read line; do
+    $SHOW_COMMIT $(find_sha "$line") | less
+  done <<< "$results"
+done
