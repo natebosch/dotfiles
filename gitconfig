@@ -33,6 +33,7 @@
   files = "! [ -z "$GIT_PREFIX" ] || cd $GIT_PREFIX ; \
       git --no-pager diff @{u} --name-only --relative"
   start = "!f() { git checkout -b $1 && git branch -u @{-1}; }; f"
+  pr = "!f() { git fetch origin refs/pull/$1/head:pr/$1; } ; f"
 [mergetoool "vimdiff3"]
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
