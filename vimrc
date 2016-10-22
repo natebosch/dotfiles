@@ -22,7 +22,8 @@ endfunction
 Plug 'tpope/vim-repeat'
 Plug 'wellle/targets.vim'
 Plug 'christoomey/vim-sort-motion'
-Plug 'tpope/vim-vinegar'
+Plug 'scrooloose/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'ap/vim-css-color'
 Plug 'chip/vim-fat-finger'
 Plug 'junegunn/vim-peekaboo'
@@ -167,9 +168,8 @@ set foldmethod=indent
 set foldnestmax=10
 set foldlevel=99
 
-" Explorer
-let g:netrw_liststyle=3 " Default to 'NerdTree' style explorer
-let g:netrw_altfile=1 " Don't jump to netrw with <c-^>
+" Explore
+let g:NERDTreeHijackNetrw=1
 
 " Allow hiding unsaved buffers
 set hidden
@@ -192,6 +192,7 @@ let g:ycm_seed_identifiers_with_syntax = 1
 let g:fzf_commits_log_options = '--graph --color=always '
       \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
       \.'%C(bold blue)<%an>%Creset"'
+let g:fzf_buffers_jump = 1
 
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
@@ -295,7 +296,7 @@ inoremap <C-j> <Esc>:m .+1<CR>==gi
 inoremap <C-k> <Esc>:m .-2<CR>==gi
 
 " File/Buffer/Code navigation
-nnoremap <leader>o :Ex<cr>
+nnoremap <leader>o :edit %:h<cr>
 nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
