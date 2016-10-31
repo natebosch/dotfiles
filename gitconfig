@@ -1,6 +1,6 @@
 [user]
   name = Nate Bosch
-  email = nbosch1@gmail.com
+  useConfigOnly = true
 [core]
   excludesfile = ~/.gitignore
 [branch]
@@ -34,6 +34,8 @@
       git --no-pager diff @{u} --name-only --relative"
   start = "!f() { git checkout -b $1 && git branch -u @{-1}; }; f"
   pr = "!f() { git fetch origin refs/pull/$1/head:pr/$1; } ; f"
+  cwork = !git config user.email nbosch@google.com
+  cpersonal = !git config user.email nbosch1@gmail.com
 [mergetoool "vimdiff3"]
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
