@@ -6,13 +6,13 @@ if [ -x "$(command -v dart)" ]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  echo "Installing dart from brew"
-  brew tap dart-lang/dart
-  brew install dart --with-dartium --devel
+  PLATFORM="macos-ia32"
 else
-  echo "Downloading latest dart"
-  DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/dev/release/"
-  LATEST="latest/sdk/dartsdk-linux-x64-release.zip"
-  wget $DOWNLOAD$LATEST -O /tmp/dart-release.zip
-  unzip -qo /tmp/dart-release.zip -d ~
+  PLATFORM="linux-x64"
 fi
+
+echo "Downloading latest dart"
+DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/dev/release/"
+LATEST="latest/sdk/dartsdk-$PLATFORM-release.zip"
+curl $DOWNLOAD$LATEST -o /tmp/dart-release.zip
+unzip -qo /tmp/dart-release.zip -d ~
