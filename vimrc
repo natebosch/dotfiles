@@ -44,7 +44,7 @@ Plug 'tpope/vim-surround'
 Plug 'justinmk/vim-sneak'
 Plug 'Raimondi/delimitMate'
 Plug 'tommcdo/vim-exchange'
-Plug 'SirVer/ultisnips' | Plug 'honza/vim-snippets'
+Plug 'SirVer/ultisnips'
 Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
