@@ -260,7 +260,6 @@ let g:airline_right_sep = ''
 nnoremap <leader>vn :set number!<CR>
 nnoremap <leader>vs :set spell!<CR>
 nnoremap - :noh<cr>
-nnoremap <leader>vu :UndotreeToggle<cr>
 " Check the highlight group under cursor
 nnoremap <leader>v? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name")
       \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
