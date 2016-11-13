@@ -256,9 +256,6 @@ let g:airline_right_sep = ''
 """""""""""""""""""""""""""""
 """ Tools/Key Maps
 
-" Find word under cursor
-nnoremap <leader>G :grep! "\b<C-R><C-W>\b"<CR>:cw<CR>
-
 " Visual Tweaks
 nnoremap <leader>vn :set number!<CR>
 nnoremap <leader>vs :set spell!<CR>
