@@ -118,6 +118,7 @@ set wildmenu
 set wildmode=longest:full,full
 
 augroup convenience
+  autocmd!
   " Nicer handling of comments
   autocmd FileType,BufNewFile,BufWinEnter * setlocal formatoptions-=o
         \ formatoptions+=rjqn
@@ -151,7 +152,10 @@ augroup END
 " Fugitive sometimes likes horizontal diffs
 set diffopt+=vertical
 " Avoid piling up fugitive buffers
-autocmd BufReadPost fugitive://* set bufhidden=delete
+augroup fugitive
+  autocmd!
+  autocmd BufReadPost fugitive://* set bufhidden=delete
+augroup END
 
 " Complete from tmux panes in YCM
 let g:tmuxcomplete#trigger = 'omnifunc'
@@ -204,10 +208,6 @@ let g:UltiSnipsJumpBackwardTrigger="<c-z>"
 " Don't let YCM steal <tab> from ultisnips
 let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
 let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
-
-" Don't restore cursor to the middle of a git commit
-au FileType gitcommit au! BufEnter COMMIT_EDITMSG
-      \ call setpos('.', [0, 1, 1, 0])
 
 " Split direction
 set splitright
