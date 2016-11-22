@@ -28,6 +28,7 @@ Plug 'ap/vim-css-color'
 Plug 'chip/vim-fat-finger'
 Plug 'junegunn/vim-peekaboo'
 Plug 'vim-airline/vim-airline' | Plug 'vim-airline/vim-airline-themes'
+Plug 'kana/vim-textobj-user' | Plug 'Julian/vim-textobj-variable-segment'
 
 " Navigation/Organization
 Plug 'christoomey/vim-tmux-navigator'
