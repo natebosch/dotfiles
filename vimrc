@@ -4,8 +4,8 @@ filetype off
 
 " Load vim-plug
 if empty(glob("~/.vim/autoload/plug.vim"))
-    execute '!curl -fLo ~/.vim/autoload/plug.vim --create-dirs
-          \ https://raw.github.com/junegunn/vim-plug/master/plug.vim'
+  execute '!curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+      \ https://raw.github.com/junegunn/vim-plug/master/plug.vim'
 endif
 
 """"""""""""""""""""""""""""""""""
@@ -18,7 +18,7 @@ function! BuildYCM(info)
   endif
 endfunction
 
-" Extend default behavior / Stay our of the way
+" Extend default behavior / Stay out of the way
 Plug 'tpope/vim-repeat'
 Plug 'wellle/targets.vim'
 Plug 'christoomey/vim-sort-motion'
@@ -121,12 +121,12 @@ augroup convenience
   autocmd!
   " Nicer handling of comments
   autocmd FileType,BufNewFile,BufWinEnter * setlocal formatoptions-=o
-        \ formatoptions+=rjqn
+      \ formatoptions+=rjqn
   " When editing a file, always jump to the last known cursor position.
   autocmd BufReadPost *
-        \ if line("'\"") > 1 && line("'\"") <= line("$") |
-        \   exe "normal! g`\"" |
-        \ endif
+      \ if line("'\"") > 1 && line("'\"") <= line("$") |
+      \   exe "normal! g`\"" |
+      \ endif
 augroup END
 
 " Allow backspacing over everything in insert mode
@@ -193,8 +193,8 @@ let g:ycm_seed_identifiers_with_syntax = 1
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '
-      \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
-      \.'%C(bold blue)<%an>%Creset"'
+    \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
+    \.'%C(bold blue)<%an>%Creset"'
 let g:fzf_buffers_jump = 1
 
 " Peekaboo
@@ -240,7 +240,7 @@ set listchars=tab:>-
 
 
 if exists('+colorcolumn')
-    set colorcolumn=+1
+  set colorcolumn=+1
 endif
 
 " Status line
@@ -262,22 +262,22 @@ nnoremap <leader>vs :set spell!<CR>
 nnoremap - :noh<cr>
 " Check the highlight group under cursor
 nnoremap <leader>v? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name")
-      \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
-      \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
+    \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
+    \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 " Toggle error matching for past width
 if exists("*matchadd")
-    hi link OverLength Error
-    nnoremap <silent> <leader>vl
-          \ :if exists('w:long_line_match') <Bar>
-          \   silent! call matchdelete(w:long_line_match) <Bar>
-          \   unlet w:long_line_match <Bar>
-          \ elseif &textwidth > 0 <Bar>
-          \   let w:long_line_match =
-          \       matchadd('OverLength', '\%>'.&tw.'v.\+', -1) <Bar>
-          \ else <Bar>
-          \   let w:long_line_match =
-          \       matchadd('OverLength', '\%>80v.\+', -1) <Bar>
-          \ endif<CR>
+  hi link OverLength Error
+  nnoremap <silent> <leader>vl
+      \ :if exists('w:long_line_match') <Bar>
+      \   silent! call matchdelete(w:long_line_match) <Bar>
+      \   unlet w:long_line_match <Bar>
+      \ elseif &textwidth > 0 <Bar>
+      \   let w:long_line_match =
+      \       matchadd('OverLength', '\%>'.&tw.'v.\+', -1) <Bar>
+      \ else <Bar>
+      \   let w:long_line_match =
+      \       matchadd('OverLength', '\%>80v.\+', -1) <Bar>
+      \ endif<CR>
 endif
 
 " Move lines or blocks of text up/down
@@ -362,7 +362,7 @@ function! AddMatchWord(group)
   call ClearMatchWord(a:group)
   let l:let_statement = 'let w:matched_words["'.a:group.'"] = '
   exe printf(l:let_statement.'matchadd("'.a:group.'", '."'\\<%s\\>')",
-        \escape(expand('<cword>'), '/\'))
+      \escape(expand('<cword>'), '/\'))
 endfunction
 """"""""""""""""""""""""""""""""""""""
 
