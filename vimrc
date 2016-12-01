@@ -91,6 +91,7 @@ set tabstop=2
 set shiftwidth=2
 set expandtab
 set smarttab
+set nojoinspaces " Don't use a double space after period
 
 " Defaults that apply to most filetypes
 set textwidth=80
