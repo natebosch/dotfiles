@@ -1,6 +1,6 @@
 let b:delimitMate_nesting_quotes = ["'"]
 
-map <buffer> <leader>ff :w<cr>:! dartfmt -w %<cr>:edit!<cr>:redraw!<cr>
+map <buffer> <leader>ff :DartFmt<cr>
 vmap <buffer> <leader>fc :! dartfmt-comment<cr>
 vmap <buffer> <leader>fs :! dartfmt-comment --implied-method<cr>
 
