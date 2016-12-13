@@ -8,4 +8,3 @@ let g:markdown_fenced_languages = [
     \ ]
 
 setlocal spell
-setlocal formatoptions+=a
