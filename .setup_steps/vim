@@ -10,7 +10,7 @@ if [ -x "$(command -v vim)" ]; then
     exit
   fi
 
-  if [ "$VERSION" == "7.4" -a $PATCH -ge 1689 ]; then
+  if [ "$VERSION" == "7.4" ] && [ "$PATCH" -ge 1689 ]; then
     echo "Already have late enough vim 7.4"
     exit
   fi

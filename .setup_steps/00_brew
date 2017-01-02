@@ -10,7 +10,7 @@ if [ -x "$(command -v brew)" ]; then
 fi
 
 echo "Installing brew"
-cd ~
+cd ~ || exit
 mkdir .brew && curl -L https://github.com/Homebrew/homebrew/tarball/master \
   | tar xz --strip 1 -C .brew
 

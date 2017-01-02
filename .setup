@@ -6,11 +6,11 @@ if [ "$(uname)" == "Darwin" ]; then
   [[ ":$PATH:" != *":$BREWPATH:"* ]] && PATH="$BREWPATH:${PATH}"
 fi
 NEWPATHS=( "$HOME/.rvm/bin" )
-for NEWPATH in ${NEWPATHS[@]}; do
+for NEWPATH in "${NEWPATHS[@]}"; do
   [[ ":$PATH:" != *":$NEWPATH:"* ]] && PATH="$NEWPATH:${PATH}"
 done
 for SCRIPT in .setup_steps/*; do
-  if [ -f $SCRIPT -a -x $SCRIPT ]; then
+  if [ -f "$SCRIPT" ] && [ -x "$SCRIPT" ]; then
     $SCRIPT
   fi
 done

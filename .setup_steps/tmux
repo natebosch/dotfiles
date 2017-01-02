@@ -16,10 +16,10 @@ else
   echo "Downloading tmux 2.2"
   wget https://github.com/tmux/tmux/releases/download/2.2/tmux-2.2.tar.gz \
     -O /tmp/tmux.tar.gz
-  cd /tmp
+  cd /tmp || exit
   echo "Extracting tmux"
   tar -xzf tmux.tar.gz
-  cd tmux-2.2
+  cd tmux-2.2 || exit
   echo "Installing tmux"
   ./configure && make && sudo make install
 fi

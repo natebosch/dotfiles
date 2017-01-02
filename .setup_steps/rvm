@@ -5,7 +5,7 @@ if [ -x "$(command -v rvm)" ]; then
   exit
 fi
 
-if [ "$(uname)" == "Darwin" -a ! -x "$(command -v gpg)" ]; then
+if [ "$(uname)" == "Darwin" ] && [ ! -x "$(command -v gpg)" ]; then
   echo "Installing gpg"
   brew install gpg
 fi

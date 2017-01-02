@@ -16,4 +16,4 @@ if [ ! -x "$(command -v zsh)" ]; then
 fi
 
 echo "Setting default shell"
-chsh -s `which zsh`
+chsh -s "$(which zsh)"
