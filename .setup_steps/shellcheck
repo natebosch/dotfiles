@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -x "$(command -v shellcheck)" ]; then
+  echo "Already have shellcheck"
+  exit
+fi
+
+if [ "$(uname)" == "Darwin" ]; then
+  echo "Installing shellcheck from brew"
+  brew install shellcheck
+else
+  echo "Installing shellcheck from apt"
+  sudo apt install shellcheck
+fi
