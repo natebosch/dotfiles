@@ -52,14 +52,14 @@ pick_commits() {
   # Pluck out the sha from the line. Pass through xargs since otherwise fzf
   # won't udpate the preview as the chosen commit changes
   fzf_args+=(--preview="echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT")
-  if (( $print_query == 1 )); then
+  if (( print_query == 1 )); then
     fzf_args+=(--print-query)
   fi
   list_full_commit_info | fzf "${fzf_args[@]}"
 }
 
 lines=$(pick_commits "$previous_query")
-if (( $print_query == 1 )); then
+if (( print_query == 1 )); then
   head -1 <<< "$lines"
   lines=$(tail -n +2 <<< "$lines")
 fi

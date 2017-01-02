@@ -6,7 +6,7 @@ previous_query=
 while lines=$(fzc -pq "$previous_query"); do
   previous_query=$(head -1 <<< "$lines")
   results=$(tail -n +2 <<< "$lines")
-  while read line; do
+  while read -r line; do
     git show --color=always -m "$line"
   done <<< "$results"
 done

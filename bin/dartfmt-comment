@@ -2,15 +2,18 @@
 
 INPUT="$(</dev/stdin)"
 FIRST_LINE=${INPUT%%$'\n'*}
-COMMENT="$(printf "$FIRST_LINE" | sed 's/^\(\s*\/\+\).*$/\1/')"
-INDENT="$(printf "$FIRST_LINE" | sed "s#^$COMMENT\(\s*\).*\$#\1#")"
+COMMENT="$(printf "%s" "$FIRST_LINE" | sed 's/^\(\s*\/\+\).*$/\1/')"
+INDENT="$(printf "%s" "$FIRST_LINE" | sed "s#^$COMMENT\(\s*\).*\$#\1#")"
 LENGTH=$((80 - ${#COMMENT}))
-CODE="$(printf "$INPUT" | sed "s#$COMMENT##")"
-if [[ $* == *--implied-method* ]]; then
+CODE="$(printf "%s" "$INPUT" | sed "s#$COMMENT##")"
+if [[ $@ == *--implied-method* ]]; then
   CODE="void main() {$CODE}";
 fi
-FORMATTED="$(printf "$CODE" | dartfmt -l $LENGTH)"
-if [[ $* == *--implied-method* ]]; then
-  FORMATTED="$(printf "$FORMATTED" | head -n -1 | tail -n +2 | sed 's/^  //')";
+FORMATTED="$(printf "%s" "$CODE" | dartfmt -l $LENGTH)"
+if [[ $@ == *--implied-method* ]]; then
+  FORMATTED="$(printf "%s" "$FORMATTED" |\
+    head -n -1 |\
+    tail -n +2 |\
+    sed 's/^  //')";
 fi
-printf "$FORMATTED" | sed "s#^#$COMMENT$INDENT#" | sed 's/\s*$//'
+printf "%s" "$FORMATTED" | sed "s#^#$COMMENT$INDENT#" | sed 's/\s*$//'

@@ -4,7 +4,8 @@ mkdir -p ~/projects
 if [[ $# -ge 1 ]]; then
   project_name=$1
 else
-  project_name=$(ls ~/projects |\
+  project_name=$(find ~/projects -maxdepth 1 -type d |\
+    awk -F/ '{print $NF}' |\
     fzf --print-query |\
     tail -n1)
 fi
@@ -12,19 +13,19 @@ if [[ -z $project_name ]]; then
   exit -1
 fi
 
-cd ~/projects
+cd ~/projects || exit
 if [[ ! -d $project_name ]]; then
-  echo Starting project $project_name
-  mkdir $project_name
-  cd $project_name
+  echo Starting project "$project_name"
+  mkdir "$project_name"
+  cd "$project_name" || exit
   if type start_project > /dev/null; then
-    start_project $2
+    start_project "$2"
   else
     git init
   fi
 fi
-cd ~/projects/$project_name
+cd ~/projects/"$project_name" || exit
 if [ -d "$PROJECT_ROOT" ]; then
-  cd "$PROJECT_ROOT"
+  cd "$PROJECT_ROOT" || exit
 fi
-session_finder $project_name
+session_finder "$project_name"

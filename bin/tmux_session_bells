@@ -1,11 +1,12 @@
 #!/bin/bash
 
 sessions=($(tmux list-sessions -F '#{session_name}'))
-for session in ${sessions[@]}; do
-  if [ -n "$(tmux list-windows -t $session | grep '\!')" ]; then
+for session in "${sessions[@]}"; do
+  if tmux list-windows -t "$session" | grep -q '\!'; then
     bell_sessions+=($session)
   fi
 done
-if [ -n "$bell_sessions" ]; then
-  echo "(${bell_sessions[@]})"
+bell_display="${bell_sessions[*]}"
+if [ -n "$bell_display" ]; then
+  echo "($bell_display)"
 fi
