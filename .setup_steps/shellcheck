@@ -6,8 +6,8 @@ if [ -x "$(command -v shellcheck)" ]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  echo "Installing shellcheck from brew"
-  brew install shellcheck
+  echo "Skipping shellcheck"
+  #brew install shellcheck
 else
   echo "Installing shellcheck from apt"
   sudo apt install shellcheck
