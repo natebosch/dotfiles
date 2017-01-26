@@ -10,7 +10,12 @@ fpath+=($DOTDIR/.zsh/completion)
 fpath=($^fpath(N))
 
 autoload -U compinit
-compinit
+FRESH_DUMP=($DOTDIR/.zcompdump(N.mh-24))
+if [[ -n "$FRESH_DUMP" ]]; then
+  compinit -C;
+else
+  compinit;
+fi;
 
 setopt COMPLETE_IN_WORD     # Allow tab completion in the middle of a word
 setopt CORRECT              # Spell check commands
