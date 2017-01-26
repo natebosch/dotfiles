@@ -1,0 +1,13 @@
+xterm*allowWindowOps: true
+xterm*metaSendsEscape: true
+xterm*faceName: Source Code Pro Medium
+xterm*faceSize: 11
+xterm*background: gray11
+
+URxvt.perl-ext-common: default,osc-52
+
+URxvt.font:     xft:Source Code Pro Medium:size=11:antialias=true
+URxvt.boldFont: xft:Source Code Pro Medium:bold:size=11:antialias=true
+URxvt.scrollBar: False
+URxvt.background: gray11
+URxvt.foreground: white
