@@ -1,6 +1,5 @@
-local PROMPT_COLOR=cyan
 local PATH_COLOR=172
-local TIME_COLOR=blue
+local TIME_COLOR=33
 autoload colors
 colors
 setopt prompt_subst

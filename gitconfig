@@ -15,6 +15,8 @@
   untracked = red
   nobranch = bold red
   changed = yellow
+[color "interactive"]
+  prompt = 33
 [alias]
   st = status -sb
   ci = commit
