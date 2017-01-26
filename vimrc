@@ -55,6 +55,7 @@ Plug 'tmux-plugins/vim-tmux'
 Plug 'dart-lang/dart-vim-plugin'
 Plug 'natebosch/dartlang-snippets'
 Plug 'leafgarland/typescript-vim'
+Plug 'tpope/vim-git'
 
 call plug#end()
 """""""""""""""""""""""""""""""""
