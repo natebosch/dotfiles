@@ -14,7 +14,6 @@ path=(
   /sbin
 )
 
-autoload -U compinit && compinit
 ## Source all zsh customizations
 if [ -d $DOTDIR/.zshrc.d ]
 then
