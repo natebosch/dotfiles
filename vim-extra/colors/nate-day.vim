@@ -10,7 +10,7 @@ let g:colors_name = "nate-day"
 hi Search ctermbg=054
 hi SpellBad ctermbg=237 ctermfg=Red
 hi SpellCap ctermbg=237
-hi MatchParen cterm=bold,reverse
+hi MatchParen ctermbg=None ctermfg=199 cterm=bold,underline
 hi Pmenu ctermbg=LightGrey
 hi LineNr ctermfg=DarkGrey
 hi ColorColumn ctermbg=236
