@@ -1,6 +1,6 @@
 # Fancy git prompt
 function git-status() {
-  GIT_STATUS=""
+  local GIT_STATUS=""
   git status &>/dev/null || return
 
   local PROMPT_PREFIX="("
@@ -60,8 +60,5 @@ function git-status() {
   if $GIT_CLEAN; then
     GIT_STATUS="$GIT_STATUS$PROMPT_CLEAN"
   fi
-  GIT_STATUS="$GIT_STATUS%{${reset_color}%}$PROMPT_SUFFIX"
+  echo "$GIT_STATUS%{${reset_color}%}$PROMPT_SUFFIX"
 }
-
-autoload add-zsh-hook
-add-zsh-hook precmd git-status
