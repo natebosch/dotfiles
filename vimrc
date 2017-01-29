@@ -12,12 +12,6 @@ endif
 """ Vim-plug
 call plug#begin('~/.vim/plugged')
 
-function! BuildYCM(info)
-  if a:info.status == 'installed' || a:info.force
-    !./install.py
-  endif
-endfunction
-
 " Extend default behavior / Stay out of the way
 Plug 'tpope/vim-repeat'
 Plug 'wellle/targets.vim'
@@ -46,7 +40,7 @@ Plug 'justinmk/vim-sneak'
 Plug 'Raimondi/delimitMate'
 Plug 'tommcdo/vim-exchange'
 Plug 'SirVer/ultisnips'
-Plug 'Valloric/YouCompleteMe', { 'frozen': 1, 'do': function('BuildYCM') }
+Plug 'natebosch/vim-lsc'
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 
@@ -160,7 +154,7 @@ augroup fugitive
   autocmd BufReadPost fugitive://* set bufhidden=delete
 augroup END
 
-" Complete from tmux panes in YCM
+" Complete from tmux panes in omnifunc
 let g:tmuxcomplete#trigger = 'omnifunc'
 
 " delimitMate
@@ -180,19 +174,8 @@ let g:NERDTreeHijackNetrw=1
 " Allow hiding unsaved buffers
 set hidden
 
-""" YCM
-" Diagnostics but not in the gutter
-let g:ycm_show_diagnostics_ui = 1
-let g:ycm_enable_diagnostic_signs = 0
-let g:ycm_enable_diagnostic_highlighting = 1
-let g:ycm_echo_current_diagnostic = 1
-let g:ycm_always_populate_location_list = 1
-" Aggressive completion
-let g:ycm_collect_identifiers_from_comments_and_strings = 1
-let g:ycm_complete_in_comments_and_strings = 1
-let g:ycm_filetype_blacklist = {}
-let g:ycm_min_num_of_chars_for_completion = 1
-let g:ycm_seed_identifiers_with_syntax = 1
+""" LSC
+let g:lsc_server_commands = {'dart': ['dart_language_server']}
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '
@@ -208,9 +191,6 @@ let g:peekaboo_delay = 750
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<tab>"
 let g:UltiSnipsJumpBackwardTrigger="<c-z>"
-" Don't let YCM steal <tab> from ultisnips
-let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
-let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
 
 " Split direction
 set splitright
@@ -298,7 +278,7 @@ nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
-nnoremap gd :YcmCompleter GoToDefinition<CR>
+nnoremap gd :call lsc#reference#goToDefinition()<CR>
 nnoremap <leader>x :bp\|bd #<cr>
 
 " Fuzzy history search
