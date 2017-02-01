@@ -37,7 +37,7 @@ done
 # commits
 list_full_commit_info() {
   local full_info="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"
-  git log --color=always --name-only --format="$full_info" \
+  git log --all --color=always --name-only --format="$full_info" \
     | sed '/^\s*$/d' \
     | tr '\n\r' '|' \
     | sed 's/|\?\xE2\x98\xA2/\n/g' \
