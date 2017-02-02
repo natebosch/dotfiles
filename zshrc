@@ -5,7 +5,6 @@ export PATH=
 path=(
   $DOTDIR/.bin.local
   $DOTDIR/.bin
-  $DOTDIR/.rvm/bin
   /usr/local/bin
   /usr/bin
   /bin
