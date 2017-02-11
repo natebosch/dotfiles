@@ -1,0 +1,7 @@
+build --experimental_ui
+
+clean --expunge_async
+
+startup --watchfs
+
+test --test_output=errors --test_summary=detailed --build_tests_only
