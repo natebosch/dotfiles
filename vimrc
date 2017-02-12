@@ -236,8 +236,6 @@ set background=dark " easier on the eyes
 colorscheme nate-day
 syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
 hi link EvilSpace Error
-hi clear Todo
-hi link Todo Comment
 
 " See tabs
 set list
