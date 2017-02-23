@@ -54,3 +54,5 @@
   templatedir = ~/.git-templates
 [difftool]
   prompt = false
+[fetch]
+  prune = true
