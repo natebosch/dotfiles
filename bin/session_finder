@@ -10,7 +10,7 @@ if [ -z "$session" ]; then
   exit -1
 fi
 
-if (! tmux has -t "$session" 2>/dev/null); then
+if (! tmux ls -F "#{session_name}" | grep "^$session$" 2>/dev/null); then
   TMUX="" tmux -2 new -s "$session" -d
 fi
 
