@@ -67,7 +67,7 @@ let swpdir = expand("~/.vim/swp")
 if !isdirectory(swpdir)
   call mkdir(swpdir)
 endif
-set directory=~/.vim/swp/
+set directory=~/.vim/swp//
 
 " Persistent Undo
 let undodir = expand("~/.vim/undo")
