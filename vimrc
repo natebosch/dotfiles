@@ -195,6 +195,9 @@ let g:UltiSnipsJumpBackwardTrigger="<c-z>"
 " Split direction
 set splitright
 set splitbelow
+
+" Automatically close preview window after completing an item.
+autocmd CompleteDone * silent! pclose
 """""""""""""""""""""""""""""""
 
 
