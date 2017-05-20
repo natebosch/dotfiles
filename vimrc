@@ -175,7 +175,7 @@ let g:NERDTreeHijackNetrw=1
 set hidden
 
 """ LSC
-let g:lsc_server_commands = {'dart': ['dart_language_server']}
+let g:lsc_server_commands = {'dart': 'dart_language_server'}
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '
