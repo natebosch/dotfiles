@@ -283,7 +283,8 @@ nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
-nnoremap gd :call lsc#reference#goToDefinition()<CR>
+nnoremap gd :LSClientGoToDefinition<CR>
+nnoremap gr :LSClientFindReferences<CR>
 nnoremap <leader>x :bp\|bd #<cr>
 
 " Fuzzy history search
