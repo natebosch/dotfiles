@@ -38,6 +38,17 @@ function! StatusSelect() abort
       \ "\<c-s>": 'Select block'})
 endfunction
 
+autocmd CursorHold,BufWritePost * unlet! b:status_trailing_space
+
+function! StatusTrailingSpaceWarning() abort
+  if &readonly | return '' | endif
+  if !exists("b:status_trailing_space")
+    let bad_line = search('\s$', 'nw')
+    let b:status_trailing_space = bad_line != 0 ? '\s:'.bad_line : ''
+  endif
+  return b:status_trailing_space
+endfunction
+
 hi! StatusLine ctermbg=236 cterm=NONE
 hi! StatusLineNC ctermbg=236 ctermfg=244 cterm=NONE
 
@@ -59,6 +70,8 @@ set statusline+=%0*
 set statusline+=\ %f%m
 " Right align the rest
 set statusline+=%=
+" Trailing whitespace warning
+set statusline+=%#WarningMsg#%{StatusTrailingSpaceWarning()}%0*
 " Filetype
 set statusline+=%y
 " Lines/Total|Column percent
