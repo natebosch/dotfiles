@@ -49,6 +49,14 @@ function! StatusTrailingSpaceWarning() abort
   return b:status_trailing_space
 endfunction
 
+function! GitBranch() abort
+  let branch = fugitive#head()
+  if branch != ''
+    return '['.branch.']'
+  endif
+  return ''
+endfunction
+
 hi! StatusLine ctermbg=236 cterm=NONE
 hi! StatusLineNC ctermbg=236 ctermfg=244 cterm=NONE
 
@@ -66,6 +74,8 @@ set statusline+=%#StatusInsert#%{StatusInsert()}
 set statusline+=%#StatusSelect#%{StatusSelect()}
 " Reset highlight
 set statusline+=%0*
+"Truncate from here
+set statusline+=%\<
 " File, modified
 set statusline+=\ %f%m
 " Right align the rest
@@ -74,6 +84,7 @@ set statusline+=%=
 set statusline+=%#WarningMsg#%{StatusTrailingSpaceWarning()}%0*
 " Filetype
 set statusline+=%y
+set statusline+=%{GitBranch()}
 " Lines/Total|Column percent
 set statusline+=%2c\|%l/%L\ %3p%%
 
