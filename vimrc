@@ -181,7 +181,8 @@ let g:lsc_server_commands = {'dart': 'dart_language_server'}
 let g:fzf_commits_log_options = '--graph --color=always '
     \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
     \.'%C(bold blue)<%an>%Creset"'
-let g:fzf_buffers_jump = 1
+command! -bang -nargs=? -complete=dir Files
+  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
 
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
@@ -283,6 +284,7 @@ nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
+nnoremap <leader>lh :Helptags<cr>
 nnoremap gd :LSClientGoToDefinition<CR>
 nnoremap gr :LSClientFindReferences<CR>
 nnoremap <leader>x :bp\|bd #<cr>
