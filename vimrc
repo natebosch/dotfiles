@@ -21,7 +21,6 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'ap/vim-css-color'
 Plug 'chip/vim-fat-finger'
 Plug 'junegunn/vim-peekaboo'
-Plug 'vim-airline/vim-airline' | Plug 'vim-airline/vim-airline-themes'
 Plug 'kana/vim-textobj-user' | Plug 'Julian/vim-textobj-variable-segment'
 
 " Navigation/Organization
@@ -229,15 +228,6 @@ set listchars=tab:>-
 if exists('+colorcolumn')
   set colorcolumn=+1
 endif
-
-" Status line
-set laststatus=2
-let g:airline_theme='bubblegum'
-let g:airline_symbols_branch = ''
-let g:airline_left_sep = ''
-let g:airline_right_sep = ''
-let g:airline_symbols = {'maxlinenr': '', 'linenr': ''}
-set noshowmode
 """""""""""""""""""""""""""""
 
 
