@@ -8,7 +8,7 @@ function! s:IfStatusMode(modes) abort
   if !exists('w:is_active') || !w:is_active | return '' | endif
   if &filetype == 'help' | return '' | endif
   if has_key(a:modes, mode())
-    return '  '.a:modes[mode()].' '
+    return '  '.a:modes[mode()].(&paste ? '[p]' : '').' '
   endif
   return ''
 endfunction
