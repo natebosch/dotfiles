@@ -195,6 +195,9 @@ set splitbelow
 
 " Automatically close preview window after completing an item.
 autocmd CompleteDone * silent! pclose
+
+" Hide "Back at Original" and other completion messages
+set shortmess+=c
 """""""""""""""""""""""""""""""
 
 
