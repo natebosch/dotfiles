@@ -153,9 +153,6 @@ augroup fugitive
   autocmd BufReadPost fugitive://* set bufhidden=delete
 augroup END
 
-" Complete from tmux panes in omnifunc
-let g:tmuxcomplete#trigger = 'omnifunc'
-
 " delimitMate
 let delimitMate_expand_cr = 2
 let delimitMate_expand_inside_quotes = 1
