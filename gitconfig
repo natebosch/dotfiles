@@ -56,3 +56,5 @@
   prompt = false
 [fetch]
   prune = true
+[commit]
+  verbose = true
