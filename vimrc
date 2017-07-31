@@ -171,6 +171,7 @@ set hidden
 
 """ LSC
 let g:lsc_server_commands = {'dart': 'dart_language_server'}
+let g:lsc_auto_map = v:true
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '
@@ -274,8 +275,6 @@ nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
 nnoremap <leader>ll :Lines<cr>
 nnoremap <leader>lh :Helptags<cr>
-nnoremap gd :LSClientGoToDefinition<CR>
-nnoremap gr :LSClientFindReferences<CR>
 nnoremap <leader>x :bp\|bd #<cr>
 
 " Fuzzy history search
