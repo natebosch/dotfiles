@@ -193,8 +193,26 @@ let g:UltiSnipsJumpBackwardTrigger="<c-z>"
 set splitright
 set splitbelow
 
-" Automatically close preview window after completing an item.
-autocmd CompleteDone * silent! pclose
+" Automatically close preview window after completing an item, only if the
+" preview window wasn't open before completing.
+augroup PREVIEW_AUTOCLOSE
+  autocmd!
+  autocmd User LSCAutocomplete let g:was_preview_open = <SID>IsPreviewOpen()
+  autocmd CompleteDone * call <SID>ClosePreview()
+augroup END
+function! s:IsPreviewOpen() abort
+  for win in range(1, winnr('$'))
+    if getwinvar(win, '&previewwindow')
+      return v:true
+    endif
+  endfor
+  return v:false
+endfunction
+function! s:ClosePreview() abort
+  if !exists('g:was_preview_open') || !g:was_preview_open
+    silent! pclose
+  endif
+endfunction
 
 " Hide "Back at Original" and other completion messages
 set shortmess+=c
