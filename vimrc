@@ -10,6 +10,12 @@ endif
 
 """"""""""""""""""""""""""""""""""
 """ Vim-plug
+function! DevPlugin(name) abort
+  let dev = expand('~/projects/'.split(a:name, '/')[1])
+  if isdirectory(dev) | return dev | endif
+  return a:name
+endfunction
+
 call plug#begin('~/.vim/plugged')
 
 " Extend default behavior / Stay out of the way
@@ -39,14 +45,14 @@ Plug 'justinmk/vim-sneak'
 Plug 'Raimondi/delimitMate'
 Plug 'tommcdo/vim-exchange'
 Plug 'SirVer/ultisnips'
-Plug 'natebosch/vim-lsc'
+Plug DevPlugin('natebosch/vim-lsc')
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 
 " Filetype
 Plug 'tmux-plugins/vim-tmux'
-Plug 'dart-lang/dart-vim-plugin'
-Plug 'natebosch/dartlang-snippets'
+Plug DevPlugin('dart-lang/dart-vim-plugin')
+Plug DevPlugin('natebosch/dartlang-snippets')
 Plug 'tpope/vim-git'
 
 call plug#end()
