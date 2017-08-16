@@ -1,0 +1,3 @@
+unsetopt extendedglob notify
+setopt NO_CASE_GLOB
+setopt NUMERIC_GLOB_SORT

@@ -1,22 +1,3 @@
-## Globbing options
-unsetopt extendedglob notify
-#setopt EXTENDED_GLOB
-setopt NO_CASE_GLOB
-setopt NUMERIC_GLOB_SORT
-
-
-## Completion Options
-fpath+=($DOTDIR/.zsh/completion)
-fpath=($^fpath(N))
-
-autoload -U compinit
-FRESH_DUMP=($DOTDIR/.zcompdump(N.mh-24))
-if [[ -n "$FRESH_DUMP" ]]; then
-  compinit -C;
-else
-  compinit;
-fi;
-
 setopt COMPLETE_IN_WORD     # Allow tab completion in the middle of a word
 setopt CORRECT              # Spell check commands
 setopt ALWAYS_TO_END        # Push cursor on completions.

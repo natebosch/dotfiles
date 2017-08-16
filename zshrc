@@ -13,6 +13,20 @@ path=(
   /sbin
 )
 
+fpath+=(
+  $DOTDIR/.brew/completions/zsh
+  $DOTDIR/.zsh/completion
+)
+fpath=($^fpath(N))
+
+autoload -U compinit
+FRESH_DUMP=($DOTDIR/.zcomdump(N.mh-24))
+if [[ -n "$FRESH_DUMP" ]]; then
+  compinit -C
+else
+  compinit
+fi
+
 ## Source all zsh customizations
 if [ -d $DOTDIR/.zshrc.d ]
 then
@@ -21,10 +35,6 @@ fi
 if [ -d $DOTDIR/.zshrc.local ]
 then
     for config_file ($DOTDIR/.zshrc.local/*) source $config_file
-fi
-if [ -d $DOTDIR/.zshrc.last ]
-then
-    for config_file ($DOTDIR/.zshrc.last/*) source $config_file
 fi
 unset config_file
 
