@@ -1,0 +1,31 @@
+#!/bin/bash
+
+pane_count=$(tmux list-panes | wc -l)
+if [[ $pane_count == 1 ]]; then
+  tmux split-window -h
+fi
+if [[ "$#" -eq 1  && "$1" == "left" ]]; then
+  case $pane_count in
+    [1-2])
+      tmux select-layout "74ac,274x62,0,0{99x62,0,0,13,174x62,100,0,12}"
+      ;;
+    3)
+      tmux select-layout "f4b0,280x79,0,0{102x79,0,0[102x39,0,0,41,102x39,0,40,42],177x79,103,0,25}"
+      ;;
+    4)
+      tmux select-layout "7cf9,280x79,0,0{102x79,0,0[102x26,0,0,41,102x26,0,27,42,102x25,0,54,43],177x79,103,0,25}"
+      ;;
+  esac
+else
+  case $pane_count in
+    [1-2])
+      tmux select-layout "ca17,274x62,0,0{174x62,0,0,13,99x62,175,0,12}"
+      ;;
+    3)
+      tmux select-layout "ba4d,280x79,0,0{177x79,0,0,25,102x79,178,0[102x39,178,0,26,102x39,178,40,30]}"
+      ;;
+    4)
+      tmux select-layout "b614,280x79,0,0{177x79,0,0,32,102x79,178,0[102x26,178,0,36,102x26,178,27,35,102x25,178,54,33]}"
+      ;;
+  esac
+fi
