@@ -37,7 +37,6 @@ Plug 'schickling/vim-bufonly'
 " Tools
 Plug 'jreybert/vimagit'
 Plug 'tpope/vim-fugitive'
-Plug 'airblade/vim-gitgutter'
 Plug 'zirrostig/vim-schlepp'
 Plug 'mjbrownie/swapit'
 Plug 'tpope/vim-surround'
