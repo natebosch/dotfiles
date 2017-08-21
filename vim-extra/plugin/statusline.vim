@@ -57,11 +57,12 @@ function! GitBranch() abort
   return ''
 endfunction
 
-function! LSCTrackingVersion() abort
+function! LSCInfo() abort
   if !has_key(g:lsc_server_commands, &filetype) | return '' | endif
+  let l:status = LSCServerStatus()
   let l:version = lsc#file#version()
   if version == '' | return '' | endif
-  return '[LSC:'.l:version.']'
+  return '[LSC:'.l:status.':'.l:version.']'
 endfunction
 
 hi! StatusLine ctermbg=236 cterm=NONE
@@ -93,7 +94,7 @@ set statusline+=%#WarningMsg#%{StatusTrailingSpaceWarning()}%0*
 set statusline+=%y
 set statusline+=%{GitBranch()}
 " LSC file version
-set statusline+=%{LSCTrackingVersion()}
+set statusline+=%{LSCInfo()}
 " Lines/Total|Column percent
 set statusline+=%2c\|%l/%L\ %3p%%
 
