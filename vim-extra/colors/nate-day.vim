@@ -26,3 +26,16 @@ hi link Todo Comment
 hi DiffAdd ctermbg=26 cterm=bold
 hi DiffChange ctermbg=53 cterm=bold
 hi DiffText ctermbg=1 ctermfg=7
+
+" Statusline/tabline
+
+hi StatusLine ctermbg=236 cterm=NONE
+hi StatusLineNC ctermbg=236 ctermfg=244 cterm=NONE
+
+hi StatusNormal cterm=bold ctermfg=234 ctermbg=33
+hi StatusVisual cterm=bold ctermfg=234 ctermbg=70
+hi StatusInsert cterm=bold ctermfg=234 ctermbg=166
+hi StatusSelect cterm=bold ctermfg=234 ctermbg=76
+
+hi TabLineFill ctermbg=236 cterm=None
+hi TabLine ctermbg=236 ctermfg=250 cterm=None

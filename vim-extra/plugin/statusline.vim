@@ -65,14 +65,6 @@ function! LSCInfo() abort
   return '[LSC:'.l:status.':'.l:version.']'
 endfunction
 
-hi! StatusLine ctermbg=236 cterm=NONE
-hi! StatusLineNC ctermbg=236 ctermfg=244 cterm=NONE
-
-hi! StatusNormal cterm=bold ctermfg=234 ctermbg=33
-hi! StatusVisual cterm=bold ctermfg=234 ctermbg=70
-hi! StatusInsert cterm=bold ctermfg=234 ctermbg=166
-hi! StatusSelect cterm=bold ctermfg=234 ctermbg=76
-
 set laststatus=2
 set statusline=
 " Color and mode only in active window
