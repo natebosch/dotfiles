@@ -240,12 +240,10 @@ syntax on
 set hlsearch
 set background=dark " easier on the eyes
 colorscheme nate-day
-syn match EvilSpace " \+$" containedin=ALL " error for trailing spaces
-hi link EvilSpace Error
 
-" See tabs
+" See tabs and trailing spaces
 set list
-set listchars=tab:>-
+set listchars=tab:>-,trail:·
 
 
 if exists('+colorcolumn')
@@ -266,21 +264,6 @@ nnoremap - :noh<cr>
 nnoremap <leader>v? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name")
     \ . '> trans<' . synIDattr(synID(line("."),col("."),0),"name") . "> lo<"
     \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
-" Toggle error matching for past width
-if exists("*matchadd")
-  hi link OverLength Error
-  nnoremap <silent> <leader>vl
-      \ :if exists('w:long_line_match') <Bar>
-      \   silent! call matchdelete(w:long_line_match) <Bar>
-      \   unlet w:long_line_match <Bar>
-      \ elseif &textwidth > 0 <Bar>
-      \   let w:long_line_match =
-      \       matchadd('OverLength', '\%>'.&tw.'v.\+', -1) <Bar>
-      \ else <Bar>
-      \   let w:long_line_match =
-      \       matchadd('OverLength', '\%>80v.\+', -1) <Bar>
-      \ endif<CR>
-endif
 
 " Move lines or blocks of text up/down
 vmap <C-h> <Plug>SchleppLeft
