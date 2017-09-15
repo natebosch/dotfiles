@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pane_count=$(tmux list-panes | wc -l)
+pane_count=$(tmux list-panes | wc -l | sed 's/^ *//;s/ *$//')
 if [[ $pane_count == 1 ]]; then
   tmux split-window -h
 fi
