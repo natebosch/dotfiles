@@ -21,6 +21,7 @@ call plug#begin('~/.vim/plugged')
 " Extend default behavior / Stay out of the way
 Plug 'tpope/vim-repeat'
 Plug 'wellle/targets.vim'
+Plug 'michaeljsmith/vim-indent-object'
 Plug 'christoomey/vim-sort-motion'
 Plug 'scrooloose/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
