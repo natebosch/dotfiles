@@ -10,13 +10,21 @@ function git-status() {
   local PROMPT_STAGED="%{$fg[red]%}"
   local PROMPT_UNSTAGED="%{$fg[cyan]%}"
   local PROMPT_CONFLICTS="%{$fg[red]%}!"
-  local PROMPT_AHEAD="%{$fg[white]%}+"
-  local PROMPT_BEHIND="%{$fg[white]%}-"
   local PROMPT_UNTRACKED="%{$fg[red]%}."
   local PROMPT_CLEAN="%{$fg_bold[green]%}."
 
   local UPSTREAM="$(git rev-parse --abbrev-ref --symbolic-full-name @{u} \
     2&>/dev/null)"
+
+  local UPSTREAM_FULL="$(git rev-parse --symbolic-full-name @{u} 2&>/dev/null)"
+
+  if [[ "$UPSTREAM_FULL" == "refs/remotes/"* ]]; then
+    local PROMPT_AHEAD="%{$fg_bold[white]%}+"
+    local PROMPT_BEHIND="%{$fg_bold[white]%}-"
+  else
+    local PROMPT_AHEAD="%{$fg[white]%}+"
+    local PROMPT_BEHIND="%{$fg[white]%}-"
+  fi
 
   local BRANCH="$(git rev-parse --abbrev-ref HEAD 2&>/dev/null)"
   local GIT_AHEAD="$(git rev-list --left-only --count $BRANCH...$UPSTREAM \
