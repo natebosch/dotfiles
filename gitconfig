@@ -38,6 +38,8 @@
   pr = "!f() { git fetch origin refs/pull/$1/head:pr/$1; } ; f"
   cwork = !git config user.email nbosch@google.com
   cpersonal = !git config user.email nbosch1@gmail.com
+  dartclone = !sh -c 'git clone git@github.com:dart-lang/$1.git' -
+  nateclone = !sh -c 'git clone git@github.com:natebosch/$1.git' -
 [mergetoool "vimdiff3"]
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
