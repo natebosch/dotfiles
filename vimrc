@@ -178,6 +178,7 @@ set hidden
 """ LSC
 let g:lsc_server_commands = {'dart': 'dart_language_server'}
 let g:lsc_auto_map = v:true
+let g:lsc_enable_incremental_sync = v:true
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '
