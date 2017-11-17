@@ -23,3 +23,6 @@ zstyle ':completion:*' completer _oldlist _expand _complete
 zstyle ':completion:*' file-sort modification reverse
 
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+# Completions for custom commands
+zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
