@@ -13,7 +13,7 @@ else
   BAZEL_REPO="http://storage.googleapis.com/bazel-apt "
   echo "deb [arch=amd64] $BAZEL_REPO stable jdk1.8" |\
     sudo tee /etc/apt/sources.list.d/bazel.list
-  curl https://bazel.io/bazel-release.pub.gpg | sudo apt-key add -
+  curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
   sudo apt-get update && sudo apt-get install bazel
 
 fi
@@ -25,6 +25,4 @@ curl "$GITHUB/bazelbuild/bazel/master/scripts/zsh_completion/_bazel" \
   -o "$DOTDIR"/.zsh/completion/_bazel
 
 echo "Installing buildifier with go"
-go get -d -u github.com/bazelbuild/buildifier/buildifier \
-  && go generate github.com/bazelbuild/buildifier/core \
-  && go install github.com/bazelbuild/buildifier/buildifier
+go get github.com/bazelbuild/buildifier/buildifier
