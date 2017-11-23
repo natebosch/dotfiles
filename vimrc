@@ -48,6 +48,7 @@ Plug 'SirVer/ultisnips'
 Plug DevPlugin('natebosch/vim-lsc')
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
+Plug 'tpope/vim-eunuch'
 
 " Filetype
 Plug 'tmux-plugins/vim-tmux'
