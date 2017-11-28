@@ -1,9 +1,11 @@
 #!/bin/bash
 
 if [ -x "$(command -v tmux)" ]; then
-  echo "Already have tmux"
-  #TODO need to check for recent version?
-  exit
+  if [ "$(echo "$(tmux -V | cut -c 6-) >= 2.6" | bc)" = 1 ]; then
+    echo "Already have tmux"
+    exit
+  fi
+  echo "Upgrading tmux"
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
@@ -13,13 +15,13 @@ else
   sudo apt install libevent-dev
   echo "Installing libcurses-dev from apt"
   sudo apt install libncurses-dev
-  echo "Downloading tmux 2.2"
-  wget https://github.com/tmux/tmux/releases/download/2.2/tmux-2.2.tar.gz \
+  echo "Downloading tmux 2.6"
+  wget https://github.com/tmux/tmux/releases/download/2.6/tmux-2.6.tar.gz \
     -O /tmp/tmux.tar.gz
   cd /tmp || exit
   echo "Extracting tmux"
   tar -xzf tmux.tar.gz
-  cd tmux-2.2 || exit
+  cd tmux-2.6 || exit
   echo "Installing tmux"
   ./configure && make && sudo make install
 fi
