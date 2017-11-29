@@ -8,3 +8,5 @@ let g:markdown_fenced_languages = [
     \ ]
 
 setlocal spell
+
+command! -buffer -nargs=0 LinkifyGithub :%s/\%(\s\|^\)\zs\(https:\/\/github.com\/\([^ \/]*\/\)\{3\}\([[:digit:]]\+\)\)/[#\3](\1)/
