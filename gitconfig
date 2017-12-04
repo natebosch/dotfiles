@@ -60,3 +60,5 @@
   prune = true
 [commit]
   verbose = true
+[pager]
+  branch = false
