@@ -16,3 +16,5 @@ command! -buffer -nargs=0 DartNoHtmlInStrings call <SID>NoHtmlInStrings()
 function! s:NoHtmlInStrings() abort
   syntax cluster dartRawStringContains remove=@HTML
 endfunction
+
+let b:project_nav_root_markers = ['pubspec.yaml']
