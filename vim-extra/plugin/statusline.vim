@@ -75,20 +75,23 @@ set statusline+=%#StatusInsert#%{StatusInsert()}
 set statusline+=%#StatusSelect#%{StatusSelect()}
 " Reset highlight
 set statusline+=%0*
-"Truncate from here
-set statusline+=%\<
-" File, modified
-set statusline+=\ %f%m
+" Shortened File, modified
+set statusline+=\ %{pathshorten(expand('%'))}%m
 " Right align the rest
 set statusline+=%=
-" Trailing whitespace warning
-set statusline+=%#WarningMsg#%{StatusTrailingSpaceWarning()}%0*
-" Filetype
-set statusline+=%y
+"Truncate from here
+set statusline+=%\<
+" Git
 set statusline+=%{GitBranch()}
 " LSC file version
 set statusline+=%{LSCInfo()}
-" Lines/Total|Column percent
-set statusline+=%2c\|%l/%L\ %3p%%
+" Filetype
+set statusline+=%y
+" Lines/Total|Column
+set statusline+=%2c\|%l/%L
+" Trailing whitespace warning
+set statusline+=%#WarningMsg#%{StatusTrailingSpaceWarning()}%0*
+" Percent
+set statusline+=\ %p%%
 
 set noshowmode
