@@ -76,7 +76,7 @@ set statusline+=%#StatusSelect#%{StatusSelect()}
 " Reset highlight
 set statusline+=%0*
 " Shortened File, modified
-set statusline+=\ %{pathshorten(expand('%'))}%m
+set statusline+=\ %{pathshorten(expand('%:~:.'))}%m
 " Right align the rest
 set statusline+=%=
 "Truncate from here
