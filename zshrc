@@ -54,7 +54,8 @@ KEYTIMEOUT=1
 export EDITOR=$(which vim)
 export VISUAL=$EDITOR   # some programs use this instead of EDITOR
 export PAGER=less       # less is more :)
-export LESS='-i -M -R'  # case insensitive searching, status line, and colors
+# fewer bells, case insensitive searching, status line, and colors
+export LESS='-q -i -M -R'
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh

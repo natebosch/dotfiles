@@ -248,10 +248,11 @@ colorscheme nate-day
 set list
 set listchars=tab:>-,trail:·
 
-
 if exists('+colorcolumn')
   set colorcolumn=+1
 endif
+
+set belloff=cursor,esc,wildmode,error
 """""""""""""""""""""""""""""
 
 
