@@ -63,7 +63,12 @@ function! LSCInfo() abort
   let l:status = LSCServerStatus()
   let l:version = lsc#file#version()
   if version == '' | return '' | endif
-  return '[LSC:'.l:status.':'.l:version.']'
+  let result = '[LSC:'.l:status.':'.l:version
+  let l:diagnostics = lsc#diagnostics#count()
+  if l:diagnostics > 0
+    let result .= ':'.string(l:diagnostics)
+  endif
+  return result.']'
 endfunction
 
 set laststatus=2
