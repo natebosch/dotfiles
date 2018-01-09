@@ -65,8 +65,12 @@ function! LSCInfo() abort
   if version == '' | return '' | endif
   let result = '[LSC:'.l:status.':'.l:version
   let l:diagnostics = lsc#diagnostics#count()
-  if l:diagnostics > 0
-    let result .= ':'.string(l:diagnostics)
+  if !empty(l:diagnostics)
+    if type(l:diagnostics) == v:t_number
+      let result .= ':'.string(l:diagnostics)
+    else
+      let result .= ':'.l:diagnostics
+    endif
   endif
   return result.']'
 endfunction
