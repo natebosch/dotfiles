@@ -14,6 +14,7 @@ hi MatchParen ctermbg=None ctermfg=199 cterm=bold,underline
 hi Pmenu ctermbg=LightGrey
 hi LineNr ctermfg=DarkGrey
 hi ColorColumn ctermbg=236
+hi CursorColumn ctermbg=236
 hi Special ctermfg=177
 hi Underlined ctermfg=177
 hi Title ctermfg=27 cterm=bold
