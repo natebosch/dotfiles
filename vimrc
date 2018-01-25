@@ -285,7 +285,8 @@ nnoremap <leader>o :edit %:h<cr>
 nnoremap <leader>lf :Files<cr>
 nnoremap <leader>lr :History<cr>
 nnoremap <leader>lb :Buffers<cr>
-nnoremap <leader>ll :Lines<cr>
+nnoremap <leader>lq :QuickFix<cr>
+nnoremap <leader>ll :LocationList<cr>
 nnoremap <leader>lh :Helptags<cr>
 nnoremap <leader>x :bp\|bd #<cr>
 
