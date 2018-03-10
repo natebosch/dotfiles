@@ -26,8 +26,8 @@ endfunction
 
 function! s:ConvertBodyType(actions) abort
   for action in a:actions
-    if action.title =~? 'Convert into block body' ||
-        \ action.title =~? 'Convert into expression body'
+    if action.title =~? 'Convert to block body' ||
+        \ action.title =~? 'Convert to expression body'
       return action
     endif
   endfor
