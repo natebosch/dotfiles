@@ -35,7 +35,6 @@
   files = "! [ -z "$GIT_PREFIX" ] || cd $GIT_PREFIX ; \
       git --no-pager diff @{u} --name-only --relative"
   start = "!f() { git checkout -b $1 && git branch -u @{-1}; }; f"
-  pr = "!f() { git fetch origin refs/pull/$1/head:pr/$1; } ; f"
   cwork = !git config user.email nbosch@google.com
   cpersonal = !git config user.email nbosch1@gmail.com
   dartclone = !sh -c 'git clone git@github.com:dart-lang/$1.git' -

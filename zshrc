@@ -12,6 +12,7 @@ path=(
   /usr/sbin
   /sbin
 )
+export MANPATH=":$DOTDIR/.man"
 
 fpath+=(
   $DOTDIR/.brew/completions/zsh
