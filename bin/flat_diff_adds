@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Finds only the added lines from a unified diff format and formats as:
+# <file name>:<line number>:<line>
+#
+# Most useful with something like `git diff --relative` to make the file names
+# sensible.
+#
+# Example: `git diff --relative | flat_diff_adds | grep TODO`
+
+
+awk 'BEGIN { OFS=":"; file=""; line=0; }
+/^[+]{3}/ { in_header=1; file=$2 }
+/^@@ / {
+  in_header=0;
+  # `@@ -xx,xx +LL,xx @@` -> (LL-1)
+  line=$3 - 1
+}
+/^ / { line++ }
+/^[+]/ {
+  if (in_header == 0) {
+    line++;
+    print file, line, substr($0, 2);
+  }
+}'
