@@ -1,2 +1,0 @@
-#!/bin/sh
-git branch -M $(git rev-parse --abbrev-ref HEAD | sed 's/^experiment_/xnatebosch_/; s/^natebosch_/xexperiment_/; s/^x//')
