@@ -1,0 +1,9 @@
+#!/bin/bash
+
+upstream="$(git rev-parse --symbolic-full-name @{u} 2>/dev/null)"
+
+if [[ "$upstream" =~ "refs/remotes/"* ]]; then
+  git push
+else
+  git push -u ${1:-origin} HEAD
+fi

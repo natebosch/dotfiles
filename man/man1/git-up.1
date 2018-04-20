@@ -1,0 +1,17 @@
+.TH "git-up" 1 "April 2018" "git-up 0.1.0" "git-up - push the current branch to a remote"
+
+.SH NAME
+git-up - push the current branch to a remote
+
+.SH SYNOPSIS
+git-up [<remote>]
+
+.SH DESCRIPTION
+git-up - push the current branch to a remote. If the upstream is already a
+remote this is a `git push`. If there is no upstream or the upstream is local
+this is `git push -u <remote> HEAD`.
+
+.SH ARGUMENTS
+.TP
+.B <remote>
+The remote repository to push to. Defaults to "origin"
