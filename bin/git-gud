@@ -1,5 +1,6 @@
 #!/bin/bash
 
+git checkout master
 updates="$(git pull 2>&1)"
 exit_code=$?
 deleted=($(echo "$updates" | sed -n "s/^ - \[deleted\] .* -> \(.*\)$/\1/p"))
