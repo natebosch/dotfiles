@@ -45,6 +45,8 @@
   tool = vimdiff3
 [rebase]
   autosquash = true
+[diff]
+  wsErrorHighlight = all
 [credential]
   helper = cache --timeout=3600
 [push]
