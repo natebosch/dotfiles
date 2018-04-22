@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+
+VERSION="${1:-latest}"
+
+if [ "$(uname)" == "Darwin" ]; then
+  PLATFORM="macos-ia32"
+else
+  PLATFORM="linux-x64"
+fi
+
+DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/dev/release/"
+RELEASE="$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
+curl $DOWNLOAD$RELEASE -o /tmp/dart-release.zip
+rm -rf ~/dart-sdk
+unzip -qo /tmp/dart-release.zip -d ~
