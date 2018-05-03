@@ -13,5 +13,8 @@ RPROMPT=""
 # Reset the prompt every second so that the clock stays up to date
 TMOUT=1
 TRAPALRM() {
+  if [[ "$WIDGET" =~ "comp" || "$WIDGET" =~ "fzf" ]]; then
+    return 0
+  fi
   zle reset-prompt
 }
