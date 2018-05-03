@@ -9,3 +9,9 @@ PROMPT='$working_dir $(git-status)
 %b[%F{$TIME_COLOR%}%B%T%b]$success%f  '
 
 RPROMPT=""
+
+# Reset the prompt every second so that the clock stays up to date
+TMOUT=1
+TRAPALRM() {
+  zle reset-prompt
+}
