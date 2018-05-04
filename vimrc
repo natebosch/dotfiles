@@ -50,6 +50,7 @@ Plug DevPlugin('natebosch/vim-lsc')
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-eunuch'
+Plug 'haya14busa/vim-poweryank'
 
 " Filetype
 Plug 'tmux-plugins/vim-tmux'
@@ -305,7 +306,8 @@ nnoremap <leader>gl :Commits<cr>
 nnoremap <leader>gp :MagitOnly<cr>
 
 " Toggle paste mode
-nnoremap <leader>y :set paste!<cr>
+nnoremap <leader>p :set paste!<cr>
+map <leader>y <Plug>(operator-poweryank-osc52)
 
 " Scratch buffer
 function! ScratchOpen()
