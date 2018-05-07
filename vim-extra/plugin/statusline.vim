@@ -58,12 +58,18 @@ function! GitBranch() abort
   return ''
 endfunction
 
+let s:lsc_statuses = {
+    \ 'disabled': 'd', 'not started': 'n',
+    \ 'starting': '...', 'running': 'r', 'restarting': '...',
+    \ 'exiting': '...',  'exited': 'e', 'unexpected exit': '!', 'failed': '!'
+    \}
+
 function! LSCInfo() abort
   if !has_key(g:lsc_server_commands, &filetype) | return '' | endif
   let l:status = LSCServerStatus()
-  let l:version = lsc#file#version()
-  if version == '' | return '' | endif
-  let result = '[LSC:'.l:status.':'.l:version
+  let l:short_status = has_key(s:lsc_statuses, l:status) ?
+      \ s:lsc_statuses[l:status] : '?'
+  let result = '['.l:short_status
   let l:diagnostics = lsc#diagnostics#count()
   if !empty(l:diagnostics)
     if type(l:diagnostics) == v:t_number
