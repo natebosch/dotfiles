@@ -1,7 +1,7 @@
 # Fancy git prompt
 function git-status() {
   local GIT_STATUS=""
-  git status &>/dev/null || return
+  git rev-parse --is-inside-work-tree &>/dev/null || return
 
   local PROMPT_PREFIX="("
   local PROMPT_SUFFIX=")"
