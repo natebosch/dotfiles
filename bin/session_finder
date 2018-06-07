@@ -3,15 +3,11 @@
 if [[ $# -eq 1 ]]; then
   session=$1
 else
-  session=$(tmux ls -F "#{session_name}" | fzf --print-query | tail -n1)
+  session=$(tmux ls -F "#{session_name}" | fzf)
 fi
 
 if [ -z "$session" ]; then
   exit -1
-fi
-
-if (! tmux ls -F "#{session_name}" | grep "^$session$" 2>/dev/null); then
-  TMUX="" tmux -2 new -s "$session" -d
 fi
 
 if [[ -n $TMUX ]]; then
