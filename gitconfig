@@ -65,3 +65,5 @@
   branch = false
 [log]
   mailmap = true
+[http]
+  cookiefile = ~/.gitcookies
