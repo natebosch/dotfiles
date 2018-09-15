@@ -5,7 +5,7 @@ set -e
 VERSION="${1:-latest}"
 
 if [ "$(uname)" == "Darwin" ]; then
-  PLATFORM="macos-ia32"
+  PLATFORM="macos-x64"
 else
   PLATFORM="linux-x64"
 fi
