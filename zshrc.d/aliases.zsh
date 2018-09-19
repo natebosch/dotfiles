@@ -1,4 +1,3 @@
-alias open='gnome-open'
 alias psg='ps aux | grep'
 alias envg='env | grep'
 alias ls='ls -F --color=auto'
