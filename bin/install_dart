@@ -3,6 +3,17 @@
 set -e
 
 VERSION="${1:-latest}"
+CHANNEL="stable"
+
+if [ "$VERSION" == "stable" ]; then
+  VERSION="latest"
+elif [ "$VERSION" == "dev" ]; then
+  CHANNEL="dev"
+  VERSION="latest"
+elif [[ "$VERSION" =~ "dev" ]]; then
+  CHANNEL="dev"
+fi
+
 
 if [ "$(uname)" == "Darwin" ]; then
   PLATFORM="macos-x64"
@@ -10,8 +21,9 @@ else
   PLATFORM="linux-x64"
 fi
 
-DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/dev/release/"
-RELEASE="$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
+
+DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/$CHANNEL/"
+RELEASE="release/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
 curl $DOWNLOAD$RELEASE -o /tmp/dart-release.zip
 rm -rf ~/dart-sdk
 unzip -qo /tmp/dart-release.zip -d ~
