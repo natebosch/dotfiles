@@ -60,5 +60,3 @@ export LESS='-q -i -M -R'
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 [ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
-
-clear
