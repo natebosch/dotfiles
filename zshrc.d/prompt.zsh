@@ -5,7 +5,7 @@ colors
 setopt prompt_subst
 local success="%B%(?,%F{green}»,%F{red}⁉)%b%f"
 local working_dir="%F{$PATH_COLOR}%B%(7~,.../,)%6~%b%f"
-PROMPT='$working_dir $(git-status)
+PROMPT='$working_dir $(git-status)$(hg-status)
 %b[%F{$TIME_COLOR%}%B%T%b]$success%f  '
 
 RPROMPT=""
