@@ -309,6 +309,10 @@ nnoremap <leader>gp :MagitOnly<cr>
 nnoremap <leader>p :set paste!<cr>
 map <leader>y <Plug>(operator-poweryank-osc52)
 
+" Rename word or selection, dot to repeat
+nnoremap <silent> <leader>R *Ncgn
+vnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
+
 " Scratch buffer
 function! ScratchOpen()
   let scr_bufnr = bufnr('__scratch__')
