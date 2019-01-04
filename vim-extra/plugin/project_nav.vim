@@ -77,6 +77,7 @@ function! ProjectTabLine()
       let  line .= '%#TabLine#'
     endif
     let line .= '%'.(i + 1).'T'
+    let line .= string(i + 1)
     let line .= ' %{ProjectTabLabel('.(i+1).','.use_tab_names.')} '
   endfor
   let  line .= '%#TabLine#'
