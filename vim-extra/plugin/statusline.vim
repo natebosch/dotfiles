@@ -82,6 +82,17 @@ function! LSCInfo() abort
   return result.']'
 endfunction
 
+function! StatusPathShorten(path) abort
+  let l:parts = split(a:path, '/')
+  if len(l:parts) < 2 | return a:path | endif
+  let l:short = map(l:parts[:-2], {_, v -> s:ShortenSegment(v)})
+  return join(add(l:short, l:parts[-1]), '/')
+endfunction
+
+function! s:ShortenSegment(segment) abort
+  return substitute(a:segment, '\([^-_]\)[^-_]\+', '\=submatch(1)', 'g')
+endfunction
+
 set laststatus=2
 set statusline=
 " Color and mode only in active window
@@ -92,7 +103,7 @@ set statusline+=%#StatusSelect#%{StatusSelect()}
 " Reset highlight
 set statusline+=%0*
 " Shortened File, modified
-set statusline+=\ %{pathshorten(expand('%:~:.'))}%m
+set statusline+=\ %{StatusPathShorten(expand('%:~:.'))}%m
 " Right align the rest
 set statusline+=%=
 "Truncate from here
