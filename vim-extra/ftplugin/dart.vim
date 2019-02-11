@@ -10,14 +10,7 @@ noremap <buffer> <leader>tm 0/=><cr>dwi{<cr>return <esc>A<cr>}<esc>:noh<cr>
 noremap <buffer> <leader>tr
     \ :LSClientFindCodeActions '\v\cConvert to (expression<bar>block) body'<cr>
 
-let dart_html_in_strings=v:true
-
-command! -buffer -nargs=0 DartNoHtmlInStrings call <SID>NoHtmlInStrings()
 command! -buffer -nargs=0 DartGetAnalysisServerPort call <SID>GetServerPort()
-
-function! s:NoHtmlInStrings() abort
-  syntax cluster dartRawStringContains remove=@HTML
-endfunction
 
 let b:project_nav_root_markers = ['pubspec.yaml']
 
