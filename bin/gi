@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Fix a common typo where the t is moved to the first argument like
+# gi tcheckout
+FIRST="${1#t}"
+shift
+git "$FIRST" "$@"
