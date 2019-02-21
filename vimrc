@@ -88,6 +88,18 @@ set undofile
 set history=300 " keep 300 lines of command line history
 set showcmd     " display incomplete commands
 
+" Dump command output to a buffer to avoid  `-- More --`
+command! -nargs=1 VC  call <SID>ViewCommand(<q-args>)
+
+function! s:ViewCommand(cmd)
+  redir @v
+  silent execute a:cmd
+  redir END
+  new
+  set buftype=nofile
+  put v
+endfunction
+
 " Use spaces not tabs
 set tabstop=2
 set shiftwidth=2
