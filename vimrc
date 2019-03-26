@@ -186,6 +186,8 @@ set foldlevel=99
 
 " Explore
 let g:NERDTreeHijackNetrw=1
+let g:NERDTreeMapJumpNextSibling="<C-n>"
+let g:NERDTreeMapJumpPrevSibling="<C-p>"
 
 " Allow hiding unsaved buffers
 set hidden
