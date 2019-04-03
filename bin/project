@@ -25,7 +25,4 @@ if [[ ! -d $project_name ]]; then
   fi
 fi
 cd ~/projects/"$project_name" || exit
-if [ -d "$PROJECT_ROOT" ]; then
-  cd "$PROJECT_ROOT" || exit
-fi
 session_finder "${project_name//\./-}"
