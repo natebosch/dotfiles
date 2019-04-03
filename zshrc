@@ -18,7 +18,6 @@ fpath+=(
   $DOTDIR/.brew/completions/zsh
   $DOTDIR/.zsh/completion
 )
-fpath=($^fpath(N))
 
 autoload -U compinit
 FRESH_DUMP=($DOTDIR/.zcomdump(N.mh-24))
@@ -41,6 +40,7 @@ unset config_file
 
 # Clean up non-existent path entries
 path=($^path(N))
+fpath=($^fpath(N))
 
 setopt NO_BEEP      # Never ever beep. Ever
 MAILCHECK=0         # disable mail checking
