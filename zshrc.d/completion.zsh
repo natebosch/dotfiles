@@ -26,3 +26,6 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 # Completions for custom commands
 zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/}
+
+# ignore other users
+zstyle ':completion:*' users $USER
