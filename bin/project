@@ -6,23 +6,12 @@ if [[ $# -ge 1 ]]; then
 else
   project_name=$(find ~/projects -maxdepth 1 -mindepth 1 -type d |\
     awk -F/ '{print $NF}' |\
-    fzf --print-query |\
+    fzf |\
     tail -n1)
 fi
 if [[ -z $project_name ]]; then
   exit -1
 fi
 
-cd ~/projects || exit
-if [[ ! -d $project_name ]]; then
-  echo Starting project "$project_name"
-  mkdir "$project_name"
-  cd "$project_name" || exit
-  if type start_project > /dev/null; then
-    start_project "$2"
-  else
-    git init
-  fi
-fi
 cd ~/projects/"$project_name" || exit
 session_finder "${project_name//\./-}"
