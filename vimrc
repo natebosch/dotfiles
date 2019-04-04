@@ -58,6 +58,10 @@ Plug DevPlugin('dart-lang/dart-vim-plugin')
 Plug DevPlugin('natebosch/dartlang-snippets')
 Plug 'tpope/vim-git'
 
+if filereadable(glob("~/.vimrc.local_plugins"))
+  source ~/.vimrc.local_plugins
+endif
+
 call plug#end()
 """""""""""""""""""""""""""""""""
 
