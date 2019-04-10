@@ -65,7 +65,7 @@ let s:lsc_statuses = {
     \}
 
 function! LSCInfo() abort
-  if !has_key(g:lsc_server_commands, &filetype) | return '' | endif
+  if !has_key(g:lsc_servers_by_filetype, &filetype) | return '' | endif
   if !exists('*LSCServerStatus') | return '' | endif
   let l:status = LSCServerStatus()
   let l:short_status = has_key(s:lsc_statuses, l:status) ?

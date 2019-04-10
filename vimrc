@@ -56,6 +56,7 @@ Plug 'haya14busa/vim-poweryank'
 Plug 'tmux-plugins/vim-tmux'
 Plug DevPlugin('dart-lang/dart-vim-plugin')
 Plug DevPlugin('natebosch/dartlang-snippets')
+Plug DevPlugin('natebosch/vim-lsc-dart')
 Plug 'tpope/vim-git'
 
 if filereadable(glob("~/.vimrc.local_plugins"))
@@ -197,10 +198,6 @@ let g:NERDTreeMapJumpPrevSibling="<C-p>"
 set hidden
 
 """ LSC
-let g:lsc_server_commands = {
-    \ 'dart': 'dart_language_server',
-    \ 'yaml': 'dart_language_server',
-    \}
 let g:lsc_auto_map = v:true
 
 " FZF
