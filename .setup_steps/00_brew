@@ -11,8 +11,8 @@ fi
 
 echo "Installing brew"
 cd ~ || exit
-mkdir .brew && curl -L https://github.com/Homebrew/homebrew/tarball/master \
+mkdir .brew && curl -L https://github.com/Homebrew/brew/tarball/master \
   | tar xz --strip 1 -C .brew
 
 echo "Updating brew packages"
-brew update
+~/.brew/bin/brew update

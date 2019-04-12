@@ -9,7 +9,7 @@ if [ -x "$(command -v tmux)" ]; then
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  brew install tmux
+  ~/.brew/bin/brew install tmux
 else
   echo "Installing libevent-dev from apt"
   sudo apt install libevent-dev

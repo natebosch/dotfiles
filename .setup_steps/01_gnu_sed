@@ -6,4 +6,4 @@ if [ "$(uname)" != "Darwin" ] || [[ "$(command -v sed)" =~ .*brew.* ]]; then
 fi
 
 echo "Installing sed from brew"
-brew install gnu-sed --with-default-names
+~/.brew/bin/brew install gnu-sed --with-default-names

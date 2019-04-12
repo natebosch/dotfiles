@@ -7,7 +7,7 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing go from brew"
-  brew install go
+  ~/.brew/bin/brew install go
 else
   echo "Installing go from apt"
   sudo apt install golang

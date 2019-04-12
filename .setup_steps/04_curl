@@ -7,7 +7,7 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing curl from brew"
-  brew install curl
+  ~/.brew/bin/brew install curl
 else
   echo "Installing curl from apt"
   sudo apt install curl

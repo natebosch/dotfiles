@@ -15,8 +15,8 @@ directory="${font}-${roman}-${italic}"
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing source-code-pro from brew"
-  brew tap caskroom/fonts
-  brew cask install font-source-code-pro
+  ~/.brew/bin/brew tap caskroom/fonts
+  ~/.brew/bin/brew cask install font-source-code-pro
   mkdir -p ~/.fonts
 else
   echo "Downloading source-code-pro"

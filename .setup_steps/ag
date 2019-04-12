@@ -7,7 +7,7 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing ag from brew"
-  brew install ag
+  ~/.brew/bin/brew install ag
 else
   echo "Installing ag from apt"
   sudo apt install silversearcher-ag

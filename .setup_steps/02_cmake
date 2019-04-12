@@ -7,7 +7,7 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing cmake from brew"
-  brew install cmake
+  ~/.brew/bin/brew install cmake
 else
   echo "Installing cmake from apt"
   sudo apt install cmake

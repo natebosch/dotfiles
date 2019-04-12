@@ -18,7 +18,7 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing vim from brew"
-  brew install vim
+  ~/.brew/bin/brew install vim
 else
   echo "Installing vim from apt"
   sudo apt-get install vim-nox

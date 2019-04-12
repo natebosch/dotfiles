@@ -8,7 +8,7 @@ fi
 if [ ! -x "$(command -v zsh)" ]; then
   if [ "$(uname)" == "Darwin" ]; then
     echo "Installing zsh from brew"
-    brew install zsh
+    ~/.brew/bin/brew install zsh
   else
     echo "Installing zsh from apt"
     sudo apt install zsh
