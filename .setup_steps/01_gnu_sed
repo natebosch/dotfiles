@@ -6,4 +6,6 @@ if [ "$(uname)" != "Darwin" ] || [[ "$(command -v sed)" =~ .*brew.* ]]; then
 fi
 
 echo "Installing sed from brew"
-~/.brew/bin/brew install gnu-sed --with-default-names
+~/.brew/bin/brew install gnu-sed
+# Use the new sed for the rest of the install process
+export PATH="$DOTDIR/.brew/opt/gnu-sed/libexec/gnubin:$PATH"
