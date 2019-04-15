@@ -18,6 +18,10 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   echo "Installing vim from brew"
+  # Will try to install perl as a dependency, which will fail unless berkeley-db
+  # is installed first.
+  # https://stackoverflow.com/a/46660972/374798
+  ~/.brew/bin/brew install berkeley-db
   ~/.brew/bin/brew install vim
 else
   echo "Installing vim from apt"
