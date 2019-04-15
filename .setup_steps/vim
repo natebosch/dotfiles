@@ -1,17 +1,11 @@
 #!/bin/bash
 
 if [ -x "$(command -v vim)" ]; then
-  # Look for any version of vim 8, or 7.4 with at least patches up to 1689
+  # Look for vim 8.1
   VERSION=$(vim --version | sed -n 's/VIM - Vi IMproved \([0-9\.]\+\) .*/\1/p')
-  PATCH=$(vim --version | sed -n 's/Included patches.*-\([0-9]\+\)$/\1/p')
 
-  if [ "$VERSION" == "8.0" ]; then
-    echo "Already have vim 8"
-    exit
-  fi
-
-  if [ "$VERSION" == "7.4" ] && [ "$PATCH" -ge 1689 ]; then
-    echo "Already have late enough vim 7.4"
+  if [ "$VERSION" == "8.1" ]; then
+    echo "Already have vim 8.1"
     exit
   fi
 fi
