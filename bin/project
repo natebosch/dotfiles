@@ -14,4 +14,12 @@ if [[ -z $project_name ]]; then
 fi
 
 cd ~/projects/"$project_name" || exit
+if [[ ! -d ".git" ]]; then
+  shopt -s nullglob
+  dirs=(*/)
+  if [[ "${#dirs[@]}" -eq "1" && -d "${dirs[0]}/.git" ]]; then
+    cd "${dirs[0]}" || exit
+  fi
+fi
+
 session_finder "${project_name//\./-}"
