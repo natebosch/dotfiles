@@ -241,6 +241,9 @@ function! s:ClosePreview() abort
   endif
 endfunction
 
+" Automatically close location list when closing associated window.
+autocmd QuitPre * nested if &filetype != 'qf' | silent! lclose | endif
+
 " Hide "Back at Original" and other completion messages
 set shortmess+=c
 """""""""""""""""""""""""""""""
