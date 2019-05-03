@@ -8,6 +8,7 @@ let g:markdown_fenced_languages = [
     \ ]
 
 setlocal spell
+setlocal autoindent
 
 command! -buffer -nargs=0 LinkifyGithub :call <SID>LinkifyGithub()
 
