@@ -15,7 +15,7 @@ command! -buffer -nargs=0 DartGetAnalysisServerPort call <SID>GetServerPort()
 let b:project_nav_root_markers = ['pubspec.yaml']
 
 function! s:GetServerPort() abort
-  call lsc#server#userCall('dart/getServerPort', v:null,
+  call lsc#server#userCall('dart/diagnosticServer', v:null,
       \ function("<SID>PrintServerPort"))
 endfunction
 
