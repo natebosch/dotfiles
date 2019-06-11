@@ -79,6 +79,9 @@ function! LSCInfo() abort
       let result .= ':'.l:diagnostics
     endif
   endif
+  if exists('g:dart_analyzer_status') && g:dart_analyzer_status
+    let result .= "\u25F4"
+  endif
   return result.']'
 endfunction
 
