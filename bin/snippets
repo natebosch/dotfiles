@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Open this weeks snippets file in a new tmux session. Open last week's snippets
+# if it's Monday before 3pm.
+
+DIR=~/snippets/"$(date +%Y)"
+if [[ "$(date +%a)" != "Mon"  || "$(date +%k)" -lt 15 ]]; then
+  LAST="last-"
+else
+  LAST=""
+fi
+FILE="$(date -d${LAST}monday +%m-%d.md)"
+
+mkdir -p $DIR
+session_finder snippets vim $DIR/$FILE
