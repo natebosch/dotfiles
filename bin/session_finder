@@ -1,18 +1,34 @@
 #!/bin/bash
+#
+# Find or start a tmux session by name.
+
+mapfile -t existing_sessions < <(tmux ls -F "#{session_name}" 2>/dev/null)
 
 if [[ $# -gt 0 ]]; then
   session=$1
   shift
-  if (! tmux ls -F "#{session_name}" | grep "^$session$" 2>/dev/null); then
-    TMUX="" tmux -2 new -s "$session" -d $@
-  fi
 else
-  session=$(tmux ls -F "#{session_name}" | fzf)
+  if [[ ${#existing_sessions[@]} -eq 0 ]]; then
+    session="0"
+  elif [[ ${#existing_sessions[@]} -eq 1 ]]; then
+    session="${existing_sessions[0]}"
+  else
+    session=$(printf '%s\n' "${existing_sessions[@]}" | fzf)
+    [[ ! -z "$session" ]] || exit -1
+  fi
 fi
 
-if [ -z "$session" ]; then
-  exit -1
+found=0
+for existing in "${existing_sessions[@]}"; do
+  if [[ "$existing" == "$session" ]]; then
+    found=1
+    break
+  fi
+done
+if [[ $found -eq 0 ]]; then
+  TMUX="" tmux -2 new -s "$session" -d $@
 fi
+
 
 if [[ -n $TMUX ]]; then
   tmux switch-client -t "$session"
