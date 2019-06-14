@@ -1,9 +1,10 @@
 #!/bin/bash
 
-if [[ $# -eq 1 ]]; then
+if [[ $# -gt 0 ]]; then
   session=$1
+  shift
   if (! tmux ls -F "#{session_name}" | grep "^$session$" 2>/dev/null); then
-    TMUX="" tmux -2 new -s "$session" -d
+    TMUX="" tmux -2 new -s "$session" -d $@
   fi
 else
   session=$(tmux ls -F "#{session_name}" | fzf)
