@@ -31,6 +31,7 @@ Plug 'chip/vim-fat-finger'
 Plug 'junegunn/vim-peekaboo'
 Plug 'kana/vim-textobj-user' | Plug 'Julian/vim-textobj-variable-segment'
 Plug 'xtal8/traces.vim'
+Plug 'andymass/vim-matchup'
 
 " Navigation/Organization
 Plug 'christoomey/vim-tmux-navigator'
