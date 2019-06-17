@@ -12,4 +12,5 @@ fi
 FILE="$(date -d${LAST}monday +%m-%d.md)"
 
 mkdir -p $DIR
-session_finder snippets vim $DIR/$FILE
+cd $DIR
+session_finder snippets vim $FILE
