@@ -2,7 +2,10 @@
 #
 # Find or start a tmux session by name.
 
-mapfile -t existing_sessions < <(tmux ls -F "#{session_name}" 2>/dev/null)
+existing_sessions=()
+while IFS= read -r name; do
+    existing_sessions+=( "$name" )
+done < <( tmux ls -F '#{session_name}' 2>/dev/null )
 
 if [[ $# -gt 0 ]]; then
   session=$1
