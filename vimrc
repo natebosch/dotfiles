@@ -32,6 +32,7 @@ Plug 'junegunn/vim-peekaboo'
 Plug 'kana/vim-textobj-user' | Plug 'Julian/vim-textobj-variable-segment'
 Plug 'xtal8/traces.vim'
 Plug 'andymass/vim-matchup'
+Plug 'bogado/file-line'
 
 " Navigation/Organization
 Plug 'christoomey/vim-tmux-navigator'
