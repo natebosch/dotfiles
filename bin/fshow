@@ -2,8 +2,23 @@
 #
 # Repeatedly choose commits and `git show` them.
 
+set -e
+
+all_branches=0
+
+while getopts "a" option; do
+  case $option in
+    a) all_branches=1;;
+  esac
+done
+
+fzc_flags="-pq"
+if (( all_branches == 1 )); then
+  fzc_flags="-apq"
+fi
+
 previous_query=
-while lines=$(fzc -pq "$previous_query"); do
+while lines=$(fzc "$fzc_flags" "$previous_query"); do
   previous_query=$(head -1 <<< "$lines")
   results=$(tail -n +2 <<< "$lines")
   while read -r line; do
