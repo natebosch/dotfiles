@@ -63,3 +63,5 @@
   verbose = true
 [pager]
   branch = false
+[log]
+  mailmap = true
