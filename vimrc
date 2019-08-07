@@ -173,8 +173,6 @@ augroup paste
   autocmd InsertLeave * set nopaste
 augroup END
 
-" Fugitive sometimes likes horizontal diffs
-set diffopt+=vertical
 " Avoid piling up fugitive buffers
 augroup fugitive
   autocmd!
@@ -278,6 +276,11 @@ if exists('+colorcolumn')
 endif
 
 set belloff=cursor,esc,wildmode,error
+
+set diffopt=filler,vertical
+if has('nvim-0.3.2') || has('patch-8.1.0360')
+    set diffopt+=internal,algorithm:histogram,indent-heuristic
+endif
 
 if has('nvim')
   set inccommand=split

@@ -46,6 +46,7 @@
 [rebase]
   autosquash = true
 [diff]
+  algorithm = histogram
   wsErrorHighlight = all
 [credential]
   helper = cache --timeout=3600
