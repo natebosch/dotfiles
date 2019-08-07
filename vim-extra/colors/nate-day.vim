@@ -40,3 +40,5 @@ hi StatusSelect cterm=bold ctermfg=234 ctermbg=76
 
 hi TabLineFill ctermbg=236 cterm=None
 hi TabLine ctermbg=236 ctermfg=250 cterm=None
+
+hi VertSplit ctermbg=None ctermfg=236 cterm=None
