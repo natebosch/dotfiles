@@ -28,6 +28,13 @@ hi DiffAdd ctermbg=26 cterm=bold
 hi DiffChange ctermbg=53 cterm=bold
 hi DiffText ctermbg=1 ctermfg=7
 
+" Git diff in commit message editing
+hi diffAdded ctermfg=2
+hi diffRemoved ctermfg=1
+hi diffFile ctermfg=3
+hi diffLine ctermfg=6
+hi diffSubname ctermfg=5
+
 " Statusline/tabline
 
 hi StatusLine ctermbg=236 cterm=NONE
