@@ -281,7 +281,7 @@ if has('nvim-0.3.2') || has('patch-8.1.0360')
     set diffopt+=internal,algorithm:histogram,indent-heuristic
 endif
 
-set fillchars=vert:┃
+set fillchars=diff:\ ,vert:┃
 
 if has('nvim')
   set inccommand=split

@@ -7,6 +7,7 @@ runtime colors/desert.vim
 
 let g:colors_name = "nate-day"
 
+hi Constant ctermfg=166
 hi Search ctermbg=054
 hi SpellBad ctermbg=237 ctermfg=Red
 hi SpellCap ctermbg=237
@@ -24,9 +25,10 @@ hi Visual ctermbg=None cterm=bold,reverse
 hi clear Todo
 hi link Todo Comment
 
-hi DiffAdd ctermbg=26 cterm=bold
-hi DiffChange ctermbg=53 cterm=bold
-hi DiffText ctermbg=1 ctermfg=7
+hi DiffAdd ctermbg=22 cterm=bold
+hi DiffChange ctermbg=22 cterm=bold
+hi DiffText ctermbg=33 ctermfg=234
+hi DiffDelete ctermbg=52
 
 " Git diff in commit message editing
 hi diffAdded ctermfg=2
