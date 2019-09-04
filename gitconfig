@@ -22,7 +22,7 @@
   ci = commit
   br = branch
   co = checkout
-  d = difftool
+  d = "!f() { vim -R -M -p $(git diff --name-only $@) +\"tabdo Gdiff $@\" +tabfirst; }; f"
   lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
   lga = !git lg --all
   lp = log -p --show-notes=*
