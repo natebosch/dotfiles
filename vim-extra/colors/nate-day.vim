@@ -21,6 +21,9 @@ hi Underlined ctermfg=177
 hi Title ctermfg=27 cterm=bold
 hi PreProc ctermfg=33
 hi Visual ctermbg=None cterm=bold,reverse
+hi Type ctermfg=245
+hi Typedef ctermfg=34
+hi link StorageClass Typedef
 
 hi clear Todo
 hi link Todo Comment
