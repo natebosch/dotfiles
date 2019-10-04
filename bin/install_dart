@@ -3,8 +3,8 @@
 set -e
 
 VERSION="${1:-latest}"
-CHANNEL="stable"
 FLAVOR="${2:-release}"
+CHANNEL="${3:-stable}"
 
 if [ "$VERSION" == "stable" ]; then
   VERSION="latest"
@@ -25,6 +25,7 @@ fi
 
 DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/$CHANNEL/"
 RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
+echo $DOWNLOAD$RELEASE
 curl $DOWNLOAD$RELEASE -o /tmp/dart-release.zip
 rm -rf ~/dart-sdk
 unzip -qo /tmp/dart-release.zip -d ~
