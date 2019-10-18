@@ -40,7 +40,7 @@ done
 # commits
 list_full_commit_info() {
   local full_info="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"
-  local -a log_args=(-n 2000 --color=always --name-only --format="$full_info")
+  local -a log_args=(-n 10000 --color=always --name-only --format="$full_info")
   if (( all_branches == 1 )); then
     log_args+=(--all)
   fi
