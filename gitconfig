@@ -31,7 +31,6 @@
       xargs -n1 git blame -M15 -CCC15 -wfc | \
       sed 's/^[^(]*(\\([a-zA-Z4 ]*\\).*$/\\1/' | sed 's/^ *//;s/ *$//' | \
       sort | uniq -c | sort -n"
-  u = branch -u @{-1}
   files = "! [ -z "$GIT_PREFIX" ] || cd $GIT_PREFIX ; \
       git --no-pager diff @{u} --name-only --relative"
   start = "!f() { git checkout -b $1 && git branch -u @{-1}; }; f"
