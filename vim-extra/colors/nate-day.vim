@@ -23,6 +23,7 @@ hi PreProc ctermfg=33
 hi Visual ctermbg=None cterm=bold,reverse
 hi Type ctermfg=245
 hi Typedef ctermfg=34
+hi Function ctermfg=109
 hi link StorageClass Typedef
 
 hi clear Todo
