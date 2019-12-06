@@ -47,7 +47,9 @@ Plug 'tpope/vim-surround'
 Plug 'justinmk/vim-sneak'
 Plug 'Raimondi/delimitMate'
 Plug 'tommcdo/vim-exchange'
-Plug 'SirVer/ultisnips'
+if has('python3')
+  Plug 'SirVer/ultisnips'
+endif
 Plug DevPlugin('natebosch/vim-lsc')
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
