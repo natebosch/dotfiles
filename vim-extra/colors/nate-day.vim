@@ -12,7 +12,7 @@ hi Search ctermbg=054
 hi SpellBad ctermbg=237 ctermfg=Red
 hi SpellCap ctermbg=237
 hi MatchParen ctermbg=None ctermfg=199 cterm=bold,underline
-hi Pmenu ctermbg=LightGrey
+hi Pmenu ctermbg=234 ctermfg=None
 hi LineNr ctermfg=DarkGrey
 hi ColorColumn ctermbg=234
 hi CursorColumn ctermbg=236
