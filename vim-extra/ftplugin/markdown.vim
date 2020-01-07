@@ -7,7 +7,9 @@ let g:markdown_fenced_languages = [
     \ 'zsh=sh',
     \ ]
 
-setlocal spell
+if &modifiable && !&previewwindow
+  setlocal spell
+endif
 setlocal autoindent
 
 command! -buffer -nargs=0 LinkifyGithub :call <SID>LinkifyGithub()
