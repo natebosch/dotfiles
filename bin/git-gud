@@ -3,6 +3,11 @@
 git checkout master
 updates="$(git pull --ff-only 2>&1)"
 exit_code=$?
+if git config remote.upstream.url > /dev/null; then
+  git fetch upstream
+  git merge --ff-only upstream/master
+  git push
+fi
 deleted=($(echo "$updates" | sed -n "s/^ - \[deleted\] .* -> \(.*\)$/\1/p"))
 echo "$updates"
 echo "Removed: ${deleted[@]}"
