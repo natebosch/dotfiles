@@ -186,6 +186,9 @@ let delimitMate_expand_inside_quotes = 1
 let delimitMate_jump_expansion = 0
 let delimitMate_excluded_regions = 0
 
+" matchup
+let g:matchup_matchparen_offscreen = {}
+
 " Code folding
 set foldmethod=indent
 set foldnestmax=10
