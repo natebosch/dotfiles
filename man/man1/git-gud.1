@@ -1,4 +1,4 @@
-.TH "git-gud" 1 "April 2018" "git-gud 0.1.0" "git-gud - git pull and remove branches deleted from the remote"
+.TH "git-gud" 1
 
 .SH NAME
 git-gud - git pull and remove branches deleted from the remote
@@ -7,3 +7,6 @@ git-gud - git pull and remove branches deleted from the remote
 git-gud - git pull and remove branches deleted from the remote. Any local
 branches that match branches which were deleted from the remote will be deleted
 even if they have unmerged changes. Always moves to the branch named `master`.
+
+If there is a remote named "upstream" it is fetched as well and
+"upstream/master" merged with --ff-only into master, then pushed.
