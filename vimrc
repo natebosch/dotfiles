@@ -165,6 +165,11 @@ inoremap <c-u> <c-g>u<c-u>
 xnoremap > >gv
 xnoremap < <gv
 
+" Stay in visual mode
+xnoremap <expr> v mode() ==# 'v' ? '' : 'v'
+xnoremap <expr> V mode() ==# 'V' ? '' : 'V'
+xnoremap <expr> <c-v> mode() ==# "<c-v>" ? '' : "<c-v>"
+
 " Prefer jumping right to a mark over a line and ' is easier to reach.
 nnoremap ' `
 nnoremap ` '
