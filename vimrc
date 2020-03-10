@@ -162,8 +162,8 @@ set backspace=indent,eol,start
 inoremap <c-u> <c-g>u<c-u>
 
 " Easier indent visual blocks
-vnoremap > >gv
-vnoremap < <gv
+xnoremap > >gv
+xnoremap < <gv
 
 " Prefer jumping right to a mark over a line and ' is easier to reach.
 nnoremap ' `
@@ -351,7 +351,7 @@ map <leader>y <Plug>(operator-poweryank-osc52)
 
 " Rename word or selection, dot to repeat
 nnoremap <silent> <leader>R *Ncgn
-vnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
+xnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
 
 " Scratch buffer
 function! ScratchOpen()
