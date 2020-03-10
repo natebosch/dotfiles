@@ -1,10 +1,10 @@
-set nocompatible " vim > vi. Required for other stuff in here
+scriptencoding utf-8
 set nomodeline
 set rtp+=~/.vim-extra/
 filetype off
 
 " Load vim-plug
-if empty(glob("~/.vim/autoload/plug.vim"))
+if empty(glob('~/.vim/autoload/plug.vim'))
   execute '!curl -fLo ~/.vim/autoload/plug.vim --create-dirs
       \ https://raw.github.com/junegunn/vim-plug/master/plug.vim'
 endif
@@ -64,7 +64,7 @@ Plug DevPlugin('natebosch/dartlang-snippets')
 Plug DevPlugin('natebosch/vim-lsc-dart')
 Plug 'tpope/vim-git'
 
-if filereadable(glob("~/.vimrc.local_plugins"))
+if filereadable(glob('~/.vimrc.local_plugins'))
   source ~/.vimrc.local_plugins
 endif
 
@@ -75,19 +75,19 @@ call plug#end()
 """""""""""""""""""""""""""""""""
 """ Convenience
 
-let g:mapleader=" "
+let g:mapleader=' '
 
 " File Backups
 set nobackup " Use git instead!
 set backupcopy=yes
-let swpdir = expand("~/.vim/swp")
+let swpdir = expand('~/.vim/swp')
 if !isdirectory(swpdir)
   call mkdir(swpdir)
 endif
 set directory=~/.vim/swp//
 
 " Persistent Undo
-let undodir = expand("~/.vim/undo")
+let undodir = expand('~/.vim/undo')
 if !isdirectory(undodir)
   call mkdir(undodir)
 endif
@@ -168,7 +168,7 @@ xnoremap < <gv
 " Stay in visual mode
 xnoremap <expr> v mode() ==# 'v' ? '' : 'v'
 xnoremap <expr> V mode() ==# 'V' ? '' : 'V'
-xnoremap <expr> <c-v> mode() ==# "<c-v>" ? '' : "<c-v>"
+xnoremap <expr> <c-v> mode() ==# '<c-v>' ? '' : '<c-v>'
 
 " Prefer jumping right to a mark over a line and ' is easier to reach.
 nnoremap ' `
@@ -202,8 +202,8 @@ set foldlevel=99
 
 " Explore
 let g:NERDTreeHijackNetrw=1
-let g:NERDTreeMapJumpNextSibling="<C-n>"
-let g:NERDTreeMapJumpPrevSibling="<C-p>"
+let g:NERDTreeMapJumpNextSibling='<C-n>'
+let g:NERDTreeMapJumpPrevSibling='<C-p>'
 
 " Allow hiding unsaved buffers
 set hidden
@@ -223,9 +223,9 @@ let g:peekaboo_window = 'vertical botright 50new'
 let g:peekaboo_delay = 750
 
 " Ultisnips
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<tab>"
-let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+let g:UltiSnipsExpandTrigger='<tab>'
+let g:UltiSnipsJumpForwardTrigger='<tab>'
+let g:UltiSnipsJumpBackwardTrigger='<c-z>'
 
 " Split direction
 set splitright
@@ -415,7 +415,7 @@ endfunction
 
 """""""""""""""""""""""""""""""""""""
 """ Local customizations
-if filereadable(glob("~/.vimrc.local"))
+if filereadable(glob('~/.vimrc.local'))
   source ~/.vimrc.local
 endif
 """""""""""""""""""""""""""""""""""""

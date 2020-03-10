@@ -2,11 +2,12 @@ augroup Status
   autocmd!
   autocmd VimEnter,WinEnter,BufWinEnter * let w:is_active = v:true
   autocmd WinLeave * let w:is_active = v:false
+  autocmd CursorHold,BufWritePost * unlet! b:status_trailing_space
 augroup END
 
 function! s:IfStatusMode(modes) abort
   if !exists('w:is_active') || !w:is_active | return '' | endif
-  if &filetype == 'help' | return '' | endif
+  if &filetype ==# 'help' | return '' | endif
   if has_key(a:modes, mode())
     return '  '.a:modes[mode()].(&paste ? '[p]' : '').' '
   endif
@@ -19,7 +20,7 @@ endfunction
 
 function! StatusSpecial() abort
   if !exists('w:is_active') || !w:is_active | return '' | endif
-  if &filetype == 'help' | return '  help ' | endif
+  if &filetype ==# 'help' | return '  help ' | endif
   return ''
 endfunction
 
@@ -38,11 +39,9 @@ function! StatusSelect() abort
       \ "\<c-s>": 'Select block'})
 endfunction
 
-autocmd CursorHold,BufWritePost * unlet! b:status_trailing_space
-
 function! StatusTrailingSpaceWarning() abort
   if &readonly | return '' | endif
-  if !exists("b:status_trailing_space")
+  if !exists('b:status_trailing_space')
     let bad_line = search('\s$', 'nw')
     let b:status_trailing_space = bad_line != 0 ? '\s:'.bad_line : ''
   endif
@@ -52,7 +51,7 @@ endfunction
 function! GitBranch() abort
   if !exists('*fugitive#head') | return '' | endif
   let branch = fugitive#head()
-  if branch != ''
+  if branch !=# ''
     return '['.branch.']'
   endif
   return ''

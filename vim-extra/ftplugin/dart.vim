@@ -1,4 +1,4 @@
-let b:delimitMate_nesting_quotes = ["'", '"', "`"]
+let b:delimitMate_nesting_quotes = ["'", '"', '`']
 
 map <buffer> <leader>ff :DartFmt<cr>
 vmap <buffer> <leader>fc :! dartfmt-comment<cr>

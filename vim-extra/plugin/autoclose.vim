@@ -18,5 +18,5 @@ endfunction
 
 " Whether this is a quickfix or preview window.
 function! s:IsUtil() abort
-  return &buftype == 'quickfix' || &pvw
+  return &buftype ==# 'quickfix' || &pvw
 endfunction

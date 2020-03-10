@@ -1,11 +1,11 @@
 hi clear
-if exists("syntax_on")
+if exists('syntax_on')
   syntax reset
 endif
 
 runtime colors/desert.vim
 
-let g:colors_name = "nate-day"
+let g:colors_name = 'nate-day'
 
 hi Constant ctermfg=166
 hi Search ctermbg=054
