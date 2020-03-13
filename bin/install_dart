@@ -9,9 +9,11 @@ CHANNEL="${3:-stable}"
 LOCAL="$DOTDIR/projects/dart-sdk/sdk/out"
 if [ "$VERSION" == "local" ]; then
   ln -snf "$LOCAL/ReleaseX64/dart-sdk" "$DOTDIR/dart-sdk"
+  dart --version
   exit
 elif [ "$VERSION" == "nnbd" ]; then
   ln -snf "$LOCAL/ReleaseX64NNBD/dart-sdk" "$DOTDIR/dart-sdk"
+  dart --version
   exit
 fi
 
