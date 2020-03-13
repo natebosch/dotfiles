@@ -1,27 +1,43 @@
 #!/bin/bash
 
+set -e
+
+TARGET_VERSION="2.9a"
+
 if [ -x "$(command -v tmux)" ]; then
-  if [ "$(echo "$(tmux -V | cut -c 6-) >= 2.6" | bc)" = 1 ]; then
-    echo "Already have tmux"
+  CURRENT_VERSION="$(echo "$(tmux -V | cut -c 6-)")"
+  if [ "$CURRENT_VERSION" == "$TARGET_VERSION" ]; then
+    echo "Already have tmux $CURRENT_VERSION"
     exit
+  else
+    NEWER="$(printf "$CURRENT_VERSION\n$TARGET_VERSION" | sort -V | tail -n1)"
+    if [ "$NEWER" != "$TARGET_VERSION" ]; then
+      echo "Already have tmux $CURRENT_VERSION > $TARGET_VERSION"
+      exit
+    fi
   fi
   echo "Upgrading tmux"
 fi
 
 if [ "$(uname)" == "Darwin" ]; then
-  ~/.brew/bin/brew install tmux
+  if [ -z "$NEWER" ]; then
+    ~/.brew/bin/brew upgrade tmux
+  else
+    ~/.brew/bin/brew install tmux
+  fi
 else
   echo "Installing libevent-dev from apt"
   sudo apt install libevent-dev
   echo "Installing libcurses-dev from apt"
   sudo apt install libncurses-dev
-  echo "Downloading tmux 2.6"
-  wget https://github.com/tmux/tmux/releases/download/2.6/tmux-2.6.tar.gz \
+  echo "Downloading tmux $TARGET_VERSION"
+  DOWNLOAD="https://github.com/tmux/tmux/releases/download/"
+  wget "$DOWNLOAD/$TARGET_VERSION/tmux-$TARGET_VERSION.tar.gz" \
     -O /tmp/tmux.tar.gz
-  cd /tmp || exit
+  cd /tmp
   echo "Extracting tmux"
   tar -xzf tmux.tar.gz
-  cd tmux-2.6 || exit
+  cd "tmux-$TARGET_VERSION"
   echo "Installing tmux"
   ./configure && make && sudo make install
 fi
