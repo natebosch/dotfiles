@@ -21,9 +21,9 @@ fi
 
 if [ "$(uname)" == "Darwin" ]; then
   if [ -z "$NEWER" ]; then
-    ~/.brew/bin/brew upgrade tmux
-  else
     ~/.brew/bin/brew install tmux
+  else
+    ~/.brew/bin/brew upgrade tmux
   fi
 else
   echo "Installing libevent-dev from apt"
