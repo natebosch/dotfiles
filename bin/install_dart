@@ -6,6 +6,15 @@ VERSION="${1:-latest}"
 FLAVOR="${2:-release}"
 CHANNEL="${3:-stable}"
 
+LOCAL="$DOTDIR/projects/dart-sdk/sdk/out"
+if [ "$VERSION" == "local" ]; then
+  ln -snf "$LOCAL/ReleaseX64/dart-sdk" "$DOTDIR/dart-sdk"
+  exit
+elif [ "$VERSION" == "nnbd" ]; then
+  ln -snf "$LOCAL/ReleaseX64NNBD/dart-sdk" "$DOTDIR/dart-sdk"
+  exit
+fi
+
 if [ "$VERSION" == "stable" ]; then
   VERSION="latest"
 elif [ "$VERSION" == "dev" ]; then
