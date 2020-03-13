@@ -15,17 +15,25 @@ elif [[ "$VERSION" =~ "dev" ]]; then
   CHANNEL="dev"
 fi
 
+DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/$CHANNEL"
 
-if [ "$(uname)" == "Darwin" ]; then
-  PLATFORM="macos-x64"
-else
-  PLATFORM="linux-x64"
+if [ "$VERSION" == "latest" ]; then
+  VERSION="$(curl -s "$DOWNLOAD/$FLAVOR/latest/VERSION" | jq -r '.version')"
 fi
 
+DIRECTORY="$DOTDIR/.dart-sdks/$VERSION"
+if [ ! -d "$DIRECTORY" ]; then
 
-DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/$CHANNEL/"
-RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
-echo $DOWNLOAD$RELEASE
-curl $DOWNLOAD$RELEASE -o /tmp/dart-release.zip
-rm -rf ~/dart-sdk
-unzip -qo /tmp/dart-release.zip -d ~
+  if [ "$(uname)" == "Darwin" ]; then
+    PLATFORM="macos-x64"
+  else
+    PLATFORM="linux-x64"
+  fi
+  RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
+  echo "Downloading $DOWNLOAD/$RELEASE"
+  curl "$DOWNLOAD/$RELEASE" -o /tmp/dart-release.zip
+  unzip -qo /tmp/dart-release.zip -d "$DOTDIR/.dart-sdks"
+  mv "$DOTDIR/.dart-sdks/dart-sdk" "$DOTDIR/.dart-sdks/$VERSION"
+fi
+
+ln -snf "$DOTDIR/.dart-sdks/$VERSION" "$DOTDIR/dart-sdk"
