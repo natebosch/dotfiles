@@ -37,3 +37,5 @@ if [ ! -d "$DIRECTORY" ]; then
 fi
 
 ln -snf "$DOTDIR/.dart-sdks/$VERSION" "$DOTDIR/dart-sdk"
+
+echo "Installed dart $VERSION"
