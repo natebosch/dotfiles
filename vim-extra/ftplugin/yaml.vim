@@ -7,6 +7,15 @@ function! s:CheckDartYaml() abort
       \ name ==? 'build.yaml'
     let b:project_nav_root_markers = ['pubspec.yaml']
   endif
+
+  " Pub constraint maps
+  if name ==? 'pubspec.yaml'
+    nnoremap <leader>dl :read! dartdeps --from=% local<space>
+    nnoremap <leader>dp :read! dartdeps latest<space>
+    nnoremap <leader>dg :read! dartdeps git<space>
+    nnoremap <leader>dr :.! dartdeps --from=% replace<cr>
+    xnoremap <leader>dr !dartdeps --from=% replace<cr>
+  endif
 endfunction
 
 call <SID>CheckDartYaml()
