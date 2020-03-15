@@ -2,7 +2,7 @@
 
 set -e
 
-TARGET_VERSION="2.9a"
+TARGET_VERSION="3.0"
 
 if [ -x "$(command -v tmux)" ]; then
   CURRENT_VERSION="$(echo "$(tmux -V | cut -c 6-)")"
