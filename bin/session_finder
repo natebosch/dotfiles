@@ -1,37 +1,52 @@
 #!/bin/bash
 #
-# Find or start a tmux session by name.
+# Find or start a tmux session by name or project.
 
-existing_sessions=()
-while IFS= read -r name; do
-    existing_sessions+=( "$name" )
-done < <( tmux ls -F '#{session_name}' 2>/dev/null )
+set -e
+shopt -s nullglob
 
 if [[ $# -gt 0 ]]; then
-  session=$1
+  session="$1"
   shift
 else
-  if [[ ${#existing_sessions[@]} -eq 0 ]]; then
-    session="0"
-  elif [[ ${#existing_sessions[@]} -eq 1 ]]; then
-    session="${existing_sessions[0]}"
-  else
-    session=$(printf '%s\n' "${existing_sessions[@]}" | fzf)
-    [[ ! -z "$session" ]] || exit -1
-  fi
+  mapfile -t sessions < <(tmux ls -F '#{session_name}' 2>/dev/null)
+  mapfile -t projects < \
+    <(find ~/projects -maxdepth 1 -mindepth 1 -type d -printf '%f\n')
+  for session in "${sessions[@]}"; do
+    for i in "${!projects[@]}"; do
+      if [[ "${projects[i]//./_}" == "$session" ]]; then
+        unset 'projects[i]'
+      fi
+    done
+  done
+  choice=$( \
+    ( \
+    printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"; \
+    printf '%s \033[0;33mP\033[0m\n' "${projects[@]}" | sort \
+    ) | \
+    fzf --ansi \
+  )
+  session="${choice%??}"
+  session_type="${choice:(-1)}"
 fi
 
-found=0
-for existing in "${existing_sessions[@]}"; do
-  if [[ "$existing" == "$session" ]]; then
-    found=1
-    break
+if [[ "$session_type" == "P" ]]; then
+  cd ~/projects/"$session"
+  if [[ ! -d ".git" ]]; then
+    dirs=(*/)
+    if [[ "${#dirs[@]}" -eq "1" && -d "${dirs[0]}/.git" ]]; then
+      cd "${dirs[0]}"
+    fi
   fi
-done
-if [[ $found -eq 0 ]]; then
-  TMUX="" tmux -2 new -s "$session" -d $@
+elif [[ "$session" == "0" ]]; then
+  cd
 fi
 
+
+session="${session//./_}"
+if ! tmux has-session -t "$session" 2>/dev/null ; then
+  TMUX="" tmux -2 new -s "$session" -d "$@"
+fi
 
 if [[ -n $TMUX ]]; then
   tmux switch-client -t "$session"
