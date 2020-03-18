@@ -1,5 +1,4 @@
 #!/bin/bash
-mkdir -p ~/projects
 
 if [[ $# -ge 1 ]]; then
   project_name=$1
