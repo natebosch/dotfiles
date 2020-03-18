@@ -6,11 +6,26 @@ set -e
 
 git rev-parse --is-inside-work-tree >/dev/null
 
+usage() {
+  cat <<EOF
+Fuzzy find git commits and show the diff.
+
+Uses \`fzc\` to find commits. Hit <enter> to show the diff. Hit <ctrl-d> to
+exit.
+
+Options:
+  -h Show this message
+  -a Show commits from all branches.
+EOF
+}
+
 all_branches=0
 
-while getopts "a" option; do
+while getopts "ha" option; do
   case $option in
     a) all_branches=1;;
+    h) usage; exit 0;;
+    ?) usage; exit 64;;
   esac
 done
 

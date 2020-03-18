@@ -41,8 +41,8 @@ git rev-parse --is-inside-work-tree >/dev/null
 # drop all newlines within a commit message, then add back a new line between
 # commits
 list_full_commit_info() {
-  local full_info="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"
-  local -a log_args=(-n 10000 --color=always --name-only --format="$full_info")
+  local -a log_args=(-n 10000 '--color=always' --name-only \
+    '--format="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"')
   if (( all_branches == 1 )); then
     log_args+=(--all)
   fi
@@ -57,10 +57,10 @@ readonly SHOW_COMMIT="git --no-pager show --color=always -m"
 
 pick_commits() {
   local -a fzf_args=(--ansi --multi --no-sort --reverse)
-  fzf_args+=(--query="$previous_query")
+  fzf_args+=(--query'='"$previous_query")
   # Pluck out the sha from the line. Pass through xargs since otherwise fzf
   # won't udpate the preview as the chosen commit changes
-  fzf_args+=(--preview="echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT")
+  fzf_args+=(--preview'='"echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT")
   if (( print_query == 1 )); then
     fzf_args+=(--print-query)
   fi
