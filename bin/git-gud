@@ -8,11 +8,13 @@ if git config remote.upstream.url > /dev/null; then
   git merge --ff-only upstream/master
   git push
 fi
-deleted=($(echo "$updates" | sed -n "s/^ - \[deleted\] .* -> \(.*\)$/\1/p"))
+while IFS= read -r name; do
+  deleted+=( "$name" )
+done < <(echo "$updates" | sed -n "s/^ - \[deleted\] .* -> \(.*\)$/\1/p")
 echo "$updates"
-echo "Removed: ${deleted[@]}"
+echo Removed: "${deleted[@]}"
 for branch in "${deleted[@]/*\//}"; do
-  if [ $(git rev-parse --verify "$branch" 2>/dev/null) ]; then
+  if [ "$(git rev-parse --verify "$branch" 2>/dev/null)" ]; then
     git branch -D "$branch"
   fi
 done
