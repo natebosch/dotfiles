@@ -4,6 +4,8 @@
 
 set -e
 
+git rev-parse --is-inside-work-tree >/dev/null
+
 all_branches=0
 
 while getopts "a" option; do
