@@ -9,9 +9,12 @@ if [[ $# -gt 0 ]]; then
   session="$1"
   shift
 else
-  mapfile -t sessions < <(tmux ls -F '#{session_name}' 2>/dev/null)
-  mapfile -t projects < \
-    <(find ~/projects -maxdepth 1 -mindepth 1 -type d -printf '%f\n')
+  while IFS= read -r name; do
+    sessions+=( "$name" )
+  done < <(tmux ls -F '#{session_name}' 2>/dev/null)
+  while IFS= read -r name; do
+    projects+=( "$name" )
+  done < <(find ~/projects -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
   for session in "${sessions[@]}"; do
     for i in "${!projects[@]}"; do
       if [[ "${projects[i]//./_}" == "$session" ]]; then
