@@ -11,6 +11,7 @@ path=(
   /usr/local/sbin
   /usr/sbin
   /sbin
+  /snap/bin
   $DOTDIR/.depot_tools/depot_tools
 )
 export MANPATH=":$DOTDIR/.man"
