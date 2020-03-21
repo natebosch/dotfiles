@@ -14,12 +14,18 @@ EOF
 remote="origin"
 while getopts ":hr:" option; do
   case $option in
-    r) remote="$OPTARG";;
-    h) usage; exit 0;;
-    ?) usage; exit 64;;
+    r) remote="$OPTARG" ;;
+    h)
+      usage
+      exit 0
+      ;;
+    ?)
+      usage
+      exit 64
+      ;;
   esac
 done
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 pr_number="$1"
 
 git fetch "$remote" refs/pull/"$pr_number"/head:pr/"$pr_number"

@@ -8,7 +8,6 @@
 #
 # Example: `git diff --relative | flat_diff_adds | grep TODO`
 
-
 awk 'BEGIN { OFS=":"; file=""; line=0; }
 /^[+]{3}/ { in_header=1; file=$2 }
 /^@@ / {

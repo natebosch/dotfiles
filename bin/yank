@@ -23,22 +23,22 @@
 #
 # Written in 2014 by Suraj N. Kurapati and documented at http://goo.gl/NwYqfW
 
-buf=$( cat "$@" )
+buf=$(cat "$@")
 
 # copy to tmux if possible
 test -n "$TMUX_PANE" && tmux set-buffer "$buf"
 
 # copy to X11 if possible...
-test -n "$DISPLAY" && command -v xsel >/dev/null && \
+test -n "$DISPLAY" && command -v xsel >/dev/null &&
   printf %s "$buf" | xsel -ib && exit
-test -n "$DISPLAY" && command -v xclipd >/dev/null && \
+test -n "$DISPLAY" && command -v xclipd >/dev/null &&
   printf %s "$buf" | xclip -sel c && exit
 
 # ...otherwise copy to terminal
-len=$( printf %s "$buf" | wc -c ) max=74994
-test $len -gt $max && echo "$0: input is $(( len - max )) bytes too long" >&2
+len=$(printf %s "$buf" | wc -c) max=74994
+test $len -gt $max && echo "$0: input is $((len - max)) bytes too long" >&2
 
-esc="\033]52;c;$( printf %s "$buf" | head -c $max | base64 | tr -d '\r\n' )\a"
+esc="\033]52;c;$(printf %s "$buf" | head -c $max | base64 | tr -d '\r\n')\a"
 test -n "$TMUX" && esc="\033Ptmux;\033$esc\033\\"
 
 printf "$esc"

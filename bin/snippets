@@ -6,7 +6,7 @@
 set -e
 
 DIR=~/snippets/"$(date +%Y)"
-if [[ "$(date +%a)" != "Mon"  || "$(date +%k)" -lt 15 ]]; then
+if [[ "$(date +%a)" != "Mon" || "$(date +%k)" -lt 15 ]]; then
   LAST="last-"
 else
   LAST=""

@@ -7,13 +7,13 @@ INDENT="$(printf "%s" "$FIRST_LINE" | sed "s#^$COMMENT\(\s*\).*\$#\1#")"
 LENGTH=$((80 - ${#COMMENT}))
 CODE="$(printf "%s" "$INPUT" | sed "s#$COMMENT##")"
 if [[ $@ == *--implied-method* ]]; then
-  CODE="void main() {$CODE}";
+  CODE="void main() {$CODE}"
 fi
 FORMATTED="$(printf "%s" "$CODE" | dartfmt -l $LENGTH)"
 if [[ $@ == *--implied-method* ]]; then
-  FORMATTED="$(printf "%s" "$FORMATTED" |\
-    head -n -1 |\
-    tail -n +2 |\
-    sed 's/^  //')";
+  FORMATTED="$(printf "%s" "$FORMATTED" |
+    head -n -1 |
+    tail -n +2 |
+    sed 's/^  //')"
 fi
 printf "%s" "$FORMATTED" | sed "s#^#$COMMENT$INDENT#" | sed 's/\s*$//'

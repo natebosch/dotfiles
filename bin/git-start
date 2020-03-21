@@ -1,7 +1,7 @@
 #!/bin/bash
 
 branch="$(git rev-parse --abbrev-ref HEAD)"
-upstream_full="$(git rev-parse --symbolic-full-name '@{u}' 2> /dev/null)"
+upstream_full="$(git rev-parse --symbolic-full-name '@{u}' 2>/dev/null)"
 reset_against=""
 if [[ "$branch" == "master" && "$upstream_full" == "refs/remotes/"* ]]; then
   upstream="$(git rev-parse --abbrev-ref "$upstream_full")"

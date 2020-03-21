@@ -25,11 +25,17 @@ previous_query=
 all_branches=0
 while getopts ":hapq:" option; do
   case $option in
-    a) all_branches=1;;
-    p) print_query=1;;
-    q) previous_query=$OPTARG;;
-    h) usage; exit 0;;
-    ?) usage; exit 64;;
+    a) all_branches=1 ;;
+    p) print_query=1 ;;
+    q) previous_query=$OPTARG ;;
+    h)
+      usage
+      exit 0
+      ;;
+    ?)
+      usage
+      exit 64
+      ;;
   esac
 done
 
@@ -41,16 +47,16 @@ git rev-parse --is-inside-work-tree >/dev/null
 # drop all newlines within a commit message, then add back a new line between
 # commits
 list_full_commit_info() {
-  local -a log_args=(-n 10000 '--color=always' --name-only \
+  local -a log_args=(-n 10000 '--color=always' --name-only
     '--format="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"')
-  if (( all_branches == 1 )); then
+  if ((all_branches == 1)); then
     log_args+=(--all)
   fi
-  git log "${log_args[@]}" \
-    | sed '/^\s*$/d' \
-    | tr '\n\r' '|' \
-    | sed 's/|\?\xE2\x98\xA2/\n/g' \
-    | tail -n +2
+  git log "${log_args[@]}" |
+    sed '/^\s*$/d' |
+    tr '\n\r' '|' |
+    sed 's/|\?\xE2\x98\xA2/\n/g' |
+    tail -n +2
 }
 
 readonly SHOW_COMMIT="git --no-pager show --color=always -m"
@@ -61,15 +67,15 @@ pick_commits() {
   # Pluck out the sha from the line. Pass through xargs since otherwise fzf
   # won't udpate the preview as the chosen commit changes
   fzf_args+=(--preview'='"echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT")
-  if (( print_query == 1 )); then
+  if ((print_query == 1)); then
     fzf_args+=(--print-query)
   fi
   list_full_commit_info | fzf "${fzf_args[@]}"
 }
 
 lines=$(pick_commits "$previous_query")
-if (( print_query == 1 )); then
-  head -1 <<< "$lines"
-  lines=$(tail -n +2 <<< "$lines")
+if ((print_query == 1)); then
+  head -1 <<<"$lines"
+  lines=$(tail -n +2 <<<"$lines")
 fi
-cut -f2 -d' ' <<< "$lines"
+cut -f2 -d' ' <<<"$lines"

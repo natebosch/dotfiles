@@ -10,10 +10,10 @@ if [[ $# -gt 0 ]]; then
   shift
 else
   while IFS= read -r name; do
-    sessions+=( "$name" )
+    sessions+=("$name")
   done < <(tmux ls -F '#{session_name}' 2>/dev/null)
   while IFS= read -r name; do
-    projects+=( "$name" )
+    projects+=("$name")
   done < <(find ~/projects -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
   for session in "${sessions[@]}"; do
     for i in "${!projects[@]}"; do
@@ -22,12 +22,12 @@ else
       fi
     done
   done
-  choice=$( \
-    ( \
-    printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"; \
-    printf '%s \033[0;33mP\033[0m\n' "${projects[@]}" | sort \
-    ) | \
-    fzf --ansi \
+  choice=$(
+    (
+      printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"
+      printf '%s \033[0;33mP\033[0m\n' "${projects[@]}" | sort
+    ) |
+      fzf --ansi
   )
   session="${choice%??}"
   session_type="${choice:(-1)}"
@@ -45,9 +45,8 @@ elif [[ "$session" == "0" ]]; then
   cd
 fi
 
-
 session="${session//./_}"
-if ! tmux has-session -t "$session" 2>/dev/null ; then
+if ! tmux has-session -t "$session" 2>/dev/null; then
   TMUX="" tmux -2 new -s "$session" -d "$@"
 fi
 

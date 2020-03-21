@@ -4,7 +4,7 @@ pane_count=$(tmux list-panes | wc -l | sed 's/^ *//;s/ *$//')
 if [[ $pane_count == 1 ]]; then
   tmux split-window -h
 fi
-if [[ "$#" -eq 1  && "$1" == "left" ]]; then
+if [[ "$#" -eq 1 && "$1" == "left" ]]; then
   case $pane_count in
     [1-2])
       tmux select-layout "74ac,274x62,0,0{99x62,0,0,13,174x62,100,0,12}"
