@@ -31,7 +31,7 @@ test -n "$TMUX_PANE" && tmux set-buffer "$buf"
 # copy to X11 if possible...
 test -n "$DISPLAY" && command -v xsel >/dev/null &&
   printf %s "$buf" | xsel -ib && exit
-test -n "$DISPLAY" && command -v xclipd >/dev/null &&
+test -n "$DISPLAY" && command -v xclip >/dev/null &&
   printf %s "$buf" | xclip -sel c && exit
 
 # ...otherwise copy to terminal
