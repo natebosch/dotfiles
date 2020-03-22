@@ -46,12 +46,12 @@ elif [[ "$session" == "0" ]]; then
 fi
 
 session="${session//./_}"
-if ! tmux has-session -t "$session" 2>/dev/null; then
+if ! tmux has-session -t="$session" 2>/dev/null; then
   TMUX="" tmux -2 new -s "$session" -d "$@"
 fi
 
 if [[ -n $TMUX ]]; then
-  tmux switch-client -t "$session"
+  tmux switch-client -t="$session"
 else
-  tmux -2 a -t "$session" -d
+  tmux -2 a -t="$session" -d
 fi
