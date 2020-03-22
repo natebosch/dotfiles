@@ -60,5 +60,4 @@ export PAGER=less       # less is more :)
 # fewer bells, case insensitive searching, status line, and colors
 export LESS='-q -i -M -R'
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-[ -f ~/.travis/travis.sh ] && source ~/.travis/travis.sh
+[ ! -f ~/.fzf.zsh ] || source ~/.fzf.zsh
