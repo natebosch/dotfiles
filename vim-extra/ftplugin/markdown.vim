@@ -12,11 +12,18 @@ if &modifiable && !&previewwindow
 endif
 setlocal autoindent
 
-command! -buffer -nargs=0 LinkifyGithub :call <SID>LinkifyGithub()
+nnoremap <leader>dr :call <SID>LinkifyGithub()<cr>
 
 function! s:LinkifyGithub() abort
-  " Commits
-  %s/\%(\s\|^\)\zs\(https:\/\/github.com\/\([^ \/]*\/\)\{2\}commit\/\([[:xdigit:]]\{7\}\)[[:xdigit:]]\+\)/[\3](\1)/e
-  " Issues and Pull Requests
-  %s/\%(\s\|^\)\zs\(https:\/\/github.com\/\([^ \/]*\/\)\{3\}\([[:digit:]]\+\)\)/[#\3](\1)/e
+  let l:line = getline('.')
+  let l:commits_replaced = substitute(l:line,
+      \ '\%(\s\|^\)\zs\(https:\/\/github.com\/\([^ \/]*\/\)\{2\}commit\/\([[:xdigit:]]\{7\}\)[[:xdigit:]]\+\)',
+      \ '[\3](\1)',
+      \ ''
+      \)
+  let l:issues_replaced = substitute(l:commits_replaced,
+      \ '\%(\s\|^\)\zs\(https:\/\/github.com\/\([^ \/]*\/\)\{3\}\([[:digit:]]\+\)\)', '[#\3](\1)', '')
+  if l:issues_replaced !=# l:line
+    call setline('.', l:issues_replaced)
+  endif
 endfunction
