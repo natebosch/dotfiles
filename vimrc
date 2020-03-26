@@ -41,6 +41,7 @@ Plug 'schickling/vim-bufonly'
 " Tools
 Plug 'jreybert/vimagit'
 Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-rhubarb'
 Plug 'zirrostig/vim-schlepp'
 Plug 'mjbrownie/swapit'
 Plug 'tpope/vim-surround'
@@ -408,6 +409,18 @@ function! AddMatchWord(group)
   let l:let_statement = 'let w:matched_words["'.a:group.'"] = '
   exe printf(l:let_statement.'matchadd("'.a:group.'", '."'\\<%s\\>')",
       \escape(expand('<cword>'), '/\'))
+endfunction
+
+" Copy URL when remote
+command! -nargs=1 Browse call <SID>Browse(<q-args>)
+
+function! s:Browse(url) abort
+  let l:tmux_display = trim(system('tmux show-env DISPLAY'))
+  if l:tmux_display =~# '^-DISPLAY'
+    call system('yank', a:url)
+  else
+    call netrw#BrowseX(a:url, 0)
+  endif
 endfunction
 """"""""""""""""""""""""""""""""""""""
 
