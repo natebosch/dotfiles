@@ -422,6 +422,30 @@ function! s:Browse(url) abort
     call netrw#BrowseX(a:url, 0)
   endif
 endfunction
+
+" :GBrowse for the Dart SDK
+if !exists('g:fugitive_browse_handlers')
+  let g:fugitive_browse_handlers = []
+endif
+
+function! s:DartGitUrl(...)
+  if a:0 == 1 || type(a:1) == type({})
+    let l:remote = get(a:1, 'remote', '')
+    if l:remote !~# '^https://dart.googlesource.com/'
+      return ''
+    endif
+    let l:repo = l:remote[30:]
+    let l:opts = deepcopy(a:1)
+    let l:opts.remote = 'https://github.com/dart-lang/'.l:repo
+    return rhubarb#FugitiveUrl(l:opts)
+  else
+    return ''
+  endif
+endfunction
+
+if index(g:fugitive_browse_handlers, function('<SID>DartGitUrl')) < 0
+  call insert(g:fugitive_browse_handlers, function('<SID>DartGitUrl'))
+endif
 """"""""""""""""""""""""""""""""""""""
 
 
