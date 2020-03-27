@@ -95,7 +95,7 @@ function! ProjectTabLabel(n, use_tab_names) abort
   endif
   if tab_name ==# ''
     let file_path = fnamemodify(bufname(buflist[winnr - 1]), ':~:.')
-    let tab_name .= pathshorten(file_path)
+    let tab_name .= StatusPathShorten(file_path)
   elseif s:HasMultipleTabs(tab_name)
     let file_path = fnamemodify(bufname(buflist[winnr - 1]), ':t')
     let tab_name .= '|'.file_path
