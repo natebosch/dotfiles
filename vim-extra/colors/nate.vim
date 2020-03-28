@@ -5,13 +5,14 @@ endif
 
 let g:colors_name = 'nate'
 
-hi Normal       guifg=#aaaaaa guibg=#020202
-hi EndOfBuffer  guifg=#aaaaaa guibg=#020202
+hi Normal       guifg=NONE guibg=NONE
+hi EndOfBuffer  guifg=NONE guibg=NONE
 
 hi ColorColumn  ctermbg=234  guibg=#1c1c1c
 hi Comment      ctermfg=067  guifg=#5f87af
 hi Constant     ctermfg=166  guifg=#d75f00
 hi CursorColumn ctermbg=236  guibg=#303030
+hi Directory    ctermfg=031  guifg=#0087af
 hi FoldColumn   ctermbg=234  guibg=#1c1c1c
 hi FoldColumn   ctermfg=075  guifg=#5fafff
 hi Function     ctermfg=109  guifg=#87afaf
@@ -48,7 +49,6 @@ hi clear StorageClass
 hi link StorageClass Typedef
 hi clear Todo
 hi link Todo Comment
-hi clear Directory
 
 hi DiffAdd      ctermbg=022  guibg=#005f00 cterm=bold gui=bold
 hi DiffChange   ctermbg=022  guibg=#005f00 cterm=bold gui=bold
