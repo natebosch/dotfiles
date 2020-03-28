@@ -1,0 +1,3 @@
+#!/bin/bash
+
+highlight -O truecolor -l --force --style nate "$@"

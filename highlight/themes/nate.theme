@@ -1,0 +1,21 @@
+Description = "customized for nate"
+
+Default       = { Colour="#aaaaaa" }
+Canvas        = { Colour="#020202" }
+Number        = { Colour="#d75f00" }
+Escape        = { Colour="#d75f00" }
+String        = { Colour="#d75f00" }
+BlockComment  = { Colour="#5f87af" }
+StringPreProc = String
+LineComment   = BlockComment
+Operator      = { Colour="#aaaaaa" }
+LineNum       = { Colour="#606060" }
+PreProcessor  = { Colour="#0087ff" }
+Interpolation = { Colour="#d75f00" }
+
+Keywords = {
+  { Colour="#dfdf00" },
+  { Colour="#d787ff" },
+  { Colour="#0087ff" },
+  { Colour="#87afaf" },
+}

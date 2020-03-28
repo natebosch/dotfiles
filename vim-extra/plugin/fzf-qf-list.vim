@@ -11,12 +11,18 @@ endfunction
 
 function! s:FuzzyPick(items, jump) abort
   let items = map(a:items, {idx, item ->
-      \ string(idx).' '.bufname(item.bufnr).' '.item.text})
-  call fzf#run({'source': items, 'sink': function('<SID>Pick', [a:jump]),
-      \'options': '--with-nth 2.. --reverse', 'down': '40%'})
+      \ bufname(item.bufnr).':'.string(item.lnum).': '.item.text.' '.string(idx)})
+  let l:options = fzf#wrap(
+      \ fzf#vim#with_preview({
+      \   'source': items,
+      \   'sink': function('<SID>Pick', [a:jump]),
+      \   'options': ['--with-nth', '..-2'],
+      \ })
+      \)
+  call fzf#run(l:options)
 endfunction
 
 function! s:Pick(jump, item) abort
-  let idx = split(a:item, ' ')[0]
+  let idx = split(a:item, ' ')[-1]
   execute a:jump idx + 1
 endfunction
