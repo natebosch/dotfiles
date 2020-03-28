@@ -272,8 +272,9 @@ set ruler       " show the cursor position all the time
 " Colors
 syntax on
 set hlsearch
-set background=dark " easier on the eyes
-colorscheme nate-day
+set background=dark
+set termguicolors
+colorscheme nate
 
 " See tabs and trailing spaces
 set list
@@ -377,9 +378,9 @@ endfunction
 nnoremap <leader>s :call ScratchOpen()<cr>
 
 " Word highlighting
-hi Word1 ctermbg=red ctermfg=black
-hi Word2 ctermbg=blue ctermfg=black
-hi Word3 ctermbg=yellow ctermfg=black
+hi Word1 ctermbg=red ctermfg=black guibg=#ff0000 guifg=black
+hi Word2 ctermbg=blue ctermfg=black guibg=#00afff guifg=black
+hi Word3 ctermbg=yellow ctermfg=black guibg=#ffff00 guifg=black
 nnoremap <leader>ha :call AddMatchWord('Word1')<cr>
 nnoremap <leader>hA :call ClearMatchWord('Word1')<cr>
 nnoremap <leader>hs :call AddMatchWord('Word2')<cr>
