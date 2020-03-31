@@ -35,7 +35,7 @@ hi Special      ctermfg=177  guifg=#d787ff
 hi SpellBad     ctermbg=237  guibg=#3a3a3a
 hi SpellBad     ctermfg=196  guifg=#ff0000
 hi SpellCap     ctermbg=237  guibg=#3a3a3a
-hi Statement    ctermfg=184  guifg=#dfdf00
+hi Statement    ctermfg=179  guifg=#c4a000
 hi Statement    term=bold    gui=bold
 hi Title        ctermfg=027  cterm=bold guifg=#005fff
 hi Type         ctermfg=245  guifg=#8a8a8a
