@@ -26,3 +26,18 @@ function! s:Pick(jump, item) abort
   let idx = split(a:item, ' ')[-1]
   execute a:jump idx + 1
 endfunction
+
+cnoremap <c-t> <c-r>=<SID>FzfRead()<cr>
+
+" Run fzf and return the chosen file path rather than edit it.
+function! s:FzfRead() abort
+  let l:choice = ''
+  function! s:Choose(choice) closure abort
+    let l:choice = a:choice
+  endfunction
+  call fzf#run(fzf#wrap(fzf#vim#with_preview({
+      \ 'sink': funcref('<SID>Choose'),
+      \})))
+  delfunction s:Choose
+  return l:choice
+endfunction
