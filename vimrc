@@ -216,8 +216,6 @@ let g:lsc_auto_map = v:true
 let g:fzf_commits_log_options = '--graph --color=always '
     \.'--pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) '
     \.'%C(bold blue)<%an>%Creset"'
-command! -bang -nargs=? -complete=dir Files
-  \ call fzf#vim#files(<q-args>, fzf#vim#with_preview(), <bang>0)
 
 " Peekaboo
 let g:peekaboo_window = 'vertical botright 50new'
