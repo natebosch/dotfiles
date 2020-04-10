@@ -20,7 +20,7 @@ hi Identifier   ctermfg=032  guifg=#0087d7
 hi LineNr       ctermfg=241  guifg=#606060
 hi MatchParen   ctermbg=NONE guibg=NONE cterm=bold,underline gui=bold,underline
 hi MatchParen   ctermfg=199  guifg=#ff00af
-hi Pmenu        ctermbg=234  guibg=#1c1c1c
+hi Pmenu        ctermbg=236  guibg=#303030
 hi Pmenu        ctermfg=NONE guifg=NONE
 hi PmenuSBar    ctermbg=237  guibg=#3a3a3a
 hi PmenuSel     ctermbg=241  guibg=#626262
