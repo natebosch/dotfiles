@@ -10,8 +10,8 @@ PROMPT='$working_dir $(git-status)
 
 RPROMPT=""
 
-# Reset the prompt every second so that the clock stays up to date
-TMOUT=1
+# Reset the prompt every 10 seconds
+TMOUT=10
 TRAPALRM() {
   if [[ "$WIDGET" =~ "comp" || "$WIDGET" =~ "fzf" ]]; then
     return 0

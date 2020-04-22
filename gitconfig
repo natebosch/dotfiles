@@ -44,11 +44,13 @@
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
 [merge]
   tool = vimdiff3
+  renamelimit = 10000
 [rebase]
   autosquash = true
 [diff]
   algorithm = histogram
   wsErrorHighlight = all
+  renamelimit = 10000
 [credential]
   helper = cache --timeout=3600
 [push]
