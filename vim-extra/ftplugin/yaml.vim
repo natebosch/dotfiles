@@ -10,11 +10,11 @@ function! s:CheckDartYaml() abort
 
   " Pub constraint maps
   if name ==? 'pubspec.yaml'
-    nnoremap <leader>dl :read! dartdeps --from=% local<space>
-    nnoremap <leader>dp :read! dartdeps latest<space>
-    nnoremap <leader>dg :read! dartdeps git<space>
-    nnoremap <leader>dr :.! dartdeps --from=% replace<cr>
-    xnoremap <leader>dr !dartdeps --from=% replace<cr>
+    nnoremap <buffer> <leader>dl :read! dartdeps --from=% local<space>
+    nnoremap <buffer> <leader>dp :read! dartdeps latest<space>
+    nnoremap <buffer> <leader>dg :read! dartdeps git<space>
+    nnoremap <buffer> <leader>dr :.! dartdeps --from=% replace<cr>
+    xnoremap <buffer> <leader>dr !dartdeps --from=% replace<cr>
   endif
 endfunction
 

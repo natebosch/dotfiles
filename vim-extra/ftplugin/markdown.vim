@@ -12,7 +12,7 @@ if &modifiable && !&previewwindow
 endif
 setlocal autoindent
 
-nnoremap <leader>dr :call <SID>LinkifyGithub()<cr>
+nnoremap <buffer> <leader>dr :call <SID>LinkifyGithub()<cr>
 
 function! s:LinkifyGithub() abort
   let l:line = getline('.')
