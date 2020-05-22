@@ -5,6 +5,7 @@ export PATH=
 path=(
   $DOTDIR/.bin.local
   $DOTDIR/.bin
+  $DOTDIR/.local/bin
   /usr/local/bin
   /usr/bin
   /bin
