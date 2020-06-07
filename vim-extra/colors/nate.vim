@@ -12,6 +12,7 @@ hi ColorColumn  ctermbg=234  guibg=#1c1c1c
 hi Comment      ctermfg=067  guifg=#5f87af
 hi Constant     ctermfg=166  guifg=#d75f00
 hi CursorColumn ctermbg=236  guibg=#303030
+hi Error        ctermbg=125  guibg=#af0000
 hi Directory    ctermfg=031  guifg=#0087af
 hi FoldColumn   ctermbg=234  guibg=#1c1c1c
 hi FoldColumn   ctermfg=075  guifg=#5fafff
