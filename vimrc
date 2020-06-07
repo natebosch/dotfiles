@@ -230,6 +230,10 @@ let g:UltiSnipsJumpBackwardTrigger='<c-z>'
 set splitright
 set splitbelow
 
+" Completion
+
+set completeopt=menuone,preview,noselect
+
 " Automatically close preview window after completing an item, only if the
 " preview window wasn't open before completing.
 augroup PREVIEW_AUTOCLOSE
