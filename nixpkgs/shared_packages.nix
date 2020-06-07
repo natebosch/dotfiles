@@ -4,6 +4,7 @@ let
 in {
   install = with pkgs; [
     cmake
+    diffr
     highlight
     htop
     jq

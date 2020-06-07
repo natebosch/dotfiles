@@ -56,14 +56,15 @@ list_full_commit_info() {
     tail -n +2
 }
 
-readonly SHOW_COMMIT="git --no-pager show --color=always -m"
-
 pick_commits() {
-  local -a fzf_args=(--ansi --multi --no-sort --reverse)
-  fzf_args+=(--query'='"$previous_query")
-  # Pluck out the sha from the line. Pass through xargs since otherwise fzf
-  # won't udpate the preview as the chosen commit changes
-  fzf_args+=(--preview'='"echo {} | cut -f2 -d' ' | xargs $SHOW_COMMIT")
+  local -a fzf_args=(
+    --ansi
+    --multi
+    --no-sort
+    --reverse
+    --query="$previous_query"
+    --preview="git show --color=always -m \$(cut -f2 -d' ' <<<{}) | diff-color"
+  )
   if ((print_query == 1)); then
     fzf_args+=(--print-query)
   fi

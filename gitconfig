@@ -3,6 +3,9 @@
   useConfigOnly = true
 [core]
   excludesfile = ~/.gitignore
+  pager = diff-color | less -R
+[interactive]
+  diffFilter = diff-color
 [branch]
   autosetuprebase = always
 [color]
