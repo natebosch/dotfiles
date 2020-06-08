@@ -45,6 +45,8 @@ hi Underlined   ctermfg=177  guifg=#87d7ff
 hi Visual       ctermbg=NONE guibg=NONE cterm=bold,reverse   gui=bold,reverse
 
 
+hi clear ErrorMsg
+hi link ErrorMsg Error
 hi clear Folded
 hi link Folded FoldColumn
 hi clear StorageClass
