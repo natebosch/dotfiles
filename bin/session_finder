@@ -27,7 +27,7 @@ else
       printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"
       printf '%s \033[0;33mP\033[0m\n' "${projects[@]}" | sort
     ) |
-      fzf --ansi
+      fzf --ansi --no-sort
   )
   session="${choice%??}"
   session_type="${choice:(-1)}"
