@@ -24,8 +24,6 @@ Plug 'tpope/vim-repeat'
 Plug 'wellle/targets.vim'
 Plug 'michaeljsmith/vim-indent-object'
 Plug 'christoomey/vim-sort-motion'
-Plug 'scrooloose/nerdtree'
-Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'ap/vim-css-color'
 Plug 'chip/vim-fat-finger'
 Plug 'junegunn/vim-peekaboo'
@@ -202,9 +200,8 @@ set foldnestmax=10
 set foldlevel=99
 
 " Explore
-let g:NERDTreeHijackNetrw=1
-let g:NERDTreeMapJumpNextSibling='<C-n>'
-let g:NERDTreeMapJumpPrevSibling='<C-p>'
+let g:netrw_banner = 0
+let g:netrw_fastbrowse = 0
 
 " Allow hiding unsaved buffers
 set hidden
