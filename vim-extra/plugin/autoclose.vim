@@ -16,7 +16,7 @@ function! s:AutocloseUtil() abort
   windo if s:IsUtil() | quit! | endif
 endfunction
 
-" Whether this is a quickfix or preview window.
+" Whether this is a quickfix, preview, or fugitive window.
 function! s:IsUtil() abort
-  return &buftype ==# 'quickfix' || &pvw
+  return &buftype ==# 'quickfix' || &pvw || &filetype ==# 'fugitiveblame'
 endfunction
