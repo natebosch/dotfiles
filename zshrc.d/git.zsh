@@ -70,3 +70,6 @@ function git-status() {
   fi
   echo "$GIT_STATUS%{${reset_color}%}$PROMPT_SUFFIX"
 }
+
+zstyle ':completion::complete:git-checkout:argument-rest:commit-tag-refs' command "echo"
+zstyle ':completion::complete:git-checkout:argument-rest:blob-tag-refs' command "echo"
