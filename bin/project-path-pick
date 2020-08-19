@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$#" -ne 0 ]; then
+  echo 'Requires exactly 0 arguments'
+  exit -1
+fi
+
+if [ -z "$PROJECT" ]; then
+  echo 'Unknown project, no $PROJECT variable'
+  exit -1
+fi
+
+file="$HOME/projects/$PROJECT/.dirs"
+
+fzf <$file

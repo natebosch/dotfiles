@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+  echo 'Requires exactly 1 argument: The tmux pane ID to paste the path'
+  exit -1
+fi
+
+pane="$1"
+
+tmux new-window 'tmux set-buffer -b pick-dir $(project-path-pick); tmux wait -S pick-dir'
+tmux wait pick-dir
+tmux paste-buffer -dpb pick-dir -t "$pane"

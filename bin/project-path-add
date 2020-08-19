@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+  echo 'Requires exactly 1 argument: <path>'
+  exit -1
+fi
+
+if [ -z "$PROJECT" ]; then
+  echo 'Unknown project, no $PROJECT variable'
+  exit -1
+fi
+
+path="$1"
+
+file="$HOME/projects/$PROJECT/.dirs"
+
+touch $file
+echo "$path" >> "$file"
+sort -u -o "$file" "$file"
