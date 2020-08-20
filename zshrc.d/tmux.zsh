@@ -28,3 +28,12 @@ change_tmux_pwd() {
   tmux switch-client -t $session_name
 }
 alias here=change_tmux_pwd
+
+# Set pane title to CWD
+function _tmux_update_title() {
+  printf '\033]2;%s\033\\' "$PWD"
+}
+if [ -n "$TMUX_PANE" ]; then
+  chpwd_functions+=("_tmux_update_title")
+  _tmux_update_title
+fi
