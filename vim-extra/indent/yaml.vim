@@ -14,10 +14,10 @@ endif
 function! YamlIndent()
   let l:indentTo = GetYAMLIndent(v:lnum)
 
-  let l:currentLine = getline(v:lnum)
-  let l:previousLine = getline(prevnonblank(v:lnum - 1))
+  let l:currentLine = trim(getline(v:lnum))
+  let l:previousLine = trim(getline(prevnonblank(v:lnum - 1)))
 
-  if l:currentLine =~# '^\s*-' && l:previousLine =~# '\m^\s*[^:]\+:\s*$'
+  if l:currentLine =~# '^-' && l:previousLine =~# '\m^[^-].*:$'
     let l:indentTo = l:indentTo - &shiftwidth
   endif
 
