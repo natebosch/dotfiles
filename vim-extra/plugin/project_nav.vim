@@ -3,7 +3,7 @@ nnoremap <leader>bt :call <SID>BreakTab()<cr>
 
 set tabline=%!ProjectTabLine()
 
-let g:project_nav_root_markers = ['.git/', 'BUILD']
+let g:project_nav_root_markers = ['.git', '.git/', 'BUILD']
 
 function! s:LcdProjectRoot(from) abort
   let root = s:FindPackageRoot(a:from)
