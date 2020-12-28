@@ -85,6 +85,9 @@ if !isdirectory(swpdir)
 endif
 set directory=~/.vim/swp//
 
+" Fix situation when a temp directory was cleaned with vim running
+command! Mktmpdir call mkdir(fnamemodify(tempname(), ':p:h'), '', 0700)
+
 " Persistent Undo
 let undodir = expand('~/.vim/undo')
 if !isdirectory(undodir)
