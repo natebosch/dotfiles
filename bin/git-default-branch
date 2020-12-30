@@ -1,0 +1,6 @@
+#! /bin/bash
+if [ -n "$(git branch --list master)" ]; then
+  echo 'master'
+else
+  echo 'main'
+fi
