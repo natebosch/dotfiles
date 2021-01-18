@@ -15,8 +15,12 @@ name="$1"
 if [[ "$name" == -* ]]; then
   name="$branch-${name}"
 fi
+if [[ "$name" == +* ]]; then
+  branch="$(git default-branch)"
+  name="${name:1}"
+fi
 
-git checkout -b "$name" && git branch -u "$branch"
+git checkout "$branch" -b "$name" && git branch -u "$branch"
 
 if [[ -n "$reset_against" ]]; then
   git checkout "$branch"

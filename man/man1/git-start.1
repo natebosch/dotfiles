@@ -8,3 +8,9 @@ git-start - start a new named feature branch and set the upstream to the current
 branch. If the current branch is is the default and has commits that are not
 pushed to a tracked remote, those commits will be moved to the new branch and
 removed from the default branch.
+
+If the new branch name starts with a `-`, create the new branch starting with
+the current branche's name and a `--` to separate the parts.
+
+If the new branch name starts with a `+`, always branch from the default branch
+regardless of the current branch.
