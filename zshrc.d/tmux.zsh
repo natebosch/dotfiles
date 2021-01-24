@@ -27,7 +27,10 @@ change_tmux_pwd() {
   fi
   tmux switch-client -t $session_name
 }
-alias here=change_tmux_pwd
+if [ -n "$TMUX" ]; then
+  alias here=change_tmux_pwd
+  alias clear=clear\;tmux\ clear-history
+fi
 
 # Set pane title to CWD
 function _tmux_update_title() {
