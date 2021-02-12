@@ -14,7 +14,6 @@ the shas of chosen commits, 1 per line.
 
 Options:
   -h Show this message
-  -a Show commits from all branches.
   -p Print the query before printing the shas.
   -q "\$query" use \$query as the starting search in fzf
 EOF
@@ -22,10 +21,8 @@ EOF
 
 print_query=0
 previous_query=
-all_branches=0
 while getopts ":hapq:" option; do
   case $option in
-    a) all_branches=1 ;;
     p) print_query=1 ;;
     q) previous_query=$OPTARG ;;
     h)
@@ -39,6 +36,9 @@ while getopts ":hapq:" option; do
   esac
 done
 
+shift $((OPTIND - 1))
+extra_log_args=("$@")
+
 git rev-parse --is-inside-work-tree >/dev/null
 
 # git log with full commit message and changed files.
@@ -49,10 +49,7 @@ git rev-parse --is-inside-work-tree >/dev/null
 list_full_commit_info() {
   local -a log_args=(-n 10000 '--color=always' --name-only
     '--format="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"')
-  if ((all_branches == 1)); then
-    log_args+=(--all)
-  fi
-  git log "${log_args[@]}" |
+  git log "${log_args[@]}" "${extra_log_args[@]}" |
     sed '/^\s*$/d' |
     tr '\n\r' '|' |
     sed 's/|\?\xE2\x98\xA2/\n/g' |
