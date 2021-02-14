@@ -1,7 +1,6 @@
 setopt AUTO_PUSHD   # push directories on every cd
 DIRSTACKSIZE=20     # number of directories in pushd/popd stack
 
-alias .='pwd'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'

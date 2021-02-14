@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if [ -x "$(command -v dart)" ]; then
-  echo "Already have dart"
-  exit
-fi
-
-echo "Downloading latest dart"
-install_dart

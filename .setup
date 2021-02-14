@@ -1,16 +1,50 @@
 #!/bin/bash
 
-# PATH might be missing some stuff we're about to install
+set -e
+
 if [ "$(uname)" == "Darwin" ]; then
-  BREWPATH="$HOME/.brew/bin"
-  [[ ":$PATH:" != *":$BREWPATH:"* ]] && PATH="$BREWPATH:${PATH}"
-fi
-NEWPATHS=( "$HOME/.rvm/bin" )
-for NEWPATH in "${NEWPATHS[@]}"; do
-  [[ ":$PATH:" != *":$NEWPATH:"* ]] && PATH="$NEWPATH:${PATH}"
-done
-for SCRIPT in .setup_steps/*; do
-  if [ -f "$SCRIPT" ] && [ -x "$SCRIPT" ]; then
-    $SCRIPT
+  if [ ! -x "$(command -v nix-env)" ]; then
+    echo "Installing nix."
+    sh <(curl -L https://nixos.org/nix/install) --no-modify-profile \
+      --darwin-use-unencrypted-nix-store-volume
+    # shellcheck source=/dev/null
+    source ~/.nix-profile/etc/profile.d/nix.sh
   fi
-done
+  if [ ! -x "$(command -v darwin-rebuild)" ]; then
+    nix-build https://github.com/LnL7/nix-darwin/archive/master.tar.gz \
+      -A installer
+    ./result/bin/darwin-installer
+    rm -r result
+    darwin-rebuild switch
+  fi
+else
+  if [ ! -x "$(command -v nix-env)" ]; then
+    if [ ! -x "$(command -v curl)" ]; then
+      echo "Installing curl."
+      sudo apt install curl
+    fi
+    echo "Installing nix."
+    sh <(curl -L https://nixos.org/nix/install) --no-modify-profile
+    # shellcheck source=/dev/null
+    source ~/.nix-profile/etc/profile.d/nix.sh
+  fi
+  if [ ! -x "$(command -v home-manager)" ]; then
+    nix-channel --add \
+      https://github.com/nix-community/home-manager/archive/master.tar.gz \
+      home-manager
+    nix-channel --update
+    nix-shell '<home-manager>' -A install
+  fi
+  home-manager switch -f nixpkgs/linux-configuration.nix
+fi
+
+vim +PlugInstall +PlugUpdate +qall
+
+if [[ ! "$SHELL" =~ .*zsh.* ]]; then
+  if [ ! -x "$(command -v zsh)" ]; then
+    echo "Installing zsh."
+    sudo apt install zsh
+  fi
+  echo "Changing shell to zsh."
+  chsh -s "$(which zsh)"
+fi

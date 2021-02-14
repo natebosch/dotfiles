@@ -1,25 +1,20 @@
 ## Use DOTDIR in other places to locate custom files.
 export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
 
-export PATH=
 path=(
-  $DOTDIR/.bin.local
-  $DOTDIR/.bin
-  $DOTDIR/.local/bin
-  /usr/local/bin
-  /usr/bin
-  /bin
-  /usr/local/sbin
-  /usr/sbin
-  /sbin
-  /snap/bin
-  $DOTDIR/.depot_tools/depot_tools
+  ~/.bin.local
+  ~/.bin
+  /run/current-system/sw/bin # darwin-rebuild
+  ~/.depot_tools/depot_tools # Dart SDK
+  $path
 )
-export MANPATH=":$DOTDIR/.man"
-
-fpath+=(
-  $DOTDIR/.brew/completions/zsh
-  $DOTDIR/.zsh/completion
+manpath=(
+  ~/.man
+  $manpath
+)
+fpath=(
+  ~/.zsh/completion
+  $fpath
 )
 
 autoload -U compinit
@@ -41,9 +36,19 @@ then
 fi
 unset config_file
 
+# Tools that require their own setup
+[ ! -f ~/.fzf.zsh ] || source ~/.fzf.zsh
+if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
+  source ~/.nix-profile/etc/profile.d/nix.sh
+fi
+if [ -e ~/.nix-profile/etc/profile.d/hm-session-vars.sh ]; then
+  source ~/.nix-profile/etc/profile.d/hm-session-vars.sh
+fi
+
 # Clean up non-existent path entries
 path=($^path(N))
 fpath=($^fpath(N))
+manpath=($^manpath(N))
 
 setopt NO_BEEP      # Never ever beep. Ever
 MAILCHECK=0         # disable mail checking
@@ -60,5 +65,3 @@ export VISUAL=$EDITOR   # some programs use this instead of EDITOR
 export PAGER=less       # less is more :)
 # fewer bells, case insensitive searching, status line, and colors
 export LESS='-q -i -M -R'
-
-[ ! -f ~/.fzf.zsh ] || source ~/.fzf.zsh
