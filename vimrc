@@ -288,6 +288,8 @@ colorscheme nate
 set list
 set listchars=tab:>-,trail:·
 
+set conceallevel=2
+
 if exists('+colorcolumn')
   set colorcolumn=+1
 endif

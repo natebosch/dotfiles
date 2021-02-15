@@ -12,12 +12,13 @@ hi ColorColumn  ctermbg=234  guibg=#1c1c1c
 hi Comment      ctermfg=067  guifg=#5f87af
 hi Constant     ctermfg=166  guifg=#d75f00
 hi CursorColumn ctermbg=236  guibg=#303030
-hi Error        ctermbg=125  guibg=#af0000
 hi Directory    ctermfg=031  guifg=#0087af
+hi Error        ctermbg=125  guibg=#af0000
 hi FoldColumn   ctermbg=234  guibg=#1c1c1c
 hi FoldColumn   ctermfg=075  guifg=#5fafff
 hi Function     ctermfg=109  guifg=#87afaf
 hi Identifier   ctermfg=032  guifg=#0087d7
+hi Ignore       ctermfg=245  guifg=#8a8a8a
 hi LineNr       ctermfg=241  guifg=#606060
 hi MatchParen   ctermbg=NONE guibg=NONE cterm=bold,underline gui=bold,underline
 hi MatchParen   ctermfg=199  guifg=#ff00af
