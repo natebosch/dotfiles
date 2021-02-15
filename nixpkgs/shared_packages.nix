@@ -1,4 +1,5 @@
 let
+  tmux = import ./tmux.nix;
   pkgs = import <nixpkgs> {};
 in {
   install = with pkgs; [
