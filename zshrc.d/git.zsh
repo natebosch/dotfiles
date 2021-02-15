@@ -38,7 +38,11 @@ function git-status() {
   local GIT_UNTRACKED="$(git ls-files -o --exclude-standard | wc -l \
     | sed 's/^ *//')"
 
-  GIT_STATUS="$PROMPT_PREFIX$PROMPT_BRANCH$BRANCH%{${reset_color}%}"
+  local BRANCH_DISPLAY="$BRANCH"
+  if [[ "$BRANCH" == "$PROJECT"--* ]]; then
+    BRANCH_DISPLAY=${BRANCH[((${#PROJECT} + 2)),${#BRANCH}]}
+  fi
+  GIT_STATUS="$PROMPT_PREFIX$PROMPT_BRANCH$BRANCH_DISPLAY%{${reset_color}%}"
   GIT_STATUS="$GIT_STATUS$PROMPT_SEPARATOR"
   GIT_CLEAN=true
   if [ "$GIT_AHEAD" -ne "0" ]; then

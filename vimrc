@@ -12,8 +12,13 @@ endif
 """"""""""""""""""""""""""""""""""
 """ Vim-plug
 function! DevPlugin(name) abort
-  let dev = expand('~/projects/'.split(a:name, '/')[1])
-  if isdirectory(dev) | return dev | endif
+  let l:name = split(a:name, '/')[1]
+  if !empty($PROJECT)
+    let l:project = expand('~/projects/'.$PROJECT.'/r/'.l:name)
+    if isdirectory(l:project) | return l:project | endif
+  endif
+  let l:dev = expand('~/repos/'.l:name)
+  if isdirectory(l:dev) | return l:dev | endif
   return a:name
 endfunction
 

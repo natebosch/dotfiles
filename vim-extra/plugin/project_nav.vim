@@ -1,5 +1,6 @@
 nnoremap <leader>cd :call <SID>LcdProjectRoot(expand('%:p'))<cr>
 nnoremap <leader>bt :call <SID>BreakTab()<cr>
+nnoremap <leader>n :call <SID>OpenNotes()<cr>
 
 set tabline=%!ProjectTabLine()
 
@@ -138,4 +139,26 @@ function! s:HasMultipleTabs(tab_name) abort
     endif
   endfor
   return v:false
+endfunction
+
+augroup ProjectNav
+  autocmd BufNewFile,BufRead notes.md
+      \ if !exists('t:tab_name') &&
+      \   len(gettabinfo(tabpagenr())[0].windows) == 1
+      \ |   let t:tab_name = 'notes'
+      \ | endif
+augroup END
+
+function! s:OpenNotes()
+  if gettabvar(1, 'tab_name') ==# 'notes'
+    tabfirst
+    return
+  endif
+  if empty($PROJECT)
+    echom 'Not in a project'
+    return
+  endif
+  tabedit $HOME/projects/$PROJECT/notes.md
+  tabmove 0
+  let t:tab_name = 'notes'
 endfunction

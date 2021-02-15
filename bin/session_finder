@@ -13,9 +13,17 @@ else
     sessions+=("$name")
   done < <(tmux ls -F '#{session_name}' 2>/dev/null)
   while IFS= read -r name; do
+    repos+=("$name")
+  done < <(find ~/repos -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
+  while IFS= read -r name; do
     projects+=("$name")
   done < <(find ~/projects -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
   for session in "${sessions[@]}"; do
+    for i in "${!repos[@]}"; do
+      if [[ "${repos[i]//./_}" == "$session" ]]; then
+        unset 'repos[i]'
+      fi
+    done
     for i in "${!projects[@]}"; do
       if [[ "${projects[i]//./_}" == "$session" ]]; then
         unset 'projects[i]'
@@ -25,7 +33,10 @@ else
   choice=$(
     (
       printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"
-      printf '%s \033[0;33mP\033[0m\n' "${projects[@]}" | sort
+      [ ${#projects[@]} -gt 0 ] &&
+        printf '%s \033[0;34mP\033[0m\n' "${projects[@]}" | sort
+      [ ${#repos[@]} -gt 0 ] &&
+        printf '%s \033[0;33mR\033[0m\n' "${repos[@]}" | sort
     ) |
       fzf --ansi --no-sort
   )
@@ -33,21 +44,26 @@ else
   session_type="${choice:(-1)}"
 fi
 
-if [[ "$session_type" == "P" ]]; then
-  cd ~/projects/"$session"
+env_args=()
+
+if [[ "$session_type" == "R" ]]; then
+  cd ~/repos/"$session"
   if [[ ! -d ".git" ]]; then
     dirs=(*/)
     if [[ "${#dirs[@]}" -eq "1" && -d "${dirs[0]}/.git" ]]; then
       cd "${dirs[0]}"
     fi
   fi
+elif [[ "$session_type" == "P" ]]; then
+  cd ~/projects/"$session"
+  env_args+=(-e "PROJECT=$session")
 elif [[ "$session" == "0" ]]; then
   cd
 fi
 
 session="${session//./_}"
 if ! tmux has-session -t="$session" 2>/dev/null; then
-  TMUX="" tmux -2 new -s "$session" -d "$@"
+  TMUX="" tmux -2 new -s "$session" -d "${env_args[@]}" "$@"
 fi
 
 if [[ -n $TMUX ]]; then

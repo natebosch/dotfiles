@@ -31,7 +31,6 @@ zstyle ':completion:*:*:git:*' user-commands ${${(M)${(k)commands}:#git-*}/git-/
 zstyle ':completion:*' users $USER
 
 # common directories
-hash -d projects=$HOME/projects
-for dir in ~projects/*(/); do
+for dir in ~/repos/*(/); do
   hash -d ${dir:t}=$dir
 done
