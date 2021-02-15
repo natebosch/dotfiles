@@ -1,13 +1,13 @@
 with import <nixpkgs> {};
 stdenv.mkDerivation rec {
   pname = "tmux";
-  version = "bc2e0cf7ff51c2ab13c7dcc792d25e11ba7a3ef4";
+  version = "0526d074d0170ad248b06187b64f4e44a0c05dcc";
 
   src = fetchFromGitHub {
     owner = "tmux";
     repo = "tmux";
     rev = version;
-    sha256 = "0h4zxyfziypc8a45ckirj9sc1x2wwkm3xgda7py2d6676bmw0p7x";
+    sha256 = "1fa1m9v2fl09b1853n2fjnkf9nakwhkczdd8gfllq46d72sl5kfa";
   };
   nativeBuildInputs = [
     autoreconfHook
