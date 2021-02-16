@@ -1,2 +1,6 @@
 # Silver Searcher ignore files
 .ignore
+# Nix-shell configuration
+shell.nix
+# Direnv
+.envrc

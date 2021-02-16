@@ -5,6 +5,7 @@ in {
   install = with pkgs; [
     cmake
     diffr
+    direnv
     highlight
     htop
     jq

@@ -44,6 +44,7 @@ fi
 if [ -e ~/.nix-profile/etc/profile.d/hm-session-vars.sh ]; then
   source ~/.nix-profile/etc/profile.d/hm-session-vars.sh
 fi
+eval "$(direnv hook zsh)"
 
 # Clean up non-existent path entries
 path=($^path(N))
