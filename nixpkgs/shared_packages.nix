@@ -14,6 +14,7 @@ in {
     source-code-pro
     tmux
     tree
-    vim
+    python3
+    (vim_configurable.override { python = python3; })
   ];
 }
