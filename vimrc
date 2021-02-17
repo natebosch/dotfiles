@@ -342,23 +342,6 @@ map <leader>y <Plug>(operator-poweryank-osc52)
 nnoremap <silent> <leader>R *Ncgn
 xnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
 
-" Scratch buffer
-function! ScratchOpen()
-  let scr_bufnr = bufnr('__scratch__')
-  if scr_bufnr == -1
-    enew
-    setlocal filetype=markdown
-    setlocal bufhidden=hide
-    setlocal nobuflisted
-    setlocal buftype=nofile
-    setlocal noswapfile
-    file __scratch__
-  else
-    execute 'buffer ' . scr_bufnr
-  endif
-endfunction
-nnoremap <leader>s :call ScratchOpen()<cr>
-
 " Word highlighting
 hi Word1 ctermbg=red ctermfg=black guibg=#ff0000 guifg=black
 hi Word2 ctermbg=blue ctermfg=black guibg=#00afff guifg=black

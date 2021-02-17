@@ -173,11 +173,26 @@ function! s:OpenNotes() abort
     return
   endif
   if empty($PROJECT)
-    echom 'Not in a project'
+    call s:OpenScratchBuffer()
     return
   endif
   tabedit $HOME/projects/$PROJECT/notes.md
   tabmove 0
   let g:lasttab = get(g:, 'lasttab', 0) + 1
   let t:tab_name = 'notes'
+endfunction
+
+function! s:OpenScratchBuffer()
+  let scr_bufnr = bufnr('__scratch__')
+  if scr_bufnr == -1
+    enew
+    setlocal filetype=markdown
+    setlocal bufhidden=hide
+    setlocal nobuflisted
+    setlocal buftype=nofile
+    setlocal noswapfile
+    file __scratch__
+  else
+    execute 'buffer ' . scr_bufnr
+  endif
 endfunction
