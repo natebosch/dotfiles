@@ -6,6 +6,7 @@ in {
     cmake
     diffr
     direnv
+    fzf
     highlight
     htop
     jq
@@ -14,6 +15,7 @@ in {
     source-code-pro
     tmux
     tree
+
     python3
     (vim_configurable.override { python = python3; })
   ];

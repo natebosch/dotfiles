@@ -56,7 +56,6 @@ if has('python3')
   Plug 'SirVer/ultisnips'
 endif
 Plug DevPlugin('natebosch/vim-lsc')
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-eunuch'
 Plug 'haya14busa/vim-poweryank'
