@@ -2,43 +2,6 @@
 
 set -e
 
-usage() {
-  cat <<EOF
-Fuzzy finds a git commit or commits.
-
-Shows a list of commits including the entirety of the commit message and
-affected files on a single line. Typed characters filter the list to the commits
-which match each token of input. A preview of the commit message and diff is
-shown. Select a single commit with enter or multiple commits with tab. Prints
-the shas of chosen commits, 1 per line.
-
-Options:
-  -h Show this message
-  -p Print the query before printing the shas.
-  -q "\$query" use \$query as the starting search in fzf
-EOF
-}
-
-print_query=0
-previous_query=
-while getopts ":hapq:" option; do
-  case $option in
-    p) print_query=1 ;;
-    q) previous_query=$OPTARG ;;
-    h)
-      usage
-      exit 0
-      ;;
-    ?)
-      usage
-      exit 64
-      ;;
-  esac
-done
-
-shift $((OPTIND - 1))
-extra_log_args=("$@")
-
 git rev-parse --is-inside-work-tree >/dev/null
 
 # git log with full commit message and changed files.
@@ -46,34 +9,16 @@ git rev-parse --is-inside-work-tree >/dev/null
 # Commits are 1 per line. Uses some hacks with a specific unicode character to
 # drop all newlines within a commit message, then add back a new line between
 # commits
-list_full_commit_info() {
-  local -a log_args=(-n 10000 '--color=always' --name-only
-    '--format="%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b"')
-  git log "${log_args[@]}" "${extra_log_args[@]}" |
-    sed '/^\s*$/d' |
-    tr '\n\r' '|' |
-    sed 's/|\?\xE2\x98\xA2/\n/g' |
-    tail -n +2
-}
 
-pick_commits() {
-  local -a fzf_args=(
-    --ansi
-    --multi
-    --no-sort
-    --reverse
-    --query="$previous_query"
-    --preview="git show --color=always -m \$(cut -f2 -d' ' <<<{}) | diff-color"
-  )
-  if ((print_query == 1)); then
-    fzf_args+=(--print-query)
-  fi
-  list_full_commit_info | fzf "${fzf_args[@]}"
-}
-
-lines=$(pick_commits "$previous_query")
-if ((print_query == 1)); then
-  head -1 <<<"$lines"
-  lines=$(tail -n +2 <<<"$lines")
-fi
-cut -f2 -d' ' <<<"$lines"
+git log -n 10000 --color=always --name-only \
+  --format='%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an> %b' "$@" |
+  sed '/^\s*$/d' |
+  tr '\n\r' '|' |
+  sed 's/|\?\xE2\x98\xA2/\n/g' |
+  tail -n +2 |
+  fzf --multi --ansi --no-sort --reverse \
+    --preview='git show --color=always -m {1} | diff-color' \
+    --bind='ctrl-d:preview-half-page-down' \
+    --bind='ctrl-u:preview-half-page-up' \
+    --bind='ctrl-o:execute(git show --color=always {1} >/dev/tty)' |
+  cut -f2 -d' '
