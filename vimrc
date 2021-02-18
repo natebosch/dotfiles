@@ -237,7 +237,7 @@ set splitbelow
 
 " Completion
 
-set completeopt=menuone,preview,noselect
+set completeopt=menuone,preview
 
 " Automatically close preview window after completing an item, only if the
 " preview window wasn't open before completing.
