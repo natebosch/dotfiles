@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 squash="sed -i -e '/pick [a-z0-9]\{7\}/s/^pick/squash/' -e '1s/^squash/pick/'"
-GIT_EDITOR="$squash" git rebase -i "$@"
+GIT_EDITOR="$squash" git rebase --keep-base -i
 git commit --amend

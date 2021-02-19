@@ -1,14 +1,14 @@
-.TH "git-squash" 1 "March 2018" "git-squash 0.1.0" "git-squash - squash all commits since the upstream branch"
+.TH "git-squash" 1 "March 2018" "git-squash 0.1.0" "git-squash - squash all commits ahead of the upstream branch"
 
 .SH NAME
-git-squash - squash all commits since the upstream branch
+git-squash - squash all commits ahead of the upstream branch
 
 .SH SYNOPSIS
-git-squash <ref>
+git-squash
 
 .SH DESCRIPTION
-git\-squash \- squash all commits since <ref>. By default uses the upstream
-branch (same behavior as git rebase -i).
+git\-squash \- squash all commits ahead of the current merge base. These are the
+commits that would be available for change in git rebase --keep-base -i
 
 Updates all choices for commits from "pick" to "squash" then opens an editor to
 update the commit message.
