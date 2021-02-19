@@ -1,19 +1,39 @@
 nnoremap <leader>cd :call <SID>LcdProjectRoot(expand('%:p'))<cr>
-nnoremap <leader>bt :call <SID>BreakTab()<cr>
+nnoremap <leader>gt :execute 'tabn '.g:lasttab<cr>
 nnoremap <leader>n :call <SID>OpenNotes()<cr>
 
 set tabline=%!ProjectTabLine()
 
 let g:project_nav_root_markers = ['.git', '.git/', 'BUILD']
 
+augroup ProjectNav
+  autocmd!
+  autocmd BufNewFile,BufRead notes.md
+      \ if !exists('t:tab_name') &&
+      \   len(gettabinfo(tabpagenr())[0].windows) == 1
+      \ |   let t:tab_name = 'notes'
+      \ | endif
+  autocmd TabLeave * let g:lasttab = tabpagenr()
+augroup END
+
 function! s:LcdProjectRoot(from) abort
   let root = s:FindPackageRoot(a:from)
   if type(root) == v:t_string
-    exec 'lcd' root
+    exec 'windo lcd' root
     let t:tab_name = fnamemodify(root, ':t')
   else
     echoerr 'Could not file: '.root
   endif
+endfunction
+
+function! s:TryLcdProjectRoot() abort
+  try
+    let root = s:FindPackageRoot(expand('%:p'))
+    if type(root) == v:t_string
+      exec 'windo lcd' root
+      let t:tab_name = fnamemodify(root, ':t')
+    endif
+  endtry
 endfunction
 
 function! s:FindPackageRoot(from) abort
@@ -141,15 +161,13 @@ function! s:HasMultipleTabs(tab_name) abort
   return v:false
 endfunction
 
-augroup ProjectNav
-  autocmd BufNewFile,BufRead notes.md
-      \ if !exists('t:tab_name') &&
-      \   len(gettabinfo(tabpagenr())[0].windows) == 1
-      \ |   let t:tab_name = 'notes'
-      \ | endif
-augroup END
-
-function! s:OpenNotes()
+function! s:OpenNotes() abort
+  if tabpagenr() == 1 && gettabvar(1, 'tab_name') ==# 'notes'
+    if exists('g:lasttab')
+      execute 'tabn '.g:lasttab
+      return
+    endif
+  endif
   if gettabvar(1, 'tab_name') ==# 'notes'
     tabfirst
     return
@@ -160,5 +178,6 @@ function! s:OpenNotes()
   endif
   tabedit $HOME/projects/$PROJECT/notes.md
   tabmove 0
+  let g:lasttab = get(g:, 'lasttab', 0) + 1
   let t:tab_name = 'notes'
 endfunction

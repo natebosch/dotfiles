@@ -340,15 +340,6 @@ nnoremap <leader>ll :LocationList<cr>
 nnoremap <leader>lh :Helptags<cr>
 nnoremap <leader>x :bp\|bd #<cr>
 
-nnoremap <leader>gt :execute 'tabn '.g:lasttab<cr>
-if !exists('g:lasttab')
-  let g:lasttab = 1
-endif
-augroup LastTab
-  autocmd!
-  autocmd TabLeave * let g:lasttab = tabpagenr()
-augroup END
-
 " Fuzzy history search
 nnoremap <leader>: :History:<cr>
 nnoremap <leader>/ :History/<cr>
