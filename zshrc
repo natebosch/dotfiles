@@ -8,10 +8,6 @@ path=(
   ~/.depot_tools/depot_tools # Dart SDK
   $path
 )
-manpath=(
-  ~/.man
-  $manpath
-)
 fpath=(
   ~/.zsh/completion
   $fpath
@@ -52,7 +48,7 @@ eval "$(direnv hook zsh)"
 # Clean up non-existent path entries
 path=($^path(N))
 fpath=($^fpath(N))
-manpath=($^manpath(N))
+MANPATH="~/.man:"
 
 setopt NO_BEEP      # Never ever beep. Ever
 MAILCHECK=0         # disable mail checking
