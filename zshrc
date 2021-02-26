@@ -45,8 +45,10 @@ if [ -e ~/.nix-profile/etc/profile.d/hm-session-vars.sh ]; then
 fi
 eval "$(direnv hook zsh)"
 
-# Clean up non-existent path entries
+# Clean up non-existent and duplicate path entries
+typeset -U path
 path=($^path(N))
+typeset -U fpath
 fpath=($^fpath(N))
 MANPATH="~/.man:"
 

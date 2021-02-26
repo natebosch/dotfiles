@@ -7,10 +7,11 @@ elif [[ "$DART_VERSION" == "nnbd" ]]; then
 else
   DART_PATH="$DOTDIR/.dart-sdks/$DART_VERSION"
 fi
-path+=(
+
+path=(
+  ${path[@]:#*dart-sdk*}
   $DOTDIR/.pub-cache/bin
   $DART_PATH/bin
-  $DOTDIR/flutter/bin
 )
 
 unset DART_PATH
