@@ -15,6 +15,7 @@ in
     diffr
     direnv
     fzf
+    gh
     highlight
     htop
     jq
