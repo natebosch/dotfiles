@@ -1,6 +1,18 @@
 #!/bin/sh
 
-buf="$(cat "$@")"
+if [ "$#" -gt 1 ]; then
+  echo "Requires 0 or 1 arguments"
+  exit 1
+fi
+if [ "$#" -eq 0 ]; then
+  buf="$(head -c 74995 -)"
+else
+  if [ -f "$1" ]; then
+    buf="$(head -c 74995 "$1")"
+  else
+    buf="$1"
+  fi
+fi
 len="$(printf %s "$buf" | wc -c)"
 if [ "$len" -gt 74994 ]; then
   echo "$0: File too long, max size 74994 bytes" >&2

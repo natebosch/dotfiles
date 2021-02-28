@@ -67,3 +67,4 @@ export VISUAL=$EDITOR   # some programs use this instead of EDITOR
 export PAGER=less       # less is more :)
 # fewer bells, case insensitive searching, status line, and colors
 export LESS='-q -i -M -R'
+export BROWSER=yank

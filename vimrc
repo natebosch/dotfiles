@@ -412,18 +412,6 @@ function! AddMatchWord(group)
       \escape(expand('<cword>'), '/\'))
 endfunction
 
-" Copy URL when remote
-command! -nargs=1 Browse call <SID>Browse(<q-args>)
-
-function! s:Browse(url) abort
-  let l:tmux_display = trim(system('tmux show-env DISPLAY'))
-  if l:tmux_display =~# '^-DISPLAY'
-    call system('yank', a:url)
-  else
-    call netrw#BrowseX(a:url, 0)
-  endif
-endfunction
-
 " :GBrowse for the Dart SDK
 if !exists('g:fugitive_browse_handlers')
   let g:fugitive_browse_handlers = []
