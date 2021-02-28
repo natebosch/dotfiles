@@ -1,6 +1,6 @@
 scriptencoding utf-8
 set nomodeline
-set rtp+=~/.vim-extra/
+set rtp+=~/.vim-extra/,~/.nix-profile/share/vim-plugins/fzf/
 filetype off
 
 " Load vim-plug
