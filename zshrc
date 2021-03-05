@@ -9,7 +9,7 @@ path=(
   $path
 )
 fpath=(
-  ~/.zsh/completion
+  ~/.nix-profile/share/zsh/site-functions
   $fpath
 )
 
