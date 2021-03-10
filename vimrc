@@ -345,7 +345,7 @@ nnoremap <leader>: :History:<cr>
 nnoremap <leader>/ :History/<cr>
 
 " Git shortcuts
-nnoremap <leader>gs :Gstatus<cr>
+nnoremap <leader>gs :vertical Git<cr>
 nnoremap <leader>gc :Git commit<cr>
 nnoremap <leader>ga :Git commit -a<cr>
 nnoremap <leader>gd :Gdiff<cr>
