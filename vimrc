@@ -236,7 +236,10 @@ set splitright
 set splitbelow
 
 " Completion
-set completeopt=menuone,popup
+set completeopt=menuone
+if has('patch-8.1.1880')
+  set completeopt+=popup
+endif
 
 " Hide "Back at Original" and other completion messages
 set shortmess+=c
