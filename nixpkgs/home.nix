@@ -19,6 +19,7 @@ in
     highlight
     htop
     jq
+    orpie
     shellcheck
     silver-searcher
     source-code-pro
