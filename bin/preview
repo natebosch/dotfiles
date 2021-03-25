@@ -1,3 +1,4 @@
 #!/bin/bash
 
-highlight -O truecolor -l --force --style nate "$@"
+highlight -O truecolor -l --force\
+  --style "$HOME/.highlight/themes/nate.theme" "$@"
