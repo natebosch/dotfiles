@@ -2,6 +2,11 @@
 
 let
   tmux = import ./tmux.nix;
+  os_packages = with pkgs; if stdenv.isDarwin then [
+    gnused
+  ] else [
+    orpie
+  ];
 in
 {
   programs.home-manager.enable = true;
@@ -19,7 +24,6 @@ in
     highlight
     htop
     jq
-    orpie
     shellcheck
     silver-searcher
     source-code-pro
@@ -28,9 +32,7 @@ in
 
     python3
     vim_configurable
-  ] ++ lib.optionals stdenv.isDarwin [
-    gnused
-  ];
+  ] ++ os_packages;
 
   fonts.fontconfig.enable = true;
 
