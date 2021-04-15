@@ -91,7 +91,11 @@ function! StatusPathShorten(path) abort
 endfunction
 
 function! s:ShortenSegment(segment) abort
-  return substitute(a:segment, '\([^-_]\)[^-_]\+', '\=submatch(1)', 'g')
+  if len(a:segment) <= 5 | return a:segment | endif
+  if a:segment =~# '_'
+    return substitute(a:segment, '\([^-_]\)[^-_]\+', '\=submatch(1)', 'g')
+  endif
+  return a:segment[:3]."\u2026"
 endfunction
 
 set laststatus=2
