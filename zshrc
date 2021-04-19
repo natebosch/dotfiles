@@ -5,7 +5,6 @@ path=(
   ~/.bin.local
   ~/.bin
   /run/current-system/sw/bin # darwin-rebuild
-  ~/.depot_tools/depot_tools # Dart SDK
   $path
 )
 fpath=(
