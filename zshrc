@@ -4,7 +4,6 @@ export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
 path=(
   ~/.bin.local
   ~/.bin
-  /run/current-system/sw/bin # darwin-rebuild
   $path
 )
 fpath=(
