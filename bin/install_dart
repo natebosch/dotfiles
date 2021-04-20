@@ -6,13 +6,13 @@ VERSION="${1:-latest}"
 FLAVOR="${2:-release}"
 CHANNEL="${3:-stable}"
 
-LOCAL="$DOTDIR/repos/dart-sdk/sdk/out"
+LOCAL="$HOME/repos/dart-sdk/sdk/out"
 if [ "$VERSION" == "local" ]; then
-  ln -snf "$LOCAL/ReleaseX64/dart-sdk" "$DOTDIR/dart-sdk"
+  ln -snf "$LOCAL/ReleaseX64/dart-sdk" "$HOME/dart-sdk"
   dart --version
   exit
 elif [ "$VERSION" == "nnbd" ]; then
-  ln -snf "$LOCAL/ReleaseX64NNBD/dart-sdk" "$DOTDIR/dart-sdk"
+  ln -snf "$LOCAL/ReleaseX64NNBD/dart-sdk" "$HOME/dart-sdk"
   dart --version
   exit
 fi
@@ -32,7 +32,7 @@ if [ "$VERSION" == "latest" ]; then
   VERSION="$(curl -s "$DOWNLOAD/$FLAVOR/latest/VERSION" | jq -r '.version')"
 fi
 
-DIRECTORY="$DOTDIR/.dart-sdks/$VERSION"
+DIRECTORY="$HOME/.dart-sdks/$VERSION"
 if [ ! -d "$DIRECTORY" ]; then
 
   if [ "$(uname)" == "Darwin" ]; then
@@ -43,10 +43,10 @@ if [ ! -d "$DIRECTORY" ]; then
   RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
   echo "Downloading $DOWNLOAD/$RELEASE"
   curl "$DOWNLOAD/$RELEASE" -o /tmp/dart-release.zip
-  unzip -qo /tmp/dart-release.zip -d "$DOTDIR/.dart-sdks"
-  mv "$DOTDIR/.dart-sdks/dart-sdk" "$DOTDIR/.dart-sdks/$VERSION"
+  unzip -qo /tmp/dart-release.zip -d "$HOME/.dart-sdks"
+  mv "$HOME/.dart-sdks/dart-sdk" "$HOME/.dart-sdks/$VERSION"
 fi
 
-ln -snf "$DOTDIR/.dart-sdks/$VERSION" "$DOTDIR/dart-sdk"
+ln -snf "$HOME/.dart-sdks/$VERSION" "$HOME/dart-sdk"
 
 echo "Installed dart $VERSION"

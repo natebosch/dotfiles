@@ -1,6 +1,3 @@
-## Use DOTDIR in other places to locate custom files.
-export DOTDIR=${ZDOTDIR:=$HOME} # Use home, override it when ZDOTDIR is set
-
 path=(
   ~/.bin.local
   ~/.bin
@@ -12,7 +9,7 @@ fpath=(
 )
 
 autoload -U compinit
-FRESH_DUMP=($DOTDIR/.zcomdump(N.mh-24))
+FRESH_DUMP=($HOME/.zcomdump(N.mh-24))
 if [[ -n "$FRESH_DUMP" ]]; then
   compinit -C
 else
@@ -20,13 +17,13 @@ else
 fi
 
 ## Source all zsh customizations
-if [ -d $DOTDIR/.zshrc.d ]
+if [ -d $HOME/.zshrc.d ]
 then
-    for config_file ($DOTDIR/.zshrc.d/*) source $config_file
+    for config_file ($HOME/.zshrc.d/*) source $config_file
 fi
-if [ -d $DOTDIR/.zshrc.local ]
+if [ -d $HOME/.zshrc.local ]
 then
-    for config_file ($DOTDIR/.zshrc.local/*) source $config_file
+    for config_file ($HOME/.zshrc.local/*) source $config_file
 fi
 unset config_file
 
