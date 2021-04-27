@@ -9,12 +9,14 @@ fpath=(
 )
 
 autoload -U compinit
-FRESH_DUMP=($HOME/.zcomdump(N.mh-24))
-if [[ -n "$FRESH_DUMP" ]]; then
+setopt extendedglob
+if [[ -n $HOME/.zcompdump(#qN.mh-24) ]]; then
   compinit -C
 else
   compinit
+  compdump
 fi
+unsetopt extendedglob
 
 ## Source all zsh customizations
 if [ -d $HOME/.zshrc.d ]
