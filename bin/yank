@@ -5,7 +5,7 @@ if [ "$#" -gt 1 ]; then
   exit 1
 fi
 if [ "$#" -eq 0 ]; then
-  buf="$(head -c 74995 -)"
+  buf="$(head -c 74995)"
 else
   if [ -f "$1" ]; then
     buf="$(head -c 74995 "$1")"
