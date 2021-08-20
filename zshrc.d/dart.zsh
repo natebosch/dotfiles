@@ -17,3 +17,4 @@ path=(
 unset DART_PATH
 
 alias pbr='pub run build_runner'
+alias flutter=~/repos/flutter/bin/flutter
