@@ -7,6 +7,16 @@ let
   ] else [
     orpie
   ];
+  diffr = (pkgs.writeShellScriptBin "diffr" ''
+    ${pkgs.diffr}/bin/diffr \
+      --colors \
+        refine-added:none:background:0x33,0x99,0x33:foreground:white:bold \
+      --colors added:none:background:0x33,0x55,0x33:foreground:white \
+      --colors \
+        refine-removed:none:background:0x99,0x33,0x33:bold:foreground:white \
+      --colors removed:none:background:0x55,0x33,0x33:foreground:white \
+      --line-numbers
+  '');
 in
 {
   programs.home-manager.enable = true;

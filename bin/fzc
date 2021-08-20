@@ -17,7 +17,7 @@ git log -n 10000 --color=always --name-only \
   sed 's/|\?\xE2\x98\xA2/\n/g' |
   tail -n +2 |
   fzf --multi --ansi --no-sort --reverse \
-    --preview='git show --color=always -m {1} | diff-color' \
+    --preview='git show --color=always -m {1} | diffr' \
     --bind='ctrl-d:preview-half-page-down' \
     --bind='ctrl-u:preview-half-page-up' \
     --bind='ctrl-o:execute(git show --color=always {1} >/dev/tty)' |
