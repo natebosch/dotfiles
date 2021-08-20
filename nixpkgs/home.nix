@@ -37,4 +37,17 @@ in
   fonts.fontconfig.enable = true;
 
   programs.go.enable = true;
+  home.file = {
+    ".vimrc".source = ../vimrc;
+    ".zshrc".source = ../zshrc;
+    ".gitconfig".source = ../gitconfig;
+    # TODO - Move out of $HOME.
+    ".zshrc.d".source = ../zshrc.d;
+    ".vim-extra".source = ../vim-extra;
+    ".gitignore".source = ../gitignore;
+    ".bin".source = ../bin;
+    ".git-templates".source = ../git-templates;
+    ".highlight".source = ../highlight;
+    ".man".source = ../man;
+  };
 }
