@@ -59,5 +59,16 @@ in
     ".git-templates".source = ../git-templates;
     ".highlight".source = ../highlight;
     ".man".source = ../man;
+    ".tmux.conf".text =
+      (builtins.replaceStrings [
+        "status-load"
+        "status-core-count"
+      ] (if pkgs.stdenv.isDarwin then [
+        "sysctl -n vm.loadavg | sed 's/{ \\(.*\\) }\\1'"
+        "sysctl -n hw.ncpu"
+      ] else [
+        "grep -c processor /proc/cpuinfo"
+        "cut -d\" \" -f1,2,3 /proc/loadavg"
+      ]) (builtins.readFile ../tmux.conf));
   };
 }

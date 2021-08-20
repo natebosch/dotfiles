@@ -1,6 +1,0 @@
-#!/bin/bash
-if [ "$(uname)" == "Darwin" ]; then
-  sysctl -n hw.ncpu
-else
-  grep -c processor /proc/cpuinfo
-fi
