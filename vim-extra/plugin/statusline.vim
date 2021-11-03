@@ -34,6 +34,10 @@ function! StatusInsert() abort
       \'R': 'Replace', 'Rv': 'Replace virtual'})
 endfunction
 
+function! StatusTerm() abort
+  return s:IfStatusMode({'t': 'Term'})
+endfunction
+
 function! StatusSelect() abort
   return s:IfStatusMode({'s': 'Select', 'S': 'Select line',
       \ "\<c-s>": 'Select block'})
@@ -104,6 +108,7 @@ set statusline=
 set statusline+=%#StatusNormal#%{StatusNormal()}%{StatusSpecial()}
 set statusline+=%#StatusVisual#%{StatusVisual()}
 set statusline+=%#StatusInsert#%{StatusInsert()}
+set statusline+=%#StatusTerm#%{StatusTerm()}
 set statusline+=%#StatusSelect#%{StatusSelect()}
 " Reset highlight
 set statusline+=%0*

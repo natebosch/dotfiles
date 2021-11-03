@@ -5,8 +5,7 @@ endif
 
 let g:colors_name = 'nate'
 
-hi Normal       guifg=NONE guibg=NONE
-hi EndOfBuffer  guifg=NONE guibg=NONE
+hi Normal       guifg=#aaaaaa guibg=#212325
 
 hi ColorColumn  ctermbg=234  guibg=#1c1c1c
 hi Comment      ctermfg=067  guifg=#5f87af
@@ -73,6 +72,8 @@ hi diffSubname  ctermfg=005  guifg=#75507B
 hi StatusLine   ctermbg=236  guibg=#303030 cterm=NONE gui=NONE
 hi StatusLineNC ctermbg=236  guibg=#303030 cterm=NONE gui=NONE
 hi StatusLineNC ctermfg=244  guifg=#808080
+hi! link StatusLineTerm StatusLine
+hi! link StatusLineTermNC StatusLineNC
 
 hi StatusNormal ctermfg=234  guifg=#1c1c1c cterm=bold gui=bold
 hi StatusInsert ctermfg=234  guifg=#1c1c1c cterm=bold gui=bold
@@ -82,6 +83,7 @@ hi StatusNormal ctermbg=033  guibg=#0087ff
 hi StatusInsert ctermbg=166  guibg=#d75f00
 hi StatusVisual ctermbg=070  guibg=#5faf00
 hi StatusSelect ctermbg=076  guibg=#5fd700
+hi link StatusTerm StatusInsert
 
 hi TabLineFill  ctermbg=236  guibg=#303030 cterm=NONE gui=NONE
 hi TabLine      ctermbg=236  guibg=#303030 cterm=NONE gui=NONE
