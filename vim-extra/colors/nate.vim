@@ -91,3 +91,10 @@ hi TabLine      ctermfg=250  guifg=#bcbcbc
 
 hi VertSplit    ctermbg=NONE cterm=NONE guibg=NONE gui=NONE
 hi VertSplit    ctermfg=236  guifg=#303030
+
+let g:terminal_ansi_colors = [
+    \ '#2e3436', '#cc0000', '#4e9a06', '#c4a000',
+    \ '#3465a4', '#75507b', '#06989A', '#d3d7cf',
+    \ '#555753', '#EF2929', '#8AE234', '#FCE94F',
+    \ '#729FCF', '#AD7FA8', '#34E2E2', '#EEEEEC'
+    \ ]
