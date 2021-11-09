@@ -343,6 +343,9 @@ map <leader>y <Plug>(operator-poweryank-osc52)
 nnoremap <silent> <leader>R *Ncgn
 xnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
 
+" Don't break <leader>s in netrw buffers
+let g:sneak#map_netrw = v:false
+
 " Word highlighting
 hi Word1 ctermbg=red ctermfg=black guibg=#ff0000 guifg=black
 hi Word2 ctermbg=blue ctermfg=black guibg=#00afff guifg=black
