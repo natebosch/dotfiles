@@ -64,7 +64,7 @@ in
         "status-load"
         "status-core-count"
       ] (if pkgs.stdenv.isDarwin then [
-        "sysctl -n vm.loadavg | sed 's/{ \\(.*\\) }\\1'"
+        "sysctl -n vm.loadavg | sed \"s/{ \\(.*\\) }\\1\""
         "sysctl -n hw.ncpu"
       ] else [
         "grep -c processor /proc/cpuinfo"
