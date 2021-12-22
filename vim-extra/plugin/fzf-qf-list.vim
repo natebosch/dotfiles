@@ -1,5 +1,6 @@
 command! QuickFix call <SID>QuickFix()
 command! LocationList call <SID>LocationList()
+command! KillBuffers call <SID>KillBuffers()
 
 function! s:QuickFix() abort
   call s:FuzzyPick(getqflist(), 'cc')
@@ -41,3 +42,23 @@ function! s:FzfRead() abort
   delfunction s:Choose
   return l:choice
 endfunction
+
+function! s:KillBuffers() abort
+  call fzf#run(fzf#wrap({
+      \ 'source': s:BufferList(),
+      \ 'sink*': { lines -> s:Wipeout(lines) },
+      \ 'options': '--multi --reverse'
+      \ }))
+endfunction
+
+function! s:BufferList()
+  redir => list
+  silent ls
+  redir END
+  return split(list, "\n")
+endfunction
+
+function! s:Wipeout(lines)
+  execute 'bwipeout' join(map(a:lines, {_, line -> split(line)[0]}))
+endfunction
+
