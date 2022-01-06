@@ -381,7 +381,10 @@ function! AddMatchWord(group)
       \escape(expand('<cword>'), '/\'))
 endfunction
 
-" :GBrowse for the Dart SDK
+" Copy URLs with `yank`.
+command! -nargs=1 Browse call system('yank', <q-args>)
+
+" Point Dart SDK URLs to github.
 if !exists('g:fugitive_browse_handlers')
   let g:fugitive_browse_handlers = []
 endif
