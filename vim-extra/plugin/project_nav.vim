@@ -125,6 +125,7 @@ function! ProjectTabLabel(n, use_tab_names) abort
   let modified = v:false
   for bufnr in uniq(copy(buflist))
     if getbufinfo(bufnr)[0].changed
+        \ && getbufvar(bufnr ,'&buftype') !=# 'terminal'
       let modified = v:true
       break
     endif
