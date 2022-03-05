@@ -120,7 +120,7 @@ endfunction
 
 " Use spaces not tabs
 set tabstop=2
-set shiftwidth=2
+set shiftwidth=0
 set expandtab
 set smarttab
 set nojoinspaces " Don't use a double space after period

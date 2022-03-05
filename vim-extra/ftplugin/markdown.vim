@@ -11,6 +11,7 @@ if &modifiable && !&previewwindow
   setlocal spell
 endif
 setlocal autoindent
+setlocal tabstop=4
 
 nnoremap <buffer> <leader>dr :call <SID>LinkifyGithub()<cr>
 
