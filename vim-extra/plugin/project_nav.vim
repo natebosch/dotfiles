@@ -1,6 +1,8 @@
 nnoremap <leader>cd :call <SID>LcdProjectRoot(expand('%:p'))<cr>
 nnoremap <leader>gt :execute 'tabn '.g:lasttab<cr>
 nnoremap <leader>n :call <SID>OpenNotes()<cr>
+nnoremap <leader>lf :call <SID>ListFiles(expand('%:p'))<cr>
+nnoremap <leader>lF :call fzf#vim#files(getcwd(-1))<cr>
 
 set tabline=%!ProjectTabLine()
 
@@ -16,13 +18,22 @@ augroup ProjectNav
   autocmd TabLeave * let g:lasttab = tabpagenr()
 augroup END
 
+function! s:ListFiles(from) abort
+  let l:root = s:FindPackageRoot(a:from)
+  if type(l:root) == v:t_string
+    call fzf#vim#files(l:root)
+  else
+    Files
+  endif
+endfunction
+
 function! s:LcdProjectRoot(from) abort
   let root = s:FindPackageRoot(a:from)
   if type(root) == v:t_string
     exec 'windo lcd' root
     let t:tab_name = fnamemodify(root, ':t')
   else
-    echoerr 'Could not file: '.root
+    echoerr 'Could not find: '.root
   endif
 endfunction
 
