@@ -18,7 +18,7 @@ function! YamlIndent()
   let l:previousLine = trim(getline(prevnonblank(v:lnum - 1)))
 
   if l:currentLine =~# '^-' && l:previousLine =~# '\m^[^-].*:$'
-    let l:indentTo = l:indentTo - &shiftwidth
+    let l:indentTo = l:indentTo - shiftwidth()
   endif
 
   return l:indentTo
