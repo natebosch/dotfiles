@@ -70,6 +70,7 @@ let s:lsc_statuses = {
 function! LSCInfo() abort
   if !exists('*LSCServerStatus') | return '' | endif
   let l:status = LSCServerStatus()
+  if empty(l:status) | return '' | endif
   let l:short_status = has_key(s:lsc_statuses, l:status) ?
       \ s:lsc_statuses[l:status] : '?'
   let result = '['.l:short_status
