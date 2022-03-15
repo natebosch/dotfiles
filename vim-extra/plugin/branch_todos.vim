@@ -6,7 +6,13 @@ command! FindBranchTodos call <SID>FindBranchTodos()
 function s:FindBranchTodos() abort
   let l:find_root_cmd = 'git rev-parse --show-toplevel'
   let l:git_root = shellescape(systemlist(l:find_root_cmd)[0].'/')
-  let l:diff = system('git diff @{u} --dst-prefix='.l:git_root)
+  let l:upstream =
+      \ system( 'git rev-parse --symbolic-full-name @{u} 2&>/dev/null')
+  if l:upstream =~# '^refs/remotes/'
+    let l:upstream = trim(system('git default-branch'))
+  endif
+  let l:diff =
+      \ system('git diff '.shellescape(l:upstream).' --dst-prefix='.l:git_root)
   let l:items = s:ParseAddedTodos(split(l:diff, "\n"))
   call setqflist(l:items)
   copen
