@@ -28,23 +28,13 @@ function! s:ListFiles(from) abort
 endfunction
 
 function! s:LcdProjectRoot(from) abort
-  let root = s:FindPackageRoot(a:from)
-  if type(root) == v:t_string
-    exec 'windo lcd' root
-    let t:tab_name = fnamemodify(root, ':t')
+  let l:root = s:FindPackageRoot(a:from)
+  if type(l:root) == v:t_string
+    call s:WinDo('lcd '.l:root)
+    let t:tab_name = fnamemodify(l:root, ':t')
   else
-    echoerr 'Could not find: '.root
+    echoerr 'Could not find package root'
   endif
-endfunction
-
-function! s:TryLcdProjectRoot() abort
-  try
-    let root = s:FindPackageRoot(expand('%:p'))
-    if type(root) == v:t_string
-      exec 'windo lcd' root
-      let t:tab_name = fnamemodify(root, ':t')
-    endif
-  endtry
 endfunction
 
 function! s:FindPackageRoot(from) abort
@@ -207,4 +197,10 @@ function! s:OpenScratchBuffer()
   else
     execute 'buffer ' . scr_bufnr
   endif
+endfunction
+
+function! s:WinDo(command) abort
+  let l:current_window = winnr()
+  execute 'keepjumps noautocmd windo '.a:command
+  execute 'keepjumps noautocmd '.l:current_window.'wincmd w'
 endfunction
