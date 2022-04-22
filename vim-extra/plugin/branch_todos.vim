@@ -1,6 +1,12 @@
 ""
-" Parses the diff against the upstream branch (`@{u}`) and adds all new (or
-" changed) lines which match "todo" to the quick fix list.
+" Populates the quickfix list with TODO lines added in the current git branch.
+"
+" If there is an upstream branch ('@{u}') which is a local branch, finds all
+" TODOs added since the upstream. Otherwise finds all TODOs since this branch was
+" forked from the trunk branch ('main' or 'master').
+"
+" Parses the diff of the commits added in this branch for new and changed lines
+" matching "todo".
 command! FindBranchTodos call <SID>FindBranchTodos()
 
 function s:FindBranchTodos() abort
@@ -8,8 +14,8 @@ function s:FindBranchTodos() abort
   let l:git_root = shellescape(systemlist(l:find_root_cmd)[0].'/')
   let l:upstream =
       \ system( 'git rev-parse --symbolic-full-name @{u} 2&>/dev/null')
-  if l:upstream =~# '^refs/remotes/'
-    let l:upstream = trim(system('git default-branch'))
+  if empty(l:upstream) || l:upstream =~# '^refs/remotes/'
+    let l:upstream = trim(system('git mainbranch'))
   endif
   let l:diff =
       \ system('git diff '.shellescape(l:upstream).' --dst-prefix='.l:git_root)

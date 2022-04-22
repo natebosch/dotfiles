@@ -3,7 +3,7 @@
 branch="$(git rev-parse --abbrev-ref HEAD)"
 upstream_full="$(git rev-parse --symbolic-full-name '@{u}' 2>/dev/null)"
 reset_against=""
-if [[ "$branch" == "$(git default-branch)" && "$upstream_full" == "refs/remotes/"* ]]; then
+if [[ "$branch" == "$(git mainbranch)" && "$upstream_full" == "refs/remotes/"* ]]; then
   upstream="$(git rev-parse --abbrev-ref "$upstream_full")"
   ahead="$(git rev-list --left-only --count "$branch...$upstream")"
   if [[ "$ahead" -ne "0" ]]; then
@@ -16,7 +16,7 @@ if [[ "$name" == -* ]]; then
   name="$branch-${name}"
 fi
 if [[ "$name" == +* ]]; then
-  branch="$(git default-branch)"
+  branch="$(git mainbranch)"
   name="${name:1}"
 fi
 
