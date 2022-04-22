@@ -227,11 +227,6 @@ let g:fzf_commits_log_options = '--graph --color=always '
 let g:peekaboo_window = 'vertical botright 50new'
 let g:peekaboo_delay = 750
 
-" Ultisnips
-let g:UltiSnipsExpandTrigger='<tab>'
-let g:UltiSnipsJumpForwardTrigger='<tab>'
-let g:UltiSnipsJumpBackwardTrigger='<c-z>'
-
 " Split direction
 set splitright
 set splitbelow
@@ -309,8 +304,6 @@ vmap <C-j> <Plug>SchleppDown
 vmap <C-k> <Plug>SchleppUp
 vmap <C-l> <Plug>SchleppRight
 vmap D <Plug>SchleppDup
-inoremap <C-j> <Esc>:m .+1<CR>==gi
-inoremap <C-k> <Esc>:m .-2<CR>==gi
 
 " File/Buffer/Code navigation
 nnoremap <leader>o :edit %:h<cr>
