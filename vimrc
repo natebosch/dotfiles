@@ -156,12 +156,15 @@ augroup convenience
   " Nicer handling of comments
   autocmd FileType,BufNewFile,BufWinEnter * setlocal formatoptions-=o
       \ formatoptions+=rjqn
-  " When editing a file, always jump to the last known cursor position.
-  autocmd BufReadPost *
-      \ if line("'\"") > 1 && line("'\"") <= line("$") |
-      \   exe "normal! g`\"" |
-      \ endif
+  autocmd BufReadPost * call <SID>RestoreCursorPosition()
 augroup END
+
+function! s:RestoreCursorPosition() abort
+  if &filetype ==# 'gitcommit' | return | endif
+  if line("'\"") > 1 && line("'\"") <= line("$")
+    exe "normal! g`\""
+  endif
+endfunction
 
 " Allow backspacing over everything in insert mode
 set backspace=indent,eol,start
