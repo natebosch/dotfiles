@@ -337,6 +337,10 @@ map <leader>y <Plug>(operator-poweryank-osc52)
 nnoremap <silent> <leader>R *Ncgn
 xnoremap <silent> <leader>R "zy/<c-r>z<cr>Ncgn
 
+" Jump to diagnostics in the location list
+nnoremap [d :lbefore<cr>
+nnoremap ]d :lafter<cr>
+
 " Don't break <leader>s in netrw buffers
 let g:sneak#map_netrw = v:false
 
