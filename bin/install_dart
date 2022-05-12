@@ -6,13 +6,29 @@ VERSION="${1:-latest}"
 FLAVOR="${2:-release}"
 CHANNEL="${3:-stable}"
 
-LOCAL="$HOME/repos/dart-sdk/sdk/out"
+if [ "$(uname)" == "Darwin" ]; then
+  OS="macos"
+else
+  OS="linux"
+fi
+
+if [ "$(uname -m)" == "arm64" ]; then
+  ARCHITECTURE="arm64"
+else
+  # Normalize because 64 bit X86 architectures can appear as "x86_x64" or "x64".
+  ARCHITECTURE="x64"
+fi
+
 if [ "$VERSION" == "local" ]; then
-  ln -snf "$LOCAL/ReleaseX64/dart-sdk" "$HOME/dart-sdk"
-  dart --version
-  exit
-elif [ "$VERSION" == "nnbd" ]; then
-  ln -snf "$LOCAL/ReleaseX64NNBD/dart-sdk" "$HOME/dart-sdk"
+  if [ "$OS" == "macos" ]; then
+    OUT="xcodebuild"
+  else
+    OUT="out"
+  fi
+  LOCAL="$HOME/repos/dart-sdk/sdk/$OUT"
+  # Convert to uppercase to match the names of the SDK build directories.
+  ARCHITECTURE=$(echo "$ARCHITECTURE" | tr '[:lower:]' '[:upper:]')
+  ln -snf "$LOCAL/Release$ARCHITECTURE/dart-sdk" "$HOME/dart-sdk"
   dart --version
   exit
 fi
@@ -34,13 +50,7 @@ fi
 
 DIRECTORY="$HOME/.dart-sdks/$VERSION"
 if [ ! -d "$DIRECTORY" ]; then
-
-  if [ "$(uname)" == "Darwin" ]; then
-    PLATFORM="macos-x64"
-  else
-    PLATFORM="linux-x64"
-  fi
-  RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$PLATFORM-release.zip"
+  RELEASE="$FLAVOR/$VERSION/sdk/dartsdk-$OS-$ARCHITECTURE-release.zip"
   echo "Downloading $DOWNLOAD/$RELEASE"
   curl "$DOWNLOAD/$RELEASE" -o /tmp/dart-release.zip
   unzip -qo /tmp/dart-release.zip -d "$HOME/.dart-sdks"
