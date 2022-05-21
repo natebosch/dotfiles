@@ -405,6 +405,13 @@ endfunction
 if index(g:fugitive_browse_handlers, function('<SID>DartGitUrl')) < 0
   call insert(g:fugitive_browse_handlers, function('<SID>DartGitUrl'))
 endif
+
+" tmux aware keybinds for navigating through terminal windows
+tnoremap <silent> <c-h> <Cmd>TmuxNavigateLeft<cr>
+tnoremap <silent> <c-j> <Cmd>TmuxNavigateDown<cr>
+tnoremap <silent> <c-k> <Cmd>TmuxNavigateUp<cr>
+tnoremap <silent> <c-l> <Cmd>TmuxNavigateRight<cr>
+tnoremap <silent> <c-\> <Cmd>TmuxNavigatePrevious<cr>
 """"""""""""""""""""""""""""""""""""""
 
 
