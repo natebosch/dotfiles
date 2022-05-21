@@ -412,6 +412,9 @@ tnoremap <silent> <c-j> <Cmd>TmuxNavigateDown<cr>
 tnoremap <silent> <c-k> <Cmd>TmuxNavigateUp<cr>
 tnoremap <silent> <c-l> <Cmd>TmuxNavigateRight<cr>
 tnoremap <silent> <c-\> <Cmd>TmuxNavigatePrevious<cr>
+
+noremap <c-w>N <c-\><c-N>
+noremap! <c-w>N <c-\><c-N>
 """"""""""""""""""""""""""""""""""""""
 
 
