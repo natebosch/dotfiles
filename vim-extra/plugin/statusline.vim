@@ -53,8 +53,8 @@ function! StatusTrailingSpaceWarning() abort
 endfunction
 
 function! GitBranch() abort
-  if !exists('*fugitive#head') | return '' | endif
-  let branch = fugitive#head()
+  if !exists('*FugitiveHead') | return '' | endif
+  let branch = FugitiveHead()
   if branch !=# ''
     return '['.branch.']'
   endif
