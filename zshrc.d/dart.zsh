@@ -16,4 +16,4 @@ path=(
 
 unset DART_PATH
 
-alias pbr='pub run build_runner'
+alias pbr='dart run build_runner'
