@@ -13,7 +13,7 @@ function s:FindBranchTodos() abort
   let l:find_root_cmd = 'git rev-parse --show-toplevel'
   let l:git_root = shellescape(systemlist(l:find_root_cmd)[0].'/')
   let l:upstream =
-      \ system( 'git rev-parse --symbolic-full-name @{u} 2&>/dev/null')
+      \ trim(system( 'git rev-parse --symbolic-full-name @{u} 2&>/dev/null'))
   if empty(l:upstream) || l:upstream =~# '^refs/remotes/'
     let l:upstream = trim(system('git mainbranch'))
   endif
