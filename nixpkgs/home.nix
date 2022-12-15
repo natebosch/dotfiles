@@ -1,7 +1,6 @@
 { pkgs, ... }:
 
 let
-  tmux = import ./tmux.nix;
   os_packages = with pkgs; if stdenv.isDarwin then [
     gnused
   ] else [
