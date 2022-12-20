@@ -22,9 +22,13 @@ function! s:Operator(type, globalcwd)
   else
     return
   endif
-  let l:search = escape(@@,'#%.^$*+?()[{\\|')
+  let l:query = escape(@@,'#%.^$*+?()[{\\|')
+  let l:count = search('\%V\<'.@@.'\>', 'npw')
+  if l:count > 0
+    let l:query = '\b'.l:query.'\b'
+  endif
   let @@ = l:reg
-  call s:Search(l:search, a:globalcwd)
+  call s:Search(l:query, a:globalcwd)
 endfunction
 
 function! s:Search(query, globalcwd)
