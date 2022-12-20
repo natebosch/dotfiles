@@ -58,7 +58,6 @@ endif
 Plug DevPlugin('natebosch/vim-lsc')
 Plug 'junegunn/fzf.vim'
 Plug 'tpope/vim-eunuch'
-Plug 'haya14busa/vim-poweryank'
 
 " Filetype
 Plug 'tmux-plugins/vim-tmux'
@@ -331,7 +330,6 @@ nnoremap <leader>gp :MagitOnly<cr>
 
 " Toggle paste mode
 nnoremap <leader>p :set paste!<cr>
-map <leader>y <Plug>(operator-poweryank-osc52)
 
 " Rename word or selection, dot to repeat
 nnoremap <silent> <leader>R *Ncgn

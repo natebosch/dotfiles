@@ -20,7 +20,6 @@ if [ "$len" -gt 74994 ]; then
 fi
 
 if [ -n "$TMUX_PANE" ]; then
-  tmux set-buffer "$buf"
   eval "$(tmux show-environment -s DISPLAY)"
 fi
 
@@ -37,9 +36,4 @@ fi
 
 encoded="$(printf %s "$buf" | base64 | tr -d '\r\n')"
 
-if [ -n "$TMUX" ]; then
-  printf '\033Ptmux;\033\033]52;c;%s\a\033'\\ "$encoded" \
-    >"$(tmux display-message -p '#{pane_tty}')"
-else
-  printf '\033]52;c;%s\a' "$encoded" >/dev/tty
-fi
+printf '\033]52;c;%s\a' "$encoded" >/dev/tty
