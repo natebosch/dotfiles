@@ -38,7 +38,7 @@ else
       [ ${#repos[@]} -gt 0 ] &&
         printf '%s \033[0;33mR\033[0m\n' "${repos[@]}" | sort
     ) |
-      fzf --ansi --no-sort
+      fzf --ansi --no-sort --tiebreak begin,chunk
   )
   session="${choice%??}"
   session_type="${choice:(-1)}"
