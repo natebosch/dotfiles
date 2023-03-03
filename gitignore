@@ -4,3 +4,5 @@
 shell.nix
 # Direnv
 .envrc
+# Dart doc
+**/doc/api/
