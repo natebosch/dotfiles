@@ -25,6 +25,9 @@
   ci = commit
   br = branch
   co = checkout
+  b = "!f() { \
+    git checkout $(fzb); \
+    }; f"
   d = "!f() { \
     vim -R -M -p $(git diff --name-only $@) \
     +\"tabdo Gdiff $@\" +\"tabdo wincmd l\" +tabfirst; \

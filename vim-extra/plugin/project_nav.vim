@@ -3,6 +3,7 @@ nnoremap <leader>gt :execute 'tabn '.g:lasttab<cr>
 nnoremap <leader>n :call <SID>OpenNotes()<cr>
 nnoremap <leader>lf :call <SID>ListFiles(expand('%:p'))<cr>
 nnoremap <leader>lF :call fzf#vim#files(getcwd(-1))<cr>
+nnoremap <leader>lgb :call <SID>ChooseGitBranch()<cr>
 
 set tabline=%!ProjectTabLine()
 
@@ -203,4 +204,21 @@ function! s:WinDo(command) abort
   let l:current_window = winnr()
   execute 'keepjumps noautocmd windo '.a:command
   execute 'keepjumps noautocmd '.l:current_window.'wincmd w'
+endfunction
+
+function! s:SwitchBranch(branch) abort
+  let l:branch = split(a:branch)[0]
+  exec 'Git checkout' l:branch
+endfunction
+
+function! s:ChooseGitBranch() abort
+  call fzf#run(fzf#wrap({
+      \ 'source': 'fzb --list-only',
+      \ 'options': '--preview "git config branch.{1}.description; '
+      \   .'git show --color=always -m {1}" '
+      \   .'--tiebreak begin '
+      \   .'--bind "ctrl-d:preview-half-page-down" '
+      \   .'--bind "ctrl-u:preview-half-page-up" ',
+      \ 'sink': funcref('<SID>SwitchBranch'),
+      \}))
 endfunction

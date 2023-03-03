@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e
+
+git rev-parse --is-inside-work-tree >/dev/null
+
+longest_branch=$(($(git branch --format="%(refname:short)" | wc -L) + 8))
+longest_upstream=$(($(git branch --format="%(upstream:short)" | wc -L) + 2))
+
+branch="%(align:$longest_branch)\
+%(if)%(HEAD)%(then)%(color:green)%(else)%(color:default)%(end)\
+%(refname:short)%(color:default)\
+%(end)"
+upstream="%(align:$longest_upstream)\
+%(upstream:short) %(upstream:trackshort)\
+%(end)"
+commit="%(objectname:short)  %(subject)"
+
+
+preview="git config branch.{1}.description;\
+  git show --color=always -m {1} | diffr"
+
+if [ "$1" == "--list-only" ]; then
+  git branch --sort=-committerdate --format="$branch $upstream $commit"
+else
+  git branch --color=always --sort=-committerdate \
+    --format="$branch $upstream $commit" |
+    fzf --multi --ansi --no-sort --reverse \
+      --preview="$preview" \
+      --tiebreak begin \
+      --bind='ctrl-d:preview-half-page-down' \
+      --bind='ctrl-u:preview-half-page-up' |
+    awk '{print $1}'
+fi
+
