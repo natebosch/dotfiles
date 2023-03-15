@@ -1,0 +1,9 @@
+snippet localtest "pubspec overrides for local copy of the test repo" b
+dependency_overrides:
+  test:
+    path: `echo $HOME`/repos/test/pkgs/test
+  test_core:
+    path: `echo $HOME`/repos/test/pkgs/test_core
+  test_api:
+    path: `echo $HOME`/repos/test/pkgs/test_api
+endsnippet
