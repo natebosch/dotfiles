@@ -9,7 +9,7 @@ function! s:CheckDartYaml() abort
   endif
 
   " Pub constraint maps
-  if name ==? 'pubspec.yaml'
+  if name ==? 'pubspec.yaml' || name ==? 'pubspec_overrides.yaml'
     nnoremap <buffer> <leader>dl :read! dartdeps --from=% local<space>
     nnoremap <buffer> <leader>dp :read! dartdeps latest<space>
     nnoremap <buffer> <leader>dg :read! dartdeps git<space>
