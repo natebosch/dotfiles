@@ -343,15 +343,18 @@ nnoremap ]d :lafter<cr>
 let g:sneak#map_netrw = v:false
 
 " Word highlighting
-hi Word1 ctermbg=red ctermfg=black guibg=#ff0000 guifg=black
+hi Word1 ctermbg=red ctermfg=black guibg=#ff0000 guifg=white
 hi Word2 ctermbg=blue ctermfg=black guibg=#00afff guifg=black
 hi Word3 ctermbg=yellow ctermfg=black guibg=#ffff00 guifg=black
+hi Word4 ctermbg=magenta ctermfg=black guibg=#d303fc guifg=white
 nnoremap <leader>ha :call AddMatchWord('Word1')<cr>
 nnoremap <leader>hA :call ClearMatchWord('Word1')<cr>
 nnoremap <leader>hs :call AddMatchWord('Word2')<cr>
 nnoremap <leader>hS :call ClearMatchWord('Word2')<cr>
 nnoremap <leader>hd :call AddMatchWord('Word3')<cr>
 nnoremap <leader>hD :call ClearMatchWord('Word3')<cr>
+nnoremap <leader>hf :call AddMatchWord('Word4')<cr>
+nnoremap <leader>hF :call ClearMatchWord('Word4')<cr>
 nnoremap <leader>hh :call ClearMatchWords()<cr>
 
 function! ClearMatchWords()
