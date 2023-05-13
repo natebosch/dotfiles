@@ -20,7 +20,7 @@ augroup ProjectNav
 augroup END
 
 function! s:ListFiles(from) abort
-  let l:root = s:FindPackageRoot(a:from)
+  let l:root = FindProjectRoot(a:from)
   if type(l:root) == v:t_string
     call fzf#vim#files(l:root)
   else
@@ -29,7 +29,7 @@ function! s:ListFiles(from) abort
 endfunction
 
 function! s:LcdProjectRoot(from) abort
-  let l:root = s:FindPackageRoot(a:from)
+  let l:root = FindProjectRoot(a:from)
   if type(l:root) == v:t_string
     call s:WinDo('lcd '.l:root)
     let t:tab_name = fnamemodify(l:root, ':t')
@@ -38,7 +38,7 @@ function! s:LcdProjectRoot(from) abort
   endif
 endfunction
 
-function! s:FindPackageRoot(from) abort
+function! FindProjectRoot(from) abort
   for path in s:ParentDirectories(a:from)
     if exists('b:project_nav_root_markers')
       if s:ContainsAny(path, b:project_nav_root_markers) | return path | endif

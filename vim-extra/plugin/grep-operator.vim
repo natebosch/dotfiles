@@ -46,6 +46,8 @@ function! s:Search(query, globalcwd)
       \}
   if a:globalcwd
     let l:spec.dir = getcwd(-1)
+  else
+    let l:spec.dir = FindProjectRoot(expand('%:p'))
   endif
   call fzf#vim#grep(initial_command, 1, fzf#vim#with_preview(spec), v:false)
 endfunction
