@@ -28,3 +28,12 @@ function! s:LinkifyGithub() abort
     call setline('.', l:issues_replaced)
   endif
 endfunction
+
+if expand('%:~') =~ '^\~/snippets/'
+  command! -nargs=0 Today call <SID>Today()
+
+  function! s:Today()
+    let l:file = system('date -dmonday +%m-%d.md')
+    execute 'edit' '~/snippets/'.strftime('%Y').'/'.l:file
+  endfunction
+endif
