@@ -4,6 +4,8 @@ nnoremap <leader>n :call <SID>OpenNotes()<cr>
 nnoremap <leader>lf :call <SID>ListFiles(expand('%:p'))<cr>
 nnoremap <leader>lF :call fzf#vim#files(getcwd(-1))<cr>
 nnoremap <leader>lgb :call <SID>ChooseGitBranch()<cr>
+nnoremap <leader>t :call <SID>OpenMainTerm()<cr>
+command OpenMainTerm :call <SID>OpenMainTerm()
 
 set tabline=%!ProjectTabLine()
 
@@ -221,4 +223,27 @@ function! s:ChooseGitBranch() abort
       \   .'--bind "ctrl-u:preview-half-page-up" ',
       \ 'sink': funcref('<SID>SwitchBranch'),
       \}))
+endfunction
+
+" Opens the 'main' terminal or switches to it's window if it is already open.
+"
+" Sets `g:main_term` while the buffer is open.
+"
+" The window opened will have a fixed width of 100.
+function! s:OpenMainTerm() abort
+  if exists('g:main_term')
+    let l:windows = win_findbuf(g:main_term)
+    if !empty(l:windows) | call win_gotoid(l:windows[0]) | return | endif
+    topleft 100 vsplit
+    set winfixwidth
+    exec 'buffer' g:main_term
+  else
+    topleft vert term ++cols=100
+    set winfixwidth
+    let g:main_term = bufnr()
+    augroup s:MainTerm
+      autocmd! * <buffer>
+      autocmd BufUnload <buffer> :unlet g:main_term
+    augroup END
+  endif
 endfunction
