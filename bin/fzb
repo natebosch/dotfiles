@@ -8,8 +8,8 @@ longest_branch=$(($(git branch --format="%(refname:short)" | wc -L) + 8))
 longest_upstream=$(($(git branch --format="%(upstream:short)" | wc -L) + 2))
 
 branch="%(align:$longest_branch)\
-%(if)%(HEAD)%(then)%(color:green)%(else)%(color:default)%(end)\
-%(refname:short)%(color:default)\
+%(if)%(HEAD)%(then)%(color:green)%(else)%(color:reset)%(end)\
+%(refname:short)%(color:reset)\
 %(end)"
 upstream="%(align:$longest_upstream)\
 %(upstream:short) %(upstream:trackshort)\
