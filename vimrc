@@ -324,6 +324,7 @@ nnoremap <leader>/ :History/<cr>
 nnoremap <leader>gs :vertical Git<cr>
 nnoremap <leader>gc :Git commit<cr>
 nnoremap <leader>ga :Git commit -a<cr>
+nnoremap <leader>gA :Git commit -a --amend<cr>
 nnoremap <leader>gd :Gdiff<cr>
 nnoremap <leader>gl :Commits<cr>
 nnoremap <leader>gp :MagitOnly<cr>
