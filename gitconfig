@@ -25,6 +25,7 @@
   ci = commit
   br = branch
   co = checkout
+  f = !git ci --fixup=$(fzc)
   b = "!f() { \
     git checkout $(fzb); \
     }; f"
