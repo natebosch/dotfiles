@@ -5,7 +5,7 @@ nnoremap <leader>lf :call <SID>ListFiles(expand('%:p'))<cr>
 nnoremap <leader>lF :call fzf#vim#files(getcwd(-1))<cr>
 nnoremap <leader>lgb :call <SID>ChooseGitBranch()<cr>
 nnoremap <leader>t :call <SID>OpenMainTerm()<cr>
-command OpenMainTerm :call <SID>OpenMainTerm()
+command! OpenMainTerm :call <SID>OpenMainTerm()
 
 set tabline=%!ProjectTabLine()
 
