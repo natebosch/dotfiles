@@ -409,11 +409,15 @@ if index(g:fugitive_browse_handlers, function('<SID>DartGitUrl')) < 0
 endif
 
 " tmux aware keybinds for navigating through terminal windows
+let g:tmux_navigator_no_mappings = v:true
+noremap <silent> <c-h> <Cmd>TmuxNavigateLeft<cr>
+noremap <silent> <c-j> <Cmd>TmuxNavigateDown<cr>
+noremap <silent> <c-k> <Cmd>TmuxNavigateUp<cr>
+noremap <silent> <c-l> <Cmd>TmuxNavigateRight<cr>
 tnoremap <silent> <c-h> <Cmd>TmuxNavigateLeft<cr>
 tnoremap <silent> <c-j> <Cmd>TmuxNavigateDown<cr>
 tnoremap <silent> <c-k> <Cmd>TmuxNavigateUp<cr>
 tnoremap <silent> <c-l> <Cmd>TmuxNavigateRight<cr>
-tnoremap <silent> <c-\> <Cmd>TmuxNavigatePrevious<cr>
 
 noremap <c-w>N <c-\><c-N>
 noremap! <c-w>N <c-\><c-N>
