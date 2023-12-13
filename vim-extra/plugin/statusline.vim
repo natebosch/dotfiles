@@ -8,14 +8,14 @@ augroup END
 function! s:IfStatusMode(modes) abort
   if !exists('w:is_active') || !w:is_active | return '' | endif
   if &filetype ==# 'help' | return '' | endif
-  if has_key(a:modes, mode())
-    return '  '.a:modes[mode()].(&paste ? '[p]' : '').' '
+  if index(a:modes, mode()) >= 0
+    return '  '.mode().(&paste ? '[p]' : '').' '
   endif
   return ''
 endfunction
 
 function! StatusNormal() abort
-  return s:IfStatusMode({'n': 'Normal', 'no': 'Normal'})
+  return s:IfStatusMode(['n', 'no'])
 endfunction
 
 function! StatusSpecial() abort
@@ -25,22 +25,19 @@ function! StatusSpecial() abort
 endfunction
 
 function! StatusVisual() abort
-  return s:IfStatusMode({'v': 'Visual', 'V': 'Visual line',
-      \ "\<c-v>": 'Visual block'})
+  return s:IfStatusMode(['v', 'V', "\<c-v>"])
 endfunction
 
 function! StatusInsert() abort
-  return s:IfStatusMode({'i': 'Insert',
-      \'R': 'Replace', 'Rv': 'Replace virtual'})
+  return s:IfStatusMode(['i', 'R', 'Rv'])
 endfunction
 
 function! StatusTerm() abort
-  return s:IfStatusMode({'t': 'Term'})
+  return s:IfStatusMode(['t'])
 endfunction
 
 function! StatusSelect() abort
-  return s:IfStatusMode({'s': 'Select', 'S': 'Select line',
-      \ "\<c-s>": 'Select block'})
+  return s:IfStatusMode(['s', 'S', "\<c-s>"])
 endfunction
 
 function! StatusTrailingSpaceWarning() abort
