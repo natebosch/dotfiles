@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+  echo 'Usage:' $0 '<file>'
+  exit 1
+fi
+FILE=$(readlink -f "$1")
+
+printf "\033]51;[\"drop\", \"$FILE\"]\07"

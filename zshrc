@@ -59,8 +59,15 @@ setopt VI
 # This times out multi-char key combos as fast as possible. (1/100th of a
 # second.)
 KEYTIMEOUT=1
-export EDITOR=$(which vim)
-export VISUAL=$EDITOR   # some programs use this instead of EDITOR
+if [ -n "$VIM" ]; then
+  export EDITOR=$(which edit_nested)
+  alias e=$(which drop)
+else
+  export EDITOR=$(which vim)
+  alias e=$(which vim)
+fi
+export VISUAL=$EDITOR
+
 export PAGER=less       # less is more :)
 # fewer bells, case insensitive searching, status line, and colors
 export LESS='-q -i -M -R'

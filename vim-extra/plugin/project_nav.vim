@@ -247,3 +247,25 @@ function! s:OpenMainTerm() abort
     augroup END
   endif
 endfunction
+
+function! Tapi_EditNested(bufnum, arglist) abort
+  let l:switchbuf = &switchbuf
+  let &switchbuf = 'useopen,split'
+  exec 'sbuffer' a:bufnum
+  let &switchbuf = l:switchbuf
+  call feedkeys("\<c-w>N", 'nix')
+  exec 'split' a:arglist[0]
+  let b:nested_waiter = a:bufnum
+  setlocal bufhidden=delete
+  augroup NestedEditing
+    autocmd! * <buffer>
+    autocmd BufUnload <buffer> :call <SID>NestedEditDone(expand('<afile>'))
+  augroup END
+endfunction
+
+function! s:NestedEditDone(bufname) abort
+  let l:term_buf = getbufvar(a:bufname, 'nested_waiter', -1)
+  if l:term_buf == -1 | return | endif
+  call term_sendkeys(l:term_buf, 'Done editing '.a:bufname."\<CR>")
+  call setbufvar(a:bufname, 'nested_waiter', -1)
+endfunction
