@@ -384,30 +384,6 @@ endfunction
 " Copy URLs with `yank`.
 command! -nargs=1 Browse call system('yank', <q-args>)
 
-" Point Dart SDK URLs to github.
-if !exists('g:fugitive_browse_handlers')
-  let g:fugitive_browse_handlers = []
-endif
-
-function! s:DartGitUrl(...)
-  if a:0 == 1 || type(a:1) == type({})
-    let l:remote = get(a:1, 'remote', '')
-    if l:remote !~# '^https://dart.googlesource.com/'
-      return ''
-    endif
-    let l:repo = l:remote[30:]
-    let l:opts = deepcopy(a:1)
-    let l:opts.remote = 'https://github.com/dart-lang/'.l:repo
-    return rhubarb#FugitiveUrl(l:opts)
-  else
-    return ''
-  endif
-endfunction
-
-if index(g:fugitive_browse_handlers, function('<SID>DartGitUrl')) < 0
-  call insert(g:fugitive_browse_handlers, function('<SID>DartGitUrl'))
-endif
-
 " tmux aware keybinds for navigating through terminal windows
 let g:tmux_navigator_no_mappings = v:true
 noremap <silent> <c-h> <Cmd>TmuxNavigateLeft<cr>
