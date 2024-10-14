@@ -5,20 +5,20 @@ endif
 
 let g:colors_name = 'nate'
 
-hi Normal       guifg=#aaaaaa guibg=#212325
+hi Normal       guifg=#dbdbdb guibg=#212325
 
 hi ColorColumn  ctermbg=234  guibg=#1c1c1c
 hi Comment      ctermfg=067  guifg=#5f87af
-hi Constant     ctermfg=166  guifg=#d75f00
+hi Constant     ctermfg=166  guifg=#fc8e00
 hi CursorColumn ctermbg=236  guibg=#303030
 hi Directory    ctermfg=031  guifg=#0087af
 hi Error        ctermbg=125  guibg=#af0000
 hi FoldColumn   ctermbg=234  guibg=#1c1c1c
 hi FoldColumn   ctermfg=075  guifg=#5fafff
-hi Function     ctermfg=109  guifg=#87afaf
-hi Identifier   ctermfg=032  guifg=#0087d7
+hi Function     ctermfg=109  guifg=#01cab1
+hi Identifier   ctermfg=032  guifg=#00a3ee
 hi Ignore       ctermfg=245  guifg=#8a8a8a
-hi LineNr       ctermfg=241  guifg=#606060
+hi LineNr       ctermfg=241  guifg=#999999
 hi MatchParen   ctermbg=NONE guibg=NONE cterm=bold,underline gui=bold,underline
 hi MatchParen   ctermfg=199  guifg=#ff00af
 hi Pmenu        ctermbg=236  guibg=#303030
@@ -27,20 +27,20 @@ hi PmenuSBar    ctermbg=237  guibg=#3a3a3a
 hi PmenuSel     ctermbg=241  guibg=#626262
 hi PmenuSel     ctermfg=NONE guifg=NONE
 hi PmenuThumb   ctermbg=234  guibg=#1c1c1c
-hi PreProc      ctermfg=033  guifg=#0087ff
+hi PreProc      ctermfg=033  guifg=#00a3ee
 hi QuickFixLine ctermbg=236  guibg=#303030
 hi QuickFixLine ctermfg=253  guifg=#dadada cterm=bold gui=bold
 hi Search       ctermbg=063  guibg=#5f5fff
 hi SignColumn   ctermbg=234  guibg=#1c1c1c
-hi Special      ctermfg=177  guifg=#d787ff
+hi Special      ctermfg=177  guifg=#ad75ff
 hi SpellBad     ctermbg=237  guibg=#3a3a3a
 hi SpellBad     ctermfg=196  guifg=#ff0000
 hi SpellCap     ctermbg=237  guibg=#3a3a3a
 hi Statement    ctermfg=179  guifg=#c4a000
 hi Statement    term=bold    gui=bold
 hi Title        ctermfg=027  cterm=bold guifg=#005fff
-hi Type         ctermfg=245  guifg=#8a8a8a
-hi Typedef      ctermfg=034  guifg=#00af00
+hi Type         ctermfg=245  guifg=#a1a1a1
+hi Typedef      ctermfg=034  guifg=#00b19c
 hi Underlined   ctermfg=177  guifg=#87d7ff
 hi Visual       ctermbg=NONE guibg=NONE cterm=bold,reverse   gui=bold,reverse
 
@@ -93,8 +93,8 @@ hi VertSplit    ctermbg=NONE cterm=NONE guibg=NONE gui=NONE
 hi VertSplit    ctermfg=236  guifg=#303030
 
 let g:terminal_ansi_colors = [
-    \ '#2e3436', '#cc0000', '#4e9a06', '#c4a000',
-    \ '#3465a4', '#75507b', '#06989A', '#d3d7cf',
-    \ '#555753', '#EF2929', '#8AE234', '#FCE94F',
-    \ '#729FCF', '#AD7FA8', '#34E2E2', '#EEEEEC'
+    \ '#3a3a3a', '#ff4593', '#8da600', '#de7c00',
+    \ '#00a3ee', '#ad75ff', '#00b19c', '#c7c7c7',
+    \ '#6a6a6a', '#ff7daa', '#a1bd00', '#fc8e00',
+    \ '#47b9ff', '#bd96ff', '#01cab1', '#f6f6f6'
     \ ]
