@@ -1,4 +1,4 @@
-local PATH_COLOR=172
+local PATH_COLOR=214
 local TIME_COLOR=33
 autoload colors
 colors
