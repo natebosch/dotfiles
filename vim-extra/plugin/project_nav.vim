@@ -234,11 +234,11 @@ function! s:OpenMainTerm() abort
   if exists('g:main_term')
     let l:windows = win_findbuf(g:main_term)
     if !empty(l:windows) | call win_gotoid(l:windows[0]) | return | endif
-    topleft 100 vsplit
+    topleft 88 vsplit
     set winfixwidth
     exec 'buffer' g:main_term
   else
-    topleft vert term ++cols=100
+    topleft vert term ++cols=88
     set winfixwidth
     let g:main_term = bufnr()
     augroup s:MainTerm
