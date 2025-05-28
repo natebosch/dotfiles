@@ -11,3 +11,5 @@ flake.lock
 **/doc/api/
 # Mac
 .DS_Store
+# Gemini
+.gemini/
