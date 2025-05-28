@@ -8,3 +8,5 @@ shell.nix
 **/doc/api/
 # Mac
 .DS_Store
+# Gemini
+.gemini/
