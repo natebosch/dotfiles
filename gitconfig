@@ -27,7 +27,7 @@
   co = checkout
   f = !git ci --fixup=$(fzc)
   b = "!f() { \
-    git checkout $(fzb); \
+    git checkout $(fzb) --; \
     }; f"
   d = "!f() { \
     vim -R -M -p $(git diff --name-only $@) \
