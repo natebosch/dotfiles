@@ -259,7 +259,9 @@ set ruler       " show the cursor position all the time
 syntax on
 set hlsearch
 set background=dark
-set termguicolors
+if !has('mac')
+  set termguicolors
+endif
 colorscheme nate
 
 " See tabs and trailing spaces
@@ -274,10 +276,7 @@ endif
 
 set belloff=cursor,esc,wildmode,error
 
-set diffopt=filler,vertical
-if has('nvim-0.3.2') || has('patch-8.1.0360')
-    set diffopt+=internal,algorithm:histogram,indent-heuristic
-endif
+set diffopt=filler,iwhiteall,vertical,closeoff
 
 set fillchars=diff:\ ,vert:┃
 

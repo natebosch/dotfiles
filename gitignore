@@ -6,3 +6,5 @@ shell.nix
 .envrc
 # Dart doc
 **/doc/api/
+# Mac
+.DS_Store

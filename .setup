@@ -2,25 +2,23 @@
 
 set -e
 
-nix_install_args=(--no-modify-profile)
-if [ "$(uname)" == "Darwin" ]; then
-  nix_install_args+=(--darwin-use-unencrypted-nix-store-volume)
-else
-  if [ ! -x "$(command -v curl)" ]; then
-    echo "Installing curl."
-    sudo apt install curl
-  fi
+if [ ! -x "$(command -v curl)" ]; then
+  echo "Installing curl."
+  sudo apt install curl
 fi
+
+nix_install_args=(--no-modify-profile)
 if [ ! -x "$(command -v nix-env)" ]; then
   echo "Installing nix."
   sh <(curl -L https://nixos.org/nix/install) "${nix_install_args[@]}"
   # shellcheck source=/dev/null
-  source ~/.nix-profile/etc/profile.d/nix.sh
+  source /nix/var/nix/profiles/default/etc/profile.d/nix.sh
 fi
 if [ ! -x "$(command -v home-manager)" ]; then
   nix-channel --add \
     https://github.com/nix-community/home-manager/archive/master.tar.gz \
     home-manager
+      # TODO: May need HTTPS certs symlinked on mac
       nix-channel --update
       nix-shell '<home-manager>' -A install
 fi
