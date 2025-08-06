@@ -1,5 +1,6 @@
 [user]
   name = Nate Bosch
+  email = nbosch1@gmail.com
   useConfigOnly = true
 [core]
   excludesfile = ~/.gitignore
