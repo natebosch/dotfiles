@@ -40,7 +40,7 @@ in
     tree
 
     python3
-    vim_configurable
+    vim-full
   ] ++ os_packages;
 
   fonts.fontconfig.enable = true;
