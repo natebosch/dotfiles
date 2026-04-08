@@ -29,7 +29,8 @@ else
       --preview="$preview" \
       --tiebreak begin \
       --bind='ctrl-d:preview-half-page-down' \
-      --bind='ctrl-u:preview-half-page-up' |
+      --bind='ctrl-u:preview-half-page-up' \
+      --bind='ctrl-x:execute(git drop {1})+reload(git branch --color=always --sort=-committerdate --format="'"$branch $upstream $commit"'")' |
     awk '{print $1}'
 fi
 

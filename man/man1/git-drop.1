@@ -1,0 +1,12 @@
+.TH "git-drop" 1
+ 
+.SH NAME
+git-drop - safely delete a git branch with interactive confirmation and worktree safety checks
+ 
+.SH SYNOPSIS
+git drop <branch>
+ 
+.SH DESCRIPTION
+git\-drop \- delete a git branch safely.
+ 
+Ensures that the specified branch is not currently checked out in any worktree. Attempts to delete the branch safely using git branch -d, and falls back to prompting for interactive confirmation before using git branch -D.

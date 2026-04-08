@@ -1,0 +1,9 @@
+#!/bin/bash
+
+prompt="${1:-Are you sure?}"
+echo -n "$prompt [y/N] "
+read -r ans < /dev/tty
+case "$ans" in
+  [yY]*) exit 0 ;;
+  *) exit 1 ;;
+esac

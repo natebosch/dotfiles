@@ -1,0 +1,34 @@
+#!/bin/bash
+
+branch="$1"
+if [ -z "$branch" ]; then
+  echo "Usage: git drop <branch>"
+  exit 1
+fi
+
+if git worktree list | awk -v b="$branch" \
+    '{gsub(/[\[\]]/, "", $NF); if ($NF == b) found=1} END {exit !found}'; then
+  echo "Error: Branch $branch is currently checked out in a worktree."
+  echo "Press Enter to continue..."
+  read -r _ < /dev/tty
+  exit 1
+fi
+
+if ! git branch -d "$branch"; then
+  echo
+  echo "============================================================"
+  echo "Latest commit in $branch:"
+  echo "============================================================"
+  git --no-pager log -1 -p "$branch"
+  echo
+  echo "============================================================"
+  echo "Commits unique to $branch:"
+  echo "============================================================"
+  git --no-pager log --graph \
+    --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
+    --abbrev-commit --date=relative --boundary \
+    "$branch" --not --exclude="$branch" --branches
+  echo
+  echo
+  confirm "Force delete $branch?" && git branch -D "$branch"
+fi
