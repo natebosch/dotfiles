@@ -12,36 +12,82 @@ else
   while IFS= read -r name; do
     sessions+=("$name")
   done < <(tmux ls -F '#{session_name}' 2>/dev/null)
-  while IFS= read -r name; do
-    repos+=("$name")
-  done < <(find ~/repos -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
-  while IFS= read -r name; do
-    projects+=("$name")
-  done < <(find ~/projects -maxdepth 1 -mindepth 1 -type d -exec basename {} \;)
-  for session in "${sessions[@]}"; do
+
+  if [[ -d ~/repos ]]; then
+    while IFS= read -r name; do
+      repos+=("$name")
+    done < <(find ~/repos -maxdepth 1 -mindepth 1 -type d -exec basename {} 2>/dev/null \;)
+  fi
+
+  if [[ -d ~/projects ]]; then
+    while IFS= read -r name; do
+      projects+=("$name")
+    done < <(find ~/projects -maxdepth 1 -mindepth 1 -type d -exec basename {} 2>/dev/null \;)
+  fi
+
+  # Track source directory for sessions to show git summary
+  session_sources=()
+  for s in "${sessions[@]}"; do
     for i in "${!repos[@]}"; do
-      if [[ "${repos[i]//./_}" == "$session" ]]; then
+      if [[ "${repos[i]//./_}" == "$s" ]]; then
+        session_sources+=("$s:$HOME/repos/${repos[i]}")
         unset 'repos[i]'
+        break
       fi
     done
     for i in "${!projects[@]}"; do
-      if [[ "${projects[i]//./_}" == "$session" ]]; then
+      if [[ "${projects[i]//./_}" == "$s" ]]; then
+        session_sources+=("$s:$HOME/projects/${projects[i]}")
         unset 'projects[i]'
+        break
       fi
     done
   done
+
   choice=$(
     (
-      printf '%s \033[1;34m*\033[0m\n' "${sessions[@]:-0}"
-      [ ${#projects[@]} -gt 0 ] &&
-        printf '%s \033[0;34mP\033[0m\n' "${projects[@]}" | sort
-      [ ${#repos[@]} -gt 0 ] &&
-        printf '%s \033[0;33mR\033[0m\n' "${repos[@]}" | sort
+      if [[ ${#sessions[@]} -gt 0 ]]; then
+        for s in "${sessions[@]}"; do
+          (
+            summary=""
+            for entry in "${session_sources[@]}"; do
+              if [[ "$entry" == "$s:"* ]]; then
+                summary=$(cd "${entry#*:}" && git summary 2>/dev/null)
+                break
+              fi
+            done
+            # Prefix '1' for sessions, '2' for projects, '3' for repos
+            printf '1\x01%s\x01*\x01%s \033[1;34m*\033[0m %s\n' "$s" "$s" "$summary"
+          ) &
+        done
+      else
+        printf '1\x010\x01*\x010 \033[1;34m*\033[0m\n'
+      fi
+
+      for p in "${projects[@]}"; do
+        (
+          summary=$(cd ~/projects/"$p" && git summary 2>/dev/null)
+          printf '2\x01%s\x01P\x01%s \033[0;34mP\033[0m %s\n' "$p" "$p" "$summary"
+        ) &
+      done
+
+      for r in "${repos[@]}"; do
+        (
+          summary=$(cd ~/repos/"$r" && git summary 2>/dev/null)
+          printf '3\x01%s\x01R\x01%s \033[0;33mR\033[0m %s\n' "$r" "$r" "$summary"
+        ) &
+      done
+      wait
     ) |
-      fzf --ansi --no-sort --tiebreak begin,chunk
+      sort -t $'\x01' -k 1,1 -k 2,2 |
+      cut -d$'\x01' -f2- |
+      fzf -d $'\x01' --with-nth 3.. --ansi --no-sort --tiebreak begin,chunk
   )
-  session="${choice%??}"
-  session_type="${choice:(-1)}"
+
+  [[ -z "$choice" ]] && exit 0
+  session="${choice%%$'\x01'*}"
+  rest="${choice#*$'\x01'}"
+  session_type="${rest%%$'\x01'*}"
 fi
 
 env_args=()
