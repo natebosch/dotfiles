@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pane_count=$(tmux list-panes | wc -l | sed 's/^ *//;s/ *$//')
+pane_count=$(tmux list-panes | wc -l | xargs)
 window_width=$(tmux display-message -p '#{window_width}')
 if [ "$window_width" \> 400 ]; then
   main_width=$(( 3*($window_width-20)/4 ))

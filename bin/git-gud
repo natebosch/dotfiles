@@ -11,7 +11,7 @@ if git config remote.upstream.url >/dev/null; then
 fi
 while IFS= read -r name; do
   deleted+=("$name")
-done < <(echo "$updates" | sed -n "s/^ - \[deleted\] .* -> \(.*\)$/\1/p")
+done < <(echo "$updates" | awk '/^ - \[deleted\] / {print $NF}')
 echo "$updates"
 echo Removed: "${deleted[@]}"
 for branch in "${deleted[@]/*\//}"; do
