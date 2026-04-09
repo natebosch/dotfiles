@@ -11,14 +11,11 @@ git rev-parse --is-inside-work-tree >/dev/null
 # commits
 
 git log -n 10000 --color=always --name-only \
-  --format='%xE2%x98%xA2 %C(auto)%h%d %s %C(black)%C(bold)<%an %ae> %b' "$@" |
-  sed '/^\s*$/d' |
-  tr '\n\r' '|' |
-  sed 's/|\?\xE2\x98\xA2/\n/g' |
-  tail -n +2 |
+  --format='%x01%C(auto)%h%d %s %C(black)%C(bold)<%an %ae> %b' "$@" |
+  awk 'BEGIN { RS="\001" } NR > 1 { gsub(/[\n\r]+/, "|"); sub(/\|$/, ""); print }' |
   fzf --multi --ansi --no-sort --reverse \
     --preview='git show --color=always --ignore-all-space -m {1} | diffr' \
     --bind='ctrl-d:preview-half-page-down' \
     --bind='ctrl-u:preview-half-page-up' \
     --bind='ctrl-o:execute(git show --color=always {1} >/dev/tty)' |
-  cut -f2 -d' '
+  cut -f1 -d' '
