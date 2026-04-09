@@ -5,6 +5,8 @@
 [core]
   excludesfile = ~/.gitignore
   pager = diffr | less -R
+[advice]
+  addIgnoredFile = false
 [interactive]
   diffFilter = diffr
 [branch]
