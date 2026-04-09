@@ -50,7 +50,7 @@ typeset -U path
 path=($^path(N))
 typeset -U fpath
 fpath=($^fpath(N))
-MANPATH="~/.man:"
+MANPATH="$HOME/.man:"
 
 setopt NO_BEEP      # Never ever beep. Ever
 MAILCHECK=0         # disable mail checking
