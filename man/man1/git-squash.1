@@ -4,11 +4,19 @@
 git-squash - squash all commits ahead of the upstream branch
 
 .SH SYNOPSIS
-git-squash
+git squash [<upstream>]
 
 .SH DESCRIPTION
-git\-squash \- squash all commits ahead of the current merge base. These are the
-commits that would be available for change in git rebase --keep-base -i
+git\-squash \- squash all commits ahead of the merge base with <upstream> into a
+single commit. These are the commits that would be available for change in git
+rebase --keep-base -i.
 
-Updates all choices for commits from "pick" to "squash" then opens an editor to
-update the commit message.
+When <upstream> is omitted, use the tracked upstream branch if there is one,
+otherwise the default branch.
+
+Refuses to run with uncommitted changes. Resets to the merge base with
+--soft, then opens an editor with the messages of all squashed commits. Lines
+starting with # are removed from the message. If the commit fails or is
+aborted, the branch is restored to its original state.
+
+Works for branches that contain merges because it does not use rebase.
