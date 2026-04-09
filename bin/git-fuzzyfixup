@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+# Use fzc to pick the target commit
+commit=$(fzc)
+
+# Exit if no commit was selected
+if [ -z "$commit" ]; then
+  exit 0
+fi
+
+# If no arguments are passed AND there are no staged changes,
+# default to including all changes (-a).
+if [ $# -eq 0 ] && git diff --cached --quiet; then
+  echo "No staged changes found. Adding -a flag."
+  set -- -a
+fi
+
+# Execute the commit
+exec git commit --fixup="$commit" "$@"

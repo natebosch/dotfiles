@@ -5,6 +5,8 @@
 [core]
   excludesfile = ~/.gitignore
   pager = diffr | less -R
+[advice]
+  addIgnoredFile = false
 [interactive]
   diffFilter = diffr
 [branch]
@@ -26,9 +28,14 @@
   ci = commit
   br = branch
   co = checkout
-  f = !git ci --fixup=$(fzc)
+  f = fuzzyfixup
   b = "!f() { \
     git checkout $(fzb) --; \
+    }; f"
+  bb = checkout @{-1}
+  lu = "!f() { \
+    git push . \
+      HEAD:$(git rev-parse --symbolic-full-name @{u}); \
     }; f"
   d = "!f() { \
     vim -R -M -p $(git diff --name-only $@) \
@@ -46,8 +53,6 @@
       git --no-pager diff @{u} --name-only --relative"
   cwork = !git config user.email nbosch@google.com
   cpersonal = !git config user.email nbosch1@gmail.com
-  dartclone = !sh -c 'git clone git@github.com:dart-lang/$1.git' -
-  nateclone = !sh -c 'git clone git@github.com:natebosch/$1.git' -
   mainbranch = ![ -n \"$(git branch --list main)\" ] && echo 'main' || echo 'master'
 [mergetool "vimdiff3"]
   cmd = vim -f -d -c \"wincmd J\" \"$MERGED\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"
@@ -60,6 +65,7 @@
   algorithm = histogram
   wsErrorHighlight = all
   renamelimit = 10000
+  whitespace = diff-algorithm,-all-space
 [credential]
   helper = cache --timeout=3600
 [push]
