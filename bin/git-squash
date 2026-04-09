@@ -1,7 +1,52 @@
 #!/bin/bash
-
 set -e
 
-squash="sed -i -e '/pick [a-z0-9]\{7\}/s/^pick/squash/' -e '1s/^squash/pick/'"
-GIT_EDITOR="$squash" git rebase --keep-base -i
-git commit --amend
+# Use the provided branch, or fallback to upstream, then to the project's main branch
+UPSTREAM="$1"
+if [[ -z "$UPSTREAM" ]]; then
+  if git rev-parse --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    UPSTREAM='@{u}'
+  else
+    UPSTREAM="$(git mainbranch 2>/dev/null || echo "main")"
+  fi
+fi
+
+# Ensure there are no uncommitted changes
+if ! git diff-index --quiet HEAD --; then
+  echo "Error: You have uncommitted changes. Please commit or stash them first."
+  exit 1
+fi
+
+# Find the merge base between your branch and upstream
+BASE=$(git merge-base HEAD "$UPSTREAM")
+ORIGINAL_HEAD=$(git rev-parse HEAD)
+
+if [[ -z "$BASE" ]]; then
+  echo "Error: Could not determine merge base with $UPSTREAM"
+  exit 1
+fi
+
+if [[ "$BASE" == "$ORIGINAL_HEAD" ]]; then
+  echo "No commits to squash."
+  exit 0
+fi
+
+# Create a temporary file for the commit message and ensure it's cleaned up
+MSG_FILE=$(mktemp)
+trap 'rm -f "$MSG_FILE"' EXIT
+
+{
+  # Add a blank line at the top for the new summary
+  echo ""
+  git log --reverse --format="# --- Commit %h ---%n%B" "$BASE..HEAD"
+} > "$MSG_FILE"
+
+# Reset to the base (keeping the working directory as-is)
+git reset --soft "$BASE"
+
+# Attempt to commit. If it fails or is aborted (e.g. empty message), restore original state.
+if ! git commit -e -F "$MSG_FILE"; then
+  echo "Commit failed or aborted. Restoring original branch state..."
+  git reset --hard "$ORIGINAL_HEAD"
+  exit 1
+fi
