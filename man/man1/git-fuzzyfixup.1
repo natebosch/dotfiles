@@ -1,0 +1,12 @@
+.TH "git-fuzzyfixup" 1
+ 
+.SH NAME
+git-fuzzyfixup - interactively pick a commit and create a fixup commit
+ 
+.SH SYNOPSIS
+git fuzzyfixup [COMMIT_ARGUMENTS...]
+ 
+.SH DESCRIPTION
+git\-fuzzyfixup \- pick a target commit from fzf and create a fixup commit.
+ 
+If no arguments are provided and there are no staged changes, automatically adds the -a flag to commit all modified files. If arguments are provided or staged changes exist, it passes any extra arguments directly to git commit.
