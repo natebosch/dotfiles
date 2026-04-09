@@ -60,6 +60,7 @@
   algorithm = histogram
   wsErrorHighlight = all
   renamelimit = 10000
+  whitespace = diff-algorithm,-all-space
 [credential]
   helper = cache --timeout=3600
 [push]
