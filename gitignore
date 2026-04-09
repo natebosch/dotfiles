@@ -2,8 +2,11 @@
 .ignore
 # Nix-shell configuration
 shell.nix
+flake.nix
+flake.lock
 # Direnv
 .envrc
+.direnv/
 # Dart doc
 **/doc/api/
 # Mac
