@@ -1,0 +1,6 @@
+#!/bin/bash
+
+branch=$(git branch --show-current 2>/dev/null)
+if [[ -n "$branch" ]]; then
+  echo "($branch)"
+fi
