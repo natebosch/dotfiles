@@ -2,6 +2,7 @@
 
 if command -v ag >/dev/null; then
   ag -l --nocolor --nogroup --depth 10 --hidden --ignore .git/
+  git ls-files -i --exclude-standard -c 2>/dev/null || true
 else
   command find -L . \
     \( -name .git -o -path '*/\\.*' -o -fstype 'dev' -o -fstype 'proc' \) -prune \
