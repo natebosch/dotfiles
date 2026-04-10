@@ -15,6 +15,13 @@
 - **Decision Log:** Use `kedge/DECISIONS.md` to record pivots, mistakes, and choices between competing designs.
 - **Architecture:** Keep `kedge/ARCHITECTURE.md` up to date as the ground truth for the project's structure and data flow.
 
+## Code Style
+- **Avoid Shadowing:** Be vigilant about shadowing `err` variables, especially in nested scopes or after multi-return calls. Use more specific names like `errStat`, `errMkdir`, or `errRel` to maintain clarity and satisfy `govet`.
+- **Linting Directives:** When adding `//nolint` comments, you MUST provide a brief explanation on the same line (e.g., `//nolint:gosec // branch and repoDir are controlled internally`) to satisfy `nolintlint`.
+- **Descriptive Error Messages:** When wrapping errors, ensure the resulting message provides context about *where* and *why* the failure occurred (e.g., `fmt.Errorf("git worktree list failed in %s: %w (output: %s)", repoDir, err, out)`).
+- **Constants for Magic Strings:** Use constants for frequently used magic strings, such as branch names (`main`, `master`), to improve maintainability and satisfy `goconst`.
+- **File Permissions:** When using `os.WriteFile` or `os.MkdirAll`, prefer restrictive permissions like `0600` or `0700` unless broader access is explicitly required, to satisfy `gosec`.
+
 ## Testing & Quality
 - **Frequent Execution:** Run tests and linters frequently after making changes to ensure everything continues to work.
 - **Go Tests:** Run `go test ./...` from the `kedge/` directory after completing Go changes for fast local feedback.
