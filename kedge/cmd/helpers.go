@@ -8,6 +8,8 @@ import (
 	"kedge/internal/tmux"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 func getSource(kt kedge.KedgeType, t tmux.Tmux) kedge.KedgeSource {
@@ -105,4 +107,25 @@ func runLaunch(ctx context.Context, idStr string) error {
 		return t.SwitchClient(ctx, sessionName)
 	}
 	return t.AttachSession(ctx, sessionName)
+}
+
+func validKedgeIDArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	t := tmux.RealTmux{}
+	repoSource := kedge.GitRepoSource{}
+	projectSource := kedge.ProjectSource{}
+	sessionSource := kedge.SessionSource{Tmux: t}
+
+	var completions []string
+
+	for ki := range repoSource.Discover() {
+		completions = append(completions, ki.String())
+	}
+	for ki := range projectSource.Discover() {
+		completions = append(completions, ki.String())
+	}
+	for ki := range sessionSource.Discover() {
+		completions = append(completions, ki.String())
+	}
+
+	return completions, cobra.ShellCompDirectiveNoFileComp
 }
