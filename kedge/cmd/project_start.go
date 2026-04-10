@@ -10,6 +10,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
+	"kedge/internal/kedge"
 )
 
 type KedgeConfig struct {
@@ -84,6 +85,7 @@ var projectStartCmd = &cobra.Command{
 			return fmt.Errorf("project directory %s already exists", projectDir)
 		}
 
+		kedge.Log.Info("creating project directory", "path", projectDir)
 		if errMkdir := os.MkdirAll(projectDir, 0755); errMkdir != nil {
 			return fmt.Errorf("failed to create project directory: %w", errMkdir)
 		}
@@ -91,6 +93,7 @@ var projectStartCmd = &cobra.Command{
 		config := KedgeConfig{Description: desc}
 		configPath := filepath.Join(projectDir, "kedge.toml")
 
+		kedge.Log.Info("writing project configuration", "path", configPath)
 		f, err := os.Create(configPath)
 		if err != nil {
 			return fmt.Errorf("failed to create kedge.toml: %w", err)

@@ -1,5 +1,8 @@
 # Kedge CLI Development Guidelines
 
+> [!IMPORTANT]
+> You **MUST** read `kedge/ARCHITECTURE.md` before planning, investigating, or beginning any code changes.
+
 ## Go Dependency Management
 - **Direct Dependencies:** Always ensure direct dependencies like `github.com/spf13/cobra` are properly reflected in `go.mod` without the `// indirect` comment.
 - **Tidying:** After adding, removing, or updating imports, you MUST run `go mod tidy` from the `kedge/` directory to synchronize `go.mod` and `go.sum`.
@@ -9,10 +12,11 @@
 ## Planning & Documentation
 - **Implementation Plans:** When creating implementation plans (e.g., in Plan Mode), you MUST explicitly include:
     - Steps to implement comprehensive (but hermetic) unit testing.
-    - A final step to run `nix flake check` from the root directory to verify the Nix build and integration tests.
+    - A final step to run go tests, go lint checks, and nix flake check to test the build and integration tests.
     - Steps to update `kedge/ARCHITECTURE.md` and `kedge/DECISIONS.md` to reflect any architectural changes or significant design decisions.
     - Steps to add dynamic autocomplete for any CLI arguments that accept a fixed set of values.
 - **Decision Log:** Use `kedge/DECISIONS.md` to record pivots, mistakes, and choices between competing designs.
+    - **Workflow Rule:** If you are in a "fix a bug or review comment" workflow that involves going back and forth with the user or an external agent, treat this as a strong hint to update `DECISIONS.md` with the resolution. Always double-check if a code review comment or fix should apply to other similar patterns in the codebase before concluding.
 - **Architecture:** Keep `kedge/ARCHITECTURE.md` up to date as the ground truth for the project's structure and data flow.
 
 ## Code Style

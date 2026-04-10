@@ -65,11 +65,26 @@
               exit 1
             fi
 
+            # Verify helloworld plugin is also discovered
+            if ! grep -q "helloworld" help_output.txt; then
+              echo "Integration test failed: kedge-helloworld not found in help output"
+              cat help_output.txt
+              exit 1
+            fi
+
             # Test execution
             PATH=$out/bin:$PATH kedge mockplugin > exec_output.txt
             if ! grep -q "Mock plugin executed" exec_output.txt; then
                echo "Integration test failed: kedge-mockplugin did not execute correctly"
                cat exec_output.txt
+               exit 1
+            fi
+
+            # Test autocomplete for helloworld
+            PATH=$out/bin:$PATH kedge __complete hello > comp_output.txt
+            if ! grep -q "helloworld" comp_output.txt; then
+               echo "Integration test failed: helloworld not suggested by autocomplete"
+               cat comp_output.txt
                exit 1
             fi
 

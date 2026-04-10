@@ -28,3 +28,6 @@
       so bad?
 - TUI to see a project?
 - Archive a project
+- Allow configuring the directories like `~/repos` and configure them in
+  `home.nix` instead of hardcoding. This should make it easier to do hermetic
+  testing.

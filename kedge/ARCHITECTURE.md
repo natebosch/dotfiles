@@ -5,6 +5,11 @@
 
 The codebase follows standard Go project layout conventions, dividing responsibilities between the command-line interface (`cmd/`) and core, reusable domain logic (`internal/`).
 
+## Core Abstractions
+- **`KedgeID`**: The ubiquitous domain model representing a managed entity (e.g., a repository `R_name` or project `P_name`).
+- **`KedgeSource` Interface**: The primary contract for any entity provider. Defines `Discover()`, `ReadSummary()`, and `TmuxInfo()`.
+- **`log.go` (`Log`)**: System audit logging adhering to Linux `$XDG_RUNTIME_DIR` standards. All unexpected errors and changes to system state should be logged.
+
 ## Directory Structure
 
 ### `cmd/`
@@ -37,3 +42,7 @@ Provides a mockable interface (`Fzf`) around the `fzf` fuzzy finder.
 2. **Formatting**: `KedgeID`s are formatted consistently (e.g., `R_my-repo`) for display and selection.
 3. **Execution**: `cmd/launch` receives a Kedge ID, asks the corresponding `KedgeSource` for working directory and environment variables, and delegates session creation/attachment to the `tmux` wrapper.
 4. **Project Lifecycle**: `cmd/project` subcommands handle project directory creation, kedge configuration, and git worktree automation. `usegitrepo` specifically manages branch checkouts to ensure projects have their own isolated git state while minimizing main repo disruption.
+
+## Testing Philosophy
+- **Hermetic Go Tests**: Fast, unit-level tests run via `go test ./...` that utilize interfaces (like `tmux.Tmux` or `fzf.Fzf`) to mock out system side-effects. This is the primary cycle for agentic coding.
+- **Nix Integration Tests**: End-to-end validations declared in `flake.nix` that verify plugin discovery and execution within a hermetic Nix sandbox. This acts as the final gate for complete features.

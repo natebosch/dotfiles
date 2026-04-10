@@ -34,3 +34,13 @@ This document records significant pivots, mistakes, and reconsiderations made du
     3. If the `-kedgebk` branch also exists, we fail safely to avoid data loss.
 - **Nix Compatibility:** We discovered that running hermetic git tests during a Nix build requires `git` to be explicitly added to `nativeBuildInputs` in `flake.nix`, as it's not present in the default build sandbox.
 
+## Process Replacement for "Tail Call" Subprocesses
+- **Context:** During an agentic code review, it was noted that running external subcommands (`kedge-*`) via `exec.Command().Run()` left the parent `kedge` process sitting idly in the process tree.
+- **The Decision:** We updated these execution paths to use `syscall.Exec`, which replaces the current binary image entirely with the target binary (a standard pattern for POSIX wrappers).
+- **The Learning:** The user subsequently pointed out that this exact same logic applied to `tmux attach` (the final action of `kedge launch`). Moving forward, any subprocess execution that acts as a "tail call" (the very last thing a command does before exiting) should be strongly considered for `syscall.Exec` rather than spawning a child process.
+
+## Zero-Clutter System Audit Logging
+- **Context:** We needed a standard-compliant way to capture write-effects (like directory creation or git commits) and silenced failures (like malformed git summaries) without cluttering the host filesystem.
+- **The Decision:** We implemented a package-level `slog.Logger` that writes structured JSON logs directly to the Linux standard `$XDG_RUNTIME_DIR` (e.g., `/run/user/$UID/kedge.log`). 
+- **Retention:** Because `XDG_RUNTIME_DIR` is a tmpfs wiped automatically on system boot, it guarantees zero long-term clutter while perfectly preserving session-level context. A 5MB manual rotation threshold prevents RAM exhaustion.
+

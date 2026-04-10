@@ -15,6 +15,9 @@ type Fzf interface {
 
 type RealFzf struct{}
 
+// ErrCancelled is returned when the user aborts fzf execution (e.g. via Ctrl-C).
+var ErrCancelled = errors.New("fzf cancelled by user")
+
 func (f RealFzf) Run(ctx context.Context, input []string, args ...string) (string, error) {
 	// session_finder uses: fzf -d $'\x01' --with-nth 3.. --ansi --no-sort --tiebreak begin,chunk
 	cmd := exec.CommandContext(ctx, "fzf", args...)
@@ -35,8 +38,7 @@ func (f RealFzf) Run(ctx context.Context, input []string, args ...string) (strin
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && exitErr.ExitCode() == 130 {
-			// User cancelled fzf
-			return "", nil
+			return "", ErrCancelled
 		}
 		return "", err
 	}

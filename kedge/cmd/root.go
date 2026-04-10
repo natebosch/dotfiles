@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -21,15 +19,37 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	if shouldScanPath() {
+		registerExternalCommands()
+	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func init() {
-	// Dynamically register external kedge-* commands from PATH
-	registerExternalCommands()
+func shouldScanPath() bool {
+	if len(os.Args) <= 1 {
+		return true
+	}
+
+	subcmd := os.Args[1]
+	if subcmd == "help" || subcmd == "--help" || subcmd == "-h" || subcmd == "__complete" {
+		return true
+	}
+
+	for _, c := range rootCmd.Commands() {
+		if c.Name() == subcmd {
+			return false
+		}
+		for _, alias := range c.Aliases {
+			if alias == subcmd {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func registerExternalCommands() {
@@ -91,26 +111,9 @@ func addExternalCommand(name, fullPath string) {
 		Short:              fmt.Sprintf("External command: %s", name),
 		DisableFlagParsing: true, // Let the external command handle its own flags
 		RunE: func(cmd *cobra.Command, args []string) error {
-			execCmd := exec.Command(fullPath, args...) //nolint:gosec // fullPath is from walking PATH entries
-			execCmd.Stdin = os.Stdin
-			execCmd.Stdout = os.Stdout
-			execCmd.Stderr = os.Stderr
-
-			err := execCmd.Run()
-			if err != nil {
-				var execErr *exec.Error
-				if errors.As(err, &execErr) {
-					return fmt.Errorf("failed to execute external command: %w", execErr)
-				}
-				// Forward the exit code if it's an ExitError
-				var exitError *exec.ExitError
-				if errors.As(err, &exitError) {
-					if status, ok := exitError.Sys().(syscall.WaitStatus); ok {
-						os.Exit(status.ExitStatus())
-					}
-					return err
-				}
-				return err
+			execArgs := append([]string{fullPath}, args...)
+			if err := syscall.Exec(fullPath, execArgs, os.Environ()); err != nil {
+				return fmt.Errorf("failed to execute external command %s: %w", fullPath, err)
 			}
 			return nil
 		},
