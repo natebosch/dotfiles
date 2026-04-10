@@ -2,6 +2,7 @@ package kedge
 
 import (
 	"context"
+	"fmt"
 	"iter"
 	"kedge/internal/tmux"
 	"os"
@@ -15,6 +16,30 @@ import (
 // GitRepoSource handles kedges in $HOME/repos
 type GitRepoSource struct{}
 
+// FindGitRepoPath resolves the actual path to a git repository, handling nested repos.
+func FindGitRepoPath(repoPath string) (string, error) {
+	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("repository directory %s does not exist", repoPath)
+	}
+
+	if _, err := os.Stat(filepath.Join(repoPath, ".git")); err == nil {
+		return repoPath, nil
+	}
+
+	entries, err := os.ReadDir(repoPath)
+	if err == nil {
+		for _, e := range entries {
+			if e.IsDir() {
+				if _, err := os.Stat(filepath.Join(repoPath, e.Name(), ".git")); err == nil {
+					return filepath.Join(repoPath, e.Name()), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("directory %s is not a git repository (no .git directory found)", repoPath)
+}
+
 func (s GitRepoSource) ReadSummary(ctx context.Context, name string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -22,27 +47,18 @@ func (s GitRepoSource) ReadSummary(ctx context.Context, name string) (string, er
 	}
 	repoPath := filepath.Join(home, "repos", name)
 	
-	// Check if .git exists, or if it's a subdir
-	if _, errStat := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(errStat) {
-		// Look for first subdir with .git
-		entries, errRead := os.ReadDir(repoPath)
-		if errRead == nil {
-			for _, e := range entries {
-				if e.IsDir() {
-					if _, errSubStat := os.Stat(filepath.Join(repoPath, e.Name(), ".git")); errSubStat == nil {
-						repoPath = filepath.Join(repoPath, e.Name())
-						break
-					}
-				}
-			}
-		}
+	resolvedPath, errFind := FindGitRepoPath(repoPath)
+	if errFind != nil {
+		Log.Warn("failed to resolve git repo path for summary", "repo", name, "error", errFind)
+		return "", nil
 	}
 
 	cmd := exec.CommandContext(ctx, "git-summary")
-	cmd.Dir = repoPath
-	out, err := cmd.Output()
-	if err != nil {
-		return "", nil // Silence errors for summary
+	cmd.Dir = resolvedPath
+	out, errCmd := cmd.Output()
+	if errCmd != nil {
+		Log.Warn("git-summary execution failed", "dir", resolvedPath, "error", errCmd)
+		return "", nil
 	}
 	return strings.TrimSpace(string(out)), nil
 }
@@ -71,20 +87,11 @@ func (s GitRepoSource) Discover() iter.Seq[KedgeID] {
 func (s GitRepoSource) TmuxInfo(name string) (string, string, map[string]string) {
 	home, _ := os.UserHomeDir()
 	repoPath := filepath.Join(home, "repos", name)
-	// Same logic as session_finder for nested git repos
-	if _, err := os.Stat(filepath.Join(repoPath, ".git")); os.IsNotExist(err) {
-		entries, err := os.ReadDir(repoPath)
-		if err == nil {
-			for _, e := range entries {
-				if e.IsDir() {
-					if _, err := os.Stat(filepath.Join(repoPath, e.Name(), ".git")); err == nil {
-						repoPath = filepath.Join(repoPath, e.Name())
-						break
-					}
-				}
-			}
-		}
+	
+	if resolvedPath, err := FindGitRepoPath(repoPath); err == nil {
+		repoPath = resolvedPath
 	}
+
 	return repoPath, "vim", nil
 }
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"kedge/internal/fzf"
 	"kedge/internal/kedge"
@@ -88,6 +89,7 @@ func gitWorktreeList(repoDir string) (map[string]string, error) {
 }
 
 func gitCheckout(dir, branch string) error {
+	kedge.Log.Info("executing git checkout", "dir", dir, "branch", branch)
 	cmd := exec.Command("git", "checkout", branch)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -97,6 +99,7 @@ func gitCheckout(dir, branch string) error {
 }
 
 func gitCheckoutNew(dir, newBranch string) error {
+	kedge.Log.Info("executing git checkout -b", "dir", dir, "branch", newBranch)
 	cmd := exec.Command("git", "checkout", "-b", newBranch)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -113,6 +116,7 @@ func gitBranchExists(repoDir, branch string) bool {
 }
 
 func gitWorktreeAdd(repoDir, path, branch string, create bool) error {
+	kedge.Log.Info("executing git worktree add", "repo", repoDir, "path", path, "branch", branch, "create", create)
 	var args []string
 	if create {
 		args = []string{"worktree", "add", "-b", branch, path}
@@ -133,28 +137,7 @@ func findGitRepoPath(repoName string) (string, error) {
 		return "", err
 	}
 	repoPath := filepath.Join(home, "repos", repoName)
-	if _, errStat := os.Stat(repoPath); os.IsNotExist(errStat) {
-		return "", fmt.Errorf("repository directory %s does not exist", repoPath)
-	}
-
-	// Check if .git exists directly
-	if _, errGit := os.Stat(filepath.Join(repoPath, ".git")); errGit == nil {
-		return repoPath, nil
-	}
-
-	// Look for first subdir with .git (nested repo)
-	entries, errRead := os.ReadDir(repoPath)
-	if errRead == nil {
-		for _, e := range entries {
-			if e.IsDir() {
-				if _, errSubStat := os.Stat(filepath.Join(repoPath, e.Name(), ".git")); errSubStat == nil {
-					return filepath.Join(repoPath, e.Name()), nil
-				}
-			}
-		}
-	}
-
-	return "", fmt.Errorf("directory %s is not a git repository (no .git directory found)", repoPath)
+	return kedge.FindGitRepoPath(repoPath)
 }
 
 func getSource(kt kedge.KedgeType, t tmux.Tmux) kedge.KedgeSource {
@@ -207,6 +190,9 @@ func runFuzzyPick(ctx context.Context) (string, error) {
 	f := fzf.RealFzf{}
 	choice, err := f.Run(ctx, lines, "-d", "\t", "--with-nth", "1..3", "--ansi", "--no-sort", "--tiebreak", "begin,chunk")
 	if err != nil {
+		if errors.Is(err, fzf.ErrCancelled) {
+			return "", nil
+		}
 		return "", err
 	}
 	if choice == "" {

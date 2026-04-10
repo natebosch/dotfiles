@@ -45,7 +45,7 @@ func TestGitHelpers(t *testing.T) {
 	repoDir := setupTestRepo(t, "main")
 
 	// Test gitDefaultBranch
-	if got := gitDefaultBranch(repoDir); got != "main" { //nolint:goconst // string used in tests
+	if got := gitDefaultBranch(repoDir); got != "main" {
 		t.Errorf("gitDefaultBranch() = %v, want main", got)
 	}
 

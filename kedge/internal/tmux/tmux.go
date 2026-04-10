@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 type Tmux interface {
@@ -70,10 +71,10 @@ func (t RealTmux) SwitchClient(ctx context.Context, name string) error {
 }
 
 func (t RealTmux) AttachSession(ctx context.Context, name string) error {
-	// session_finder uses tmux -2 a -t="$session" -d
-	cmd := exec.CommandContext(ctx, "tmux", "-2", "a", "-t", name, "-d")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	tmuxPath, err := exec.LookPath("tmux")
+	if err != nil {
+		return err
+	}
+	args := []string{"tmux", "-2", "a", "-t", name, "-d"}
+	return syscall.Exec(tmuxPath, args, os.Environ())
 }
