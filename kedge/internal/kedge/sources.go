@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 // GitRepoSource handles kedges in $HOME/repos
@@ -90,8 +92,25 @@ func (s GitRepoSource) TmuxInfo(name string) (string, string, map[string]string)
 type ProjectSource struct{}
 
 func (s ProjectSource) ReadSummary(ctx context.Context, name string) (string, error) {
-	// Project summary is blank for now as per instructions
-	return "", nil
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	configPath := filepath.Join(home, "projects", name, "kedge.toml")
+
+	f, err := os.Open(configPath)
+	if err != nil {
+		return "", nil // Silence if file doesn't exist
+	}
+	defer f.Close()
+
+	var config struct {
+		Description string `toml:"description"`
+	}
+	if err := toml.NewDecoder(f).Decode(&config); err != nil {
+		return "", nil // Silence if invalid TOML
+	}
+	return config.Description, nil
 }
 
 func (s ProjectSource) Discover() iter.Seq[KedgeID] {
