@@ -33,8 +33,8 @@ hi QuickFixLine ctermfg=253  guifg=#dadada cterm=bold gui=bold
 hi Search       ctermbg=063  guibg=#5f5fff
 hi SignColumn   ctermbg=234  guibg=#1c1c1c
 hi Special      ctermfg=177  guifg=#ad75ff
-hi SpellBad     ctermbg=237  guibg=#3a3a3a
-hi SpellBad     ctermfg=196  guifg=#ff0000
+hi SpecialKey   ctermfg=237  guifg=#3a3a3a
+hi SpellBad     ctermbg=196  guibg=#ff0000
 hi SpellCap     ctermbg=237  guibg=#3a3a3a
 hi Statement    ctermfg=179  guifg=#c4a000
 hi Statement    term=bold    gui=bold
