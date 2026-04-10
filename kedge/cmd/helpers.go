@@ -7,10 +7,155 @@ import (
 	"kedge/internal/kedge"
 	"kedge/internal/tmux"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
+
+func resolveProjectName(cmd *cobra.Command) (string, error) {
+	project, _ := cmd.Flags().GetString("project")
+
+	if project == "" {
+		project = os.Getenv("PROJECT")
+	}
+
+	if project == "" {
+		cwd, err := os.Getwd()
+		if err == nil {
+			home, err := os.UserHomeDir()
+			if err == nil {
+				projectsDir := filepath.Join(home, "projects")
+				if strings.HasPrefix(cwd, projectsDir) {
+					rel, err := filepath.Rel(projectsDir, cwd)
+					if err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+						// The first component of the relative path is the project name
+						parts := strings.Split(rel, string(filepath.Separator))
+						project = parts[0]
+					}
+				}
+			}
+		}
+	}
+
+	if project == "" {
+		return "", fmt.Errorf("could not determine project. Use --project flag, set $PROJECT, or run from within a project directory")
+	}
+
+	return project, nil
+}
+
+func gitDefaultBranch(repoDir string) string {
+	cmd := exec.Command("git", "rev-parse", "--verify", "main")
+	cmd.Dir = repoDir
+	if err := cmd.Run(); err == nil {
+		return "main"
+	}
+	return "master"
+}
+
+func gitCurrentBranch(dir string) (string, error) {
+	cmd := exec.Command("git", "branch", "--show-current")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+func gitWorktreeList(repoDir string) (map[string]string, error) {
+	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd.Dir = repoDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("git worktree list failed in %s: %w (output: %s)", repoDir, err, out)
+	}
+
+	worktrees := make(map[string]string)
+	lines := strings.Split(string(out), "\n")
+	var currentPath string
+	for _, line := range lines {
+		if strings.HasPrefix(line, "worktree ") {
+			currentPath = strings.TrimPrefix(line, "worktree ")
+		} else if strings.HasPrefix(line, "branch ") {
+			branch := strings.TrimPrefix(line, "branch refs/heads/")
+			worktrees[currentPath] = branch
+		}
+	}
+	return worktrees, nil
+}
+
+func gitCheckout(dir, branch string) error {
+	cmd := exec.Command("git", "checkout", branch)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git checkout %s failed: %w (output: %s)", branch, err, out)
+	}
+	return nil
+}
+
+func gitCheckoutNew(dir, newBranch string) error {
+	cmd := exec.Command("git", "checkout", "-b", newBranch)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git checkout -b %s failed: %w (output: %s)", newBranch, err, out)
+	}
+	return nil
+}
+
+func gitBranchExists(repoDir, branch string) bool {
+	//nolint:gosec // branch and repoDir are controlled internally
+	cmd := exec.Command("git", "show-ref", "--verify", "--quiet", "refs/heads/"+branch)
+	cmd.Dir = repoDir
+	return cmd.Run() == nil
+}
+
+func gitWorktreeAdd(repoDir, path, branch string, create bool) error {
+	var args []string
+	if create {
+		args = []string{"worktree", "add", "-b", branch, path}
+	} else {
+		args = []string{"worktree", "add", path, branch}
+	}
+	cmd := exec.Command("git", args...)
+	cmd.Dir = repoDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git %v failed: %w (output: %s)", args, err, out)
+	}
+	return nil
+}
+
+func findGitRepoPath(repoName string) (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	repoPath := filepath.Join(home, "repos", repoName)
+	if _, errStat := os.Stat(repoPath); os.IsNotExist(errStat) {
+		return "", fmt.Errorf("repository directory %s does not exist", repoPath)
+	}
+
+	// Check if .git exists directly
+	if _, errGit := os.Stat(filepath.Join(repoPath, ".git")); errGit == nil {
+		return repoPath, nil
+	}
+
+	// Look for first subdir with .git (nested repo)
+	entries, errRead := os.ReadDir(repoPath)
+	if errRead == nil {
+		for _, e := range entries {
+			if e.IsDir() {
+				if _, errSubStat := os.Stat(filepath.Join(repoPath, e.Name(), ".git")); errSubStat == nil {
+					return filepath.Join(repoPath, e.Name()), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("directory %s is not a git repository (no .git directory found)", repoPath)
+}
 
 func getSource(kt kedge.KedgeType, t tmux.Tmux) kedge.KedgeSource {
 	switch kt {

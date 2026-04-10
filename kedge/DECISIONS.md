@@ -24,3 +24,13 @@ This document records significant pivots, mistakes, and reconsiderations made du
 ## TOML Library for `kedge.toml`
 - **Initial Plan:** User requested a dependency for TOML formatting/parsing to handle description escaping safely.
 - **The Choice:** We chose `github.com/pelletier/go-toml/v2`. It provides modern, fast, and idiomatic struct mapping for Go, ensuring that freeform descriptions in `kedge project start` are correctly serialized into the `kedge.toml` file.
+
+## Git Worktree Branch Management (`kedge project usegitrepo`)
+- **Initial Plan:** Add a git worktree for a repo at `~/projects/<name>/r/<repo_name>`.
+- **The Problem:** If the branch matching the project name is already checked out in another worktree (including the main repo), `git worktree add` will fail.
+- **The Pivot:** We implemented "branch juggling". If the project branch is already checked out:
+    1. Try to move that checkout to the "main" branch (`main` or `master`) if "main" is not checked out anywhere else.
+    2. If "main" is also checked out elsewhere, create a backup branch named `<project>-kedgebk` to host the previous checkout.
+    3. If the `-kedgebk` branch also exists, we fail safely to avoid data loss.
+- **Nix Compatibility:** We discovered that running hermetic git tests during a Nix build requires `git` to be explicitly added to `nativeBuildInputs` in `flake.nix`, as it's not present in the default build sandbox.
+

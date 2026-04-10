@@ -16,18 +16,57 @@ type KedgeConfig struct {
 	Description string `toml:"description"`
 }
 
+const (
+	mainBranch   = "main"
+	masterBranch = "master"
+)
+
 var projectStartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start a new project interactively",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		reader := bufio.NewReader(os.Stdin)
 
-		fmt.Print("Project name: ")
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		var defaultName string
+		var repoName string
+		reposDir := filepath.Join(home, "repos")
+		if strings.HasPrefix(cwd, reposDir) {
+			relPath, errRel := filepath.Rel(reposDir, cwd)
+			if errRel == nil && relPath != "." && !strings.HasPrefix(relPath, "..") {
+				parts := strings.Split(relPath, string(filepath.Separator))
+				repoName = parts[0]
+				repoPath := filepath.Join(reposDir, repoName)
+				currentBranch, errCurr := gitCurrentBranch(repoPath)
+				if errCurr == nil && currentBranch != mainBranch && currentBranch != masterBranch {
+					defaultName = currentBranch
+				}
+			}
+		}
+
+		prompt := "Project name"
+		if defaultName != "" {
+			prompt = fmt.Sprintf("%s [%s]", prompt, defaultName)
+		}
+		fmt.Printf("%s: ", prompt)
+
 		name, _ := reader.ReadString('\n')
 		name = strings.TrimSpace(name)
 
 		if name == "" {
-			return fmt.Errorf("project name cannot be empty")
+			if defaultName == "" {
+				return fmt.Errorf("project name cannot be empty")
+			}
+			name = defaultName
 		}
 
 		// Alphanumeric + dash/underscore validation
@@ -39,11 +78,6 @@ var projectStartCmd = &cobra.Command{
 		fmt.Print("Description: ")
 		desc, _ := reader.ReadString('\n')
 		desc = strings.TrimSpace(desc)
-
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
 
 		projectDir := filepath.Join(home, "projects", name)
 		if _, errStat := os.Stat(projectDir); errStat == nil {
@@ -68,6 +102,25 @@ var projectStartCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Project %s started at %s\n", name, projectDir)
+
+		if repoName != "" {
+			var doUseGitRepo bool
+			if name == defaultName {
+				doUseGitRepo = true
+			} else {
+				fmt.Printf("Create worktree for repo '%s'? [Y/n]: ", repoName)
+				ans, _ := reader.ReadString('\n')
+				ans = strings.TrimSpace(strings.ToLower(ans))
+				if ans == "" || ans == "y" || ans == "yes" {
+					doUseGitRepo = true
+				}
+			}
+
+			if doUseGitRepo {
+				return runUseGitRepo(name, repoName)
+			}
+		}
+
 		return nil
 	},
 }

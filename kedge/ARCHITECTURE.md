@@ -10,9 +10,9 @@ The codebase follows standard Go project layout conventions, dividing responsibi
 ### `cmd/`
 Contains the CLI entry points and wiring for all built-in commands.
 - **`root.go`**: Defines the base `kedge` command and handles dynamic discovery of external `$PATH` executables.
-- **`project.go`, `project_start.go`, `project_notes.go`**: Implementation of `kedge project` and its subcommands `start` (interactive project creation) and `notes` (accessing project-specific NOTES.md).
+- **`project.go`, `project_start.go`, `project_notes.go`, `project_usegitrepo.go`**: Implementation of `kedge project` and its subcommands: `start` (context-aware interactive creation), `notes` (NOTES.md access), and `usegitrepo` (secure git worktree management).
 - **Built-in Commands** (`list.go`, `summary.go`, `fuzzypick.go`, `launch.go`, `fuzzylaunch.go`): Thin wrappers that parse arguments, instantiate core domain objects, and invoke business logic.
-- **`helpers.go`**: Shared logic for the commands, such as wiring up `fzf` and `tmux` flows.
+- **`helpers.go`**: Shared logic for the commands, including `fzf`, `tmux`, and `git` helper operations.
 
 ### `internal/`
 Contains private packages that encapsulate the business logic and external service integrations.
@@ -36,3 +36,4 @@ Provides a mockable interface (`Fzf`) around the `fzf` fuzzy finder.
 1. **Discovery**: `cmd/list` or `cmd/fuzzypick` requests kedges from all `KedgeSource` implementations.
 2. **Formatting**: `KedgeID`s are formatted consistently (e.g., `R_my-repo`) for display and selection.
 3. **Execution**: `cmd/launch` receives a Kedge ID, asks the corresponding `KedgeSource` for working directory and environment variables, and delegates session creation/attachment to the `tmux` wrapper.
+4. **Project Lifecycle**: `cmd/project` subcommands handle project directory creation, kedge configuration, and git worktree automation. `usegitrepo` specifically manages branch checkouts to ensure projects have their own isolated git state while minimizing main repo disruption.
