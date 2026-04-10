@@ -42,8 +42,8 @@ func TestProjectStart(t *testing.T) {
 		}
 		runGit("add", "README")
 		runGit("commit", "-m", "initial")
-		runGit("branch", "-m", "main")
-		if branch != "" && branch != "main" {
+		runGit("branch", "-m", mainBranch)
+		if branch != "" && branch != mainBranch {
 			runGit("branch", branch)
 			runGit("checkout", branch)
 		}

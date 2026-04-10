@@ -44,3 +44,8 @@ This document records significant pivots, mistakes, and reconsiderations made du
 - **The Decision:** We implemented a package-level `slog.Logger` that writes structured JSON logs directly to the Linux standard `$XDG_RUNTIME_DIR` (e.g., `/run/user/$UID/kedge.log`). 
 - **Retention:** Because `XDG_RUNTIME_DIR` is a tmpfs wiped automatically on system boot, it guarantees zero long-term clutter while perfectly preserving session-level context. A 5MB manual rotation threshold prevents RAM exhaustion.
 
+## Interactive Fallbacks in `fzf`
+- **Context:** We wanted a way to trigger interactive CLI workflows (like `kedge project start`) directly from within an active `fzf` fuzzy-picker session.
+- **The Problem:** `fzf` takes over the terminal. If we exit `fzf` to run an interactive prompt, we lose the user's place in the picker if they abort the prompt.
+- **The Decision:** We utilized `fzf`'s `--expect` flag combined with an infinite `for` loop in `runFuzzyPick`. If the `--expect` key (`ctrl-s`) is detected, we execute the interactive workflow. If the workflow returns an error or is aborted, we simply `continue` the loop, seamlessly restarting `fzf` without losing the session context.
+
