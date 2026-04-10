@@ -42,15 +42,15 @@ func setupTestRepo(t *testing.T, mainBranch string) string {
 }
 
 func TestGitHelpers(t *testing.T) {
-	repoDir := setupTestRepo(t, "main")
+	repoDir := setupTestRepo(t, mainBranch)
 
 	// Test gitDefaultBranch
-	if got := gitDefaultBranch(repoDir); got != "main" {
+	if got := gitDefaultBranch(repoDir); got != mainBranch {
 		t.Errorf("gitDefaultBranch() = %v, want main", got)
 	}
 
 	// Test gitCurrentBranch
-	if got, err := gitCurrentBranch(repoDir); err != nil || got != "main" {
+	if got, err := gitCurrentBranch(repoDir); err != nil || got != mainBranch {
 		t.Errorf("gitCurrentBranch() = %v, %v; want main, nil", got, err)
 	}
 
@@ -72,10 +72,10 @@ func TestGitHelpers(t *testing.T) {
 	}
 
 	// Test gitCheckout
-	if err := gitCheckout(repoDir, "main"); err != nil {
+	if err := gitCheckout(repoDir, mainBranch); err != nil {
 		t.Errorf("gitCheckout() failed: %v", err)
 	}
-	if got, _ := gitCurrentBranch(repoDir); got != "main" {
+	if got, _ := gitCurrentBranch(repoDir); got != mainBranch {
 		t.Errorf("gitCurrentBranch() after checkout = %v, want main", got)
 	}
 }
@@ -118,7 +118,7 @@ func TestRunUseGitRepo(t *testing.T) {
 		}
 		runGit("add", "README")
 		runGit("commit", "-m", "initial")
-		runGit("branch", "-m", "main")
+		runGit("branch", "-m", mainBranch)
 	}
 	setupGitInDir(repoDir)
 
@@ -156,7 +156,7 @@ func TestRunUseGitRepo(t *testing.T) {
 	
 	// Main repo should have been moved to 'main'
 	current, _ := gitCurrentBranch(repoDir)
-	if current != "main" {
+	if current != mainBranch {
 		t.Errorf("main repo branch = %v, want main", current)
 	}
 
@@ -173,7 +173,7 @@ func TestRunUseGitRepo(t *testing.T) {
 	
 	// Let's make main checked out in a worktree.
 	mainWT := t.TempDir()
-	if out, errRun := exec.Command("git", "-C", repoDir, "worktree", "add", mainWT, "main").CombinedOutput(); errRun != nil {
+	if out, errRun := exec.Command("git", "-C", repoDir, "worktree", "add", mainWT, mainBranch).CombinedOutput(); errRun != nil {
 		t.Fatalf("git worktree add failed: %v, output: %s", errRun, out)
 	}
 	

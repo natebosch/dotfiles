@@ -137,4 +137,8 @@ func runProjectStart() (string, error) {
 
 func init() {
 	projectCmd.AddCommand(projectStartCmd)
+	startAlias := *projectStartCmd
+	startAlias.Use = "start"
+	startAlias.Hidden = true // Keep it as an alias/hidden top-level to avoid cluttering help
+	rootCmd.AddCommand(&startAlias)
 }
