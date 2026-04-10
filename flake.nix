@@ -17,7 +17,7 @@
           pname = "kedge";
           version = "0.1.0";
           src = ./kedge;
-          vendorHash = "sha256-7K17JaXFsjf163g5PXCb5ng2gYdotnZ2IDKk8KFjNj0=";
+          vendorHash = "sha256-C2pSj/1UZei+Us78cCIwbz76fRtjQxFioZiIDypGgns=";
           doCheck = false;
           nativeBuildInputs = [ prev.installShellFiles ];
           postInstall = ''
