@@ -1,0 +1,59 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - errcheck
+    - errorlint
+    - forcetypeassert
+    - goconst
+    - gocritic
+    - gosec
+    - govet
+    - intrange
+    - misspell
+    - nilnil
+    - nolintlint
+    - revive
+    - staticcheck
+    - tparallel
+    - unparam
+    - unused
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    govet:
+      enable-all: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    revive:
+      rules:
+        # [AI-POLICY]: Rules are opt-in. We explicitly exclude 'exported' and
+        # 'package-comment' to prevent AI agents from generating redundant doc
+        # comments.
+        - name: empty-block
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: var-naming
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

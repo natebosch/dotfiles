@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 let
   os_packages = with pkgs; if stdenv.isDarwin then [
@@ -21,11 +21,11 @@ in
   programs.home-manager.enable = true;
   home.stateVersion = "21.05";
 
-  home.username = builtins.getEnv "USER";
-  home.homeDirectory = builtins.getEnv "HOME";
+  targets.genericLinux.enable = pkgs.stdenv.isLinux;
 
 
   home.packages = with pkgs; [
+    kedge
     diffr
     direnv
     fzf
@@ -42,6 +42,12 @@ in
     python3
     vim-full
   ] ++ os_packages;
+
+  home.activation = {
+    clearZcompdump = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      $DRY_RUN_CMD rm -rf $HOME/.zcompdump*
+    '';
+  };
 
   fonts.fontconfig.enable = true;
 
