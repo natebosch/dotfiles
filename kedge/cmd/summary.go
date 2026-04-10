@@ -12,6 +12,7 @@ var summaryCmd = &cobra.Command{
 	Use:   "summary [kedge-id]",
 	Short: "Print information about a kedge in structured TSV format.",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: validKedgeIDArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ki, err := kedge.ParseKedgeID(args[0])
 		if err != nil {
