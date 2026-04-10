@@ -189,7 +189,7 @@ func runFuzzyPick(ctx context.Context) (string, error) {
 
 	f := fzf.RealFzf{}
 	for {
-		choice, err := f.Run(ctx, lines, "-d", "\t", "--with-nth", "1..3", "--ansi", "--no-sort", "--tiebreak", "begin,chunk", "--expect=ctrl-s", "--header=ctrl-s: start project")
+		choice, err := f.Run(ctx, lines, "-d", "\t", "--with-nth", "1..3", "--ansi", "--no-sort", "--tiebreak", "begin,chunk", "--expect=ctrl-s,ctrl-g", "--header=ctrl-s: start project, ctrl-g: launch S_0")
 		if err != nil {
 			if errors.Is(err, fzf.ErrCancelled) {
 				return "", nil
@@ -216,6 +216,10 @@ func runFuzzyPick(ctx context.Context) (string, error) {
 				continue
 			}
 			return newID, nil
+		}
+
+		if key == "ctrl-g" {
+			return "S_0", nil
 		}
 
 		if selection == "" {

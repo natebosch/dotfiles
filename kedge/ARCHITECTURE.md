@@ -15,9 +15,9 @@ The codebase follows standard Go project layout conventions, dividing responsibi
 ### `cmd/`
 Contains the CLI entry points and wiring for all built-in commands.
 - **`root.go`**: Defines the base `kedge` command and handles dynamic discovery of external `$PATH` executables.
-- **`project.go`, `project_start.go`, `project_notes.go`, `project_usegitrepo.go`**: Implementation of `kedge project` and its subcommands: `start` (context-aware interactive creation), `notes` (NOTES.md access), and `usegitrepo` (secure git worktree management).
+- **`project.go`, `project_start.go`, `project_notes.go`, `project_usegitrepo.go`**: Implementation of `kedge project` and its subcommands. `start` is also exposed as a top-level alias for `project start`.
 - **Built-in Commands** (`list.go`, `summary.go`, `fuzzypick.go`, `launch.go`, `fuzzylaunch.go`): Thin wrappers that parse arguments, instantiate core domain objects, and invoke business logic.
-- **`helpers.go`**: Shared logic for the commands, including `fzf`, `tmux`, and `git` helper operations.
+- **`helpers.go`**: Shared logic for the commands, including an enhanced `fzf` loop supporting interactive keybinds (`ctrl-s`, `ctrl-g`), and `tmux`/`git` helper operations.
 
 ### `internal/`
 Contains private packages that encapsulate the business logic and external service integrations.

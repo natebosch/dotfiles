@@ -45,7 +45,14 @@ This document records significant pivots, mistakes, and reconsiderations made du
 - **Retention:** Because `XDG_RUNTIME_DIR` is a tmpfs wiped automatically on system boot, it guarantees zero long-term clutter while perfectly preserving session-level context. A 5MB manual rotation threshold prevents RAM exhaustion.
 
 ## Interactive Fallbacks in `fzf`
-- **Context:** We wanted a way to trigger interactive CLI workflows (like `kedge project start`) directly from within an active `fzf` fuzzy-picker session.
+- **Context:** We wanted a way to trigger interactive CLI workflows (like `kedge project start`) or quick actions (like launching a catch-all session `S_0`) directly from within an active `fzf` fuzzy-picker session.
 - **The Problem:** `fzf` takes over the terminal. If we exit `fzf` to run an interactive prompt, we lose the user's place in the picker if they abort the prompt.
-- **The Decision:** We utilized `fzf`'s `--expect` flag combined with an infinite `for` loop in `runFuzzyPick`. If the `--expect` key (`ctrl-s`) is detected, we execute the interactive workflow. If the workflow returns an error or is aborted, we simply `continue` the loop, seamlessly restarting `fzf` without losing the session context.
+- **The Decision:** We utilized `fzf`'s `--expect` flag combined with an infinite `for` loop in `runFuzzyPick`. 
+    - `ctrl-s`: Executes the `kedge start` (alias for `kedge project start`) workflow.
+    - `ctrl-g`: Immediately returns `S_0` to jump to the catch-all session.
+    If an interactive workflow returns an error or is aborted, we simply `continue` the loop, seamlessly restarting `fzf` without losing the session context.
+
+## Top-level Alias for Common Subcommands
+- **Context:** `kedge project start` is a frequent operation, and users prefer shorter commands like `kedge start`.
+- **The Decision:** We added `start` as a hidden top-level command in `rootCmd` that delegates to `projectStartCmd`. This allows `kedge start` to work without cluttering the main help menu, while keeping the canonical location in the `project` subcommand.
 
