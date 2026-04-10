@@ -14,6 +14,15 @@ if [ ! -x "$(command -v nix-env)" ]; then
   # shellcheck source=/dev/null
   source /nix/var/nix/profiles/default/etc/profile.d/nix.sh
 fi
+# Generate host-specific Nix configuration.
+cat <<EOF > nixpkgs/host.nix
+{ ... }:
+{
+  home.username = "${USER}";
+  home.homeDirectory = "${HOME}";
+}
+EOF
+
 if [ ! -x "$(command -v home-manager)" ]; then
   nix-channel --add \
     https://github.com/nix-community/home-manager/archive/master.tar.gz \
@@ -22,7 +31,7 @@ if [ ! -x "$(command -v home-manager)" ]; then
       nix-channel --update
       nix-shell '<home-manager>' -A install
 fi
-home-manager switch -f nixpkgs/home.nix
+home-manager switch --flake .#nate
 
 vim +PlugInstall +PlugUpdate +qall
 

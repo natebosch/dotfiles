@@ -40,9 +40,18 @@ fi
 if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh  ]; then
   source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
-if [ -e ~/.nix-profile/etc/profile.d/hm-session-vars.sh ]; then
-  source ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-fi
+# Source home-manager session variables.
+# Try the standard nix profile, and the flake-based home-manager profile.
+for hm_vars in \
+  ~/.nix-profile/etc/profile.d/hm-session-vars.sh \
+  ~/.local/state/nix/profiles/home-manager/home-path/etc/profile.d/hm-session-vars.sh
+do
+  if [ -e "$hm_vars" ]; then
+    source "$hm_vars"
+    break
+  fi
+done
+unset hm_vars
 eval "$(direnv hook zsh)"
 
 # Clean up non-existent and duplicate path entries

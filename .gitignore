@@ -1,0 +1,4 @@
+# Nix builds
+result
+# Built per-host, not checked in
+nixpkgs/host.nix
