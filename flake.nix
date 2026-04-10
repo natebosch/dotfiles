@@ -19,7 +19,7 @@
           src = ./kedge;
           vendorHash = "sha256-C2pSj/1UZei+Us78cCIwbz76fRtjQxFioZiIDypGgns=";
           doCheck = false;
-          nativeBuildInputs = [ prev.installShellFiles ];
+          nativeBuildInputs = [ prev.installShellFiles prev.git ];
           postInstall = ''
             export PATH=$out/bin:$PATH
             installShellCompletion --cmd kedge \

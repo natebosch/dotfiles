@@ -8,8 +8,10 @@
 
 ## Planning & Documentation
 - **Implementation Plans:** When creating implementation plans (e.g., in Plan Mode), you MUST explicitly include:
+    - Steps to implement comprehensive (but hermetic) unit testing.
     - A final step to run `nix flake check` from the root directory to verify the Nix build and integration tests.
     - Steps to update `kedge/ARCHITECTURE.md` and `kedge/DECISIONS.md` to reflect any architectural changes or significant design decisions.
+    - Steps to add dynamic autocomplete for any CLI arguments that accept a fixed set of values.
 - **Decision Log:** Use `kedge/DECISIONS.md` to record pivots, mistakes, and choices between competing designs.
 - **Architecture:** Keep `kedge/ARCHITECTURE.md` up to date as the ground truth for the project's structure and data flow.
 
