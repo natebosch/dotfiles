@@ -6,12 +6,72 @@ if [ -z "$branch" ]; then
   exit 1
 fi
 
-if git worktree list | awk -v b="$branch" \
-    '{gsub(/[\[\]]/, "", $NF); if ($NF == b) found=1} END {exit !found}'; then
-  echo "Error: Branch $branch is currently checked out in a worktree."
-  echo "Press Enter to continue..."
-  read -r _ < /dev/tty
-  exit 1
+is_checked_out() {
+  local b="$1"
+  git worktree list | awk -v b="$b" '{gsub(/[\[\]]/, "", $NF); if ($NF == b) found=1} END {exit !found}'
+}
+
+current_branch=$(git branch --show-current)
+
+if is_checked_out "$branch"; then
+  if [ "$current_branch" != "$branch" ]; then
+    echo "Error: Branch $branch is currently checked out in a worktree."
+    echo "Press Enter to continue..."
+    read -r _ < /dev/tty
+    exit 1
+  fi
+
+  fallback=""
+  remote=$(git config --get "branch.$branch.remote")
+  merge=$(git config --get "branch.$branch.merge")
+  local_upstream=""
+
+  if [ "$remote" = "." ] && [[ "$merge" == refs/heads/* ]]; then
+    local_upstream="${merge#refs/heads/}"
+    if ! is_checked_out "$local_upstream"; then
+      fallback="$local_upstream"
+    fi
+  fi
+
+  main_branch=$(git mainbranch)
+
+  if [ -z "$fallback" ]; then
+    if ! is_checked_out "$main_branch"; then
+      fallback="$main_branch"
+    else
+      if [ -n "$local_upstream" ]; then
+        bk="${local_upstream}-kedgebk"
+        if ! is_checked_out "$bk"; then
+          fallback="$bk"
+          if ! git show-ref --verify --quiet "refs/heads/$bk"; then
+            git branch "$bk" "$local_upstream"
+          fi
+        else
+          echo "Error: Backup branch $bk is currently checked out in a worktree."
+          echo "Press Enter to continue..."
+          read -r _ < /dev/tty
+          exit 1
+        fi
+      else
+        bk="${main_branch}-kedgebk"
+        if ! is_checked_out "$bk"; then
+          fallback="$bk"
+          if ! git show-ref --verify --quiet "refs/heads/$bk"; then
+            git branch "$bk" "$main_branch"
+          fi
+        else
+          echo "Error: Backup branch $bk is currently checked out in a worktree."
+          echo "Press Enter to continue..."
+          read -r _ < /dev/tty
+          exit 1
+        fi
+      fi
+    fi
+  fi
+
+  if [ -n "$fallback" ]; then
+    git checkout "$fallback"
+  fi
 fi
 
 if ! git branch -d "$branch"; then
