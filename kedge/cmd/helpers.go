@@ -48,12 +48,12 @@ func resolveProjectName(cmd *cobra.Command) (string, error) {
 }
 
 func gitDefaultBranch(repoDir string) string {
-	cmd := exec.Command("git", "rev-parse", "--verify", "main")
+	cmd := exec.Command("git", "rev-parse", "--verify", mainBranch)
 	cmd.Dir = repoDir
 	if err := cmd.Run(); err == nil {
-		return "main"
+		return mainBranch
 	}
-	return "master"
+	return masterBranch
 }
 
 func gitCurrentBranch(dir string) (string, error) {
@@ -188,22 +188,46 @@ func runFuzzyPick(ctx context.Context) (string, error) {
 	}
 
 	f := fzf.RealFzf{}
-	choice, err := f.Run(ctx, lines, "-d", "\t", "--with-nth", "1..3", "--ansi", "--no-sort", "--tiebreak", "begin,chunk")
-	if err != nil {
-		if errors.Is(err, fzf.ErrCancelled) {
+	for {
+		choice, err := f.Run(ctx, lines, "-d", "\t", "--with-nth", "1..3", "--ansi", "--no-sort", "--tiebreak", "begin,chunk", "--expect=ctrl-s", "--header=ctrl-s: start project")
+		if err != nil {
+			if errors.Is(err, fzf.ErrCancelled) {
+				return "", nil
+			}
+			return "", err
+		}
+		if choice == "" {
 			return "", nil
 		}
-		return "", err
-	}
-	if choice == "" {
+
+		parts := strings.Split(choice, "\n")
+		var key, selection string
+		if len(parts) >= 1 {
+			key = parts[0]
+		}
+		if len(parts) >= 2 {
+			selection = parts[1]
+		}
+
+		if key == "ctrl-s" {
+			newID, errStart := runProjectStart()
+			if errStart != nil {
+				fmt.Fprintf(os.Stderr, "Error creating project: %v\n", errStart)
+				continue
+			}
+			return newID, nil
+		}
+
+		if selection == "" {
+			return "", nil
+		}
+
+		fields := strings.Split(selection, "\t")
+		if len(fields) > 0 {
+			return fields[len(fields)-1], nil
+		}
 		return "", nil
 	}
-
-	fields := strings.Split(choice, "\t")
-	if len(fields) > 0 {
-		return fields[len(fields)-1], nil
-	}
-	return "", nil
 }
 
 func runLaunch(ctx context.Context, idStr string) error {
