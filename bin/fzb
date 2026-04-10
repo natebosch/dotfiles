@@ -23,14 +23,19 @@ preview="git config branch.{1}.description;\
 if [ "$1" == "--list-only" ]; then
   git branch --sort=-committerdate --format="$branch $upstream $commit"
 else
+  main_branch=$(git mainbranch)
+  main_idx=$(git branch --sort=-committerdate --format="%(refname:short)" | awk -v b="$main_branch" '$1 == b {print NR; exit}')
+  main_idx=${main_idx:-1}
+
   git branch --color=always --sort=-committerdate \
     --format="$branch $upstream $commit" |
     fzf --multi --ansi --no-sort --reverse \
       --preview="$preview" \
       --tiebreak begin \
+      --bind="load:pos($main_idx)" \
       --bind='ctrl-d:preview-half-page-down' \
       --bind='ctrl-u:preview-half-page-up' \
-      --bind='ctrl-x:execute(git drop {1})+reload(git branch --color=always --sort=-committerdate --format="'"$branch $upstream $commit"'")' |
+      --bind='ctrl-x:execute(git drop {1})+transform: curr=$(git branch --show-current); idx=$(git branch --sort=-committerdate --format="%(refname:short)" | awk -v b="$curr" "$1 == b {print NR; exit}"); echo "reload(git branch --color=always --sort=-committerdate --format=\"'"$branch $upstream $commit"'\")+pos(${idx:-1})"' |
     awk '{print $1}'
 fi
 
