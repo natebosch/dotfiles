@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Determine the configuration name based on the OS
+case "$(uname -s)" in
+    Darwin)
+        CONF="mac"
+        ;;
+    Linux)
+        if [[ -d /usr/local/google/home ]]; then
+            CONF="glinux"
+        else
+            CONF="linux"
+        fi
+        ;;
+    *)
+        echo "Unsupported OS"
+        exit 1
+        ;;
+esac
+
+echo "Starting isolated test environment for configuration: $CONF"
+
+# Create a temporary directory for HOME
+TRY_HOME=$(mktemp -d -t try-config-XXXXXX)
+export HOME="$TRY_HOME"
+
+# Create a temporary directory for tmux
+export TMUX_TMPDIR="$HOME/.tmux-tmp"
+mkdir -p "$TMUX_TMPDIR"
+
+echo "Temporary HOME: $HOME"
+echo "Building Home Manager activation package..."
+
+# Build the activation package
+# We use the absolute path to the flake to avoid issues if we change directory
+FLAKE_PATH=$(realpath .)
+nix build --extra-experimental-features 'nix-command flakes' "$FLAKE_PATH#homeConfigurations.$CONF.activationPackage" --no-link --out-link "$HOME/activate-pkg"
+
+echo "Activating Home Manager..."
+# Run activation with SKIP_SANITY_CHECKS=1 to bypass the HOME path check
+# We use --driver-version 1 to avoid profile updates if possible
+SKIP_SANITY_CHECKS=1 "$HOME/activate-pkg/activate" --driver-version 1
+
+# Setup shell environment
+# Some dotfiles might expect these to exist
+mkdir -p "$HOME/.ssh"
+mkdir -p "$HOME/repos"
+
+echo "Entering isolated shell. Type 'exit' to leave."
+echo "To test tmux: tmux -S $TMUX_TMPDIR/default"
+
+# Launch a new shell with the isolated environment
+# We use zsh if available since it's the primary shell in the config
+if command -v zsh >/dev/null; then
+    exec zsh
+else
+    exec bash
+fi

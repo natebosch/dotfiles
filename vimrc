@@ -1,6 +1,6 @@
 scriptencoding utf-8
 set nomodeline
-set rtp+=~/.vim-extra/,~/.nix-profile/share/vim-plugins/fzf/
+set rtp+=~/.vim-extra/
 filetype off
 
 " Load vim-plug
@@ -24,49 +24,16 @@ endfunction
 
 call plug#begin('~/.vim/plugged')
 
-" Extend default behavior / Stay out of the way
-Plug 'tpope/vim-repeat'
-Plug 'wellle/targets.vim'
-Plug 'michaeljsmith/vim-indent-object'
-Plug 'christoomey/vim-sort-motion'
-Plug 'ap/vim-css-color'
+" Plugins not in nixpkgs or using DevPlugin
 Plug 'chip/vim-fat-finger'
-Plug 'junegunn/vim-peekaboo'
-Plug 'kana/vim-textobj-user' | Plug 'Julian/vim-textobj-variable-segment'
-Plug 'xtal8/traces.vim'
-Plug 'andymass/vim-matchup'
-
-" Navigation/Organization
-Plug 'christoomey/vim-tmux-navigator'
-Plug 'tmux-plugins/vim-tmux-focus-events'
 Plug 'schickling/vim-bufonly'
-
-" Tools
-Plug 'jreybert/vimagit'
-Plug 'tpope/vim-fugitive'
-Plug 'tpope/vim-rhubarb'
 Plug 'zirrostig/vim-schlepp'
 Plug 'mjbrownie/swapit'
-Plug 'tpope/vim-surround'
-Plug 'tpope/vim-commentary'
-Plug 'justinmk/vim-sneak'
-Plug 'Raimondi/delimitMate'
-Plug 'tommcdo/vim-exchange'
-if has('python3')
-  Plug 'SirVer/ultisnips'
-endif
-Plug DevPlugin('natebosch/vim-lsc')
-Plug 'junegunn/fzf.vim'
-Plug 'tpope/vim-eunuch'
 
-" Filetype
-Plug 'tmux-plugins/vim-tmux'
+Plug DevPlugin('natebosch/vim-lsc')
 Plug DevPlugin('dart-lang/dart-vim-plugin')
 Plug DevPlugin('natebosch/dartlang-snippets')
 Plug DevPlugin('natebosch/vim-lsc-dart')
-Plug 'tpope/vim-git'
-Plug 'LnL7/vim-nix'
-Plug 'sirtaj/vim-openscad'
 
 if filereadable(glob('~/.vimrc.local_plugins'))
   source ~/.vimrc.local_plugins
