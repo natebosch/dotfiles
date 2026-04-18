@@ -1,0 +1,134 @@
+
+Description="Bash"
+
+Categories = {"script", "shell"}
+
+Identifiers=[[ [a-zA-Z_][\w\-]*(?!\w*\/) ]]
+
+Keywords={
+  { Id=1,
+    List={"case", "in", "esac", "for", "do", "done", "function", "if", "then",
+        "fi", "elif", "else", "select", "time", "until", "while"},
+  },
+  { Id=2,
+    List={"source", "alias", "bind", "break", "builtin", "command", "continue",
+        "declare", "dirs", "disown", "enable", "export", "fc", "fg", "getopts",
+        "hash", "help", "history", "jobs",  "let", "local", "logout", "popd", "printf",
+        "pushd", "pwd", "read", "readonly", "return", "set",  "shift", "shopt",
+        "suspend", "test", "times", "trap", "type", "ulimit", "umask", "unalias",
+        "unset", "wait", "eval", "bg", "cd", "echo", "exec", "exit", "kill"},
+  },
+  { Id=3,
+    List={"ls", "cat", "tac", "rev", "cp", "mv", "rm", "rmdir", "chmod", "mkdir", "ls", "ll",
+        "chattr", "ln", "find", "xargs", "expr", "date", "zdump", "time", "touch", "at",
+        "batch", "cal", "sleep", "usleep", "hwclock", "clock", "sort", "tsort", "diff",
+        "patch", "diff3", "sdiff", "cmp", "comm", "uniq", "expand", "unexpand", "cat",
+        "paste", "join", "head", "tail", "grep", "egrep", "zgrep", "look", "sed", "awk",
+        "wc", "tr", "fold", "fmt", "ptx", "col", "column", "colrm", "nl", "pr",
+        "gettext", "iconv", "recode", "groff", "lex", "yacc", "tar", "shar", "ar",
+        "cpio", "gzip", "bzip2", "compress", "uncompress", "zip", "unzip", "sq", "file",
+        "which", "whereis", "whatis", "vdir", "shred", "locate", "slocate", "strings",
+        "basename", "dirname", "split", "sum", "cksum", "md5sum", "sha1sum", "uuencode",
+        "uudecode", "crypt", "make", "install", "more", "less", "host", "vrfy",
+        "nslookup", "dig", "traceroute", "ping", "whois", "finger", "ftp", "uucp",
+        "telnet", "rlogin", "rsh", "rcp", "ssh", "write", "mail", "vacation", "tput",
+        "reset", "clear", "script", "factor", "bc", "dc", "jot", "seq", "yes", "banner",
+        "printenv", "lp", "tee", "mkfifo", "pathchk", "dd", "od", "hexdump", "m4"},
+  },
+
+  -- fixes issue with expressions like ${SHELL="${CONFIG_SHELL-/bin/sh}"}
+  -- the [^\}]+ part fixes issue with "s#@PATH@#/opt/${pkgname}/bin/# ${pkgdir}/etc/profile.d/${pkgname}.sh"
+  { Id=4,
+    Regex=[[\$\{[^\}]+\$\{.+?\}.+?\}|\$\{.+?\} ]],
+  },
+  { Id=4,
+    Regex=[[ \$[\w\#]+ ]],
+  },
+  { Id=2,
+    Regex=[[ \s(\-\-?[\w\-]+) ]],
+  },
+
+  --see OnStateChange
+  { Id=5,
+    Regex=[[ \*\[.*?\]\* ]],
+  }
+}
+
+-- hereDoc opening delimiter, see OnStateChange to handle end of string
+Strings={
+  Delimiter=[[<<[\-]?\s*["']?\s*[A-Za-z_]+["']?|"|`|']],
+}
+
+IgnoreCase=false
+
+Comments={
+  { Block=false,
+    Delimiter= { [[#]] },
+  },
+}
+
+Operators=[[\(|\)|\[|\]|\{|\}|\,|\;|\:|\&|<|>|\!|\=|\/|\*|\%|\+|\-|\|]]
+
+-- state vars for nested command substitution tracking
+-- REMOVED local to fix highlight 4.18 bug with upvalues
+cmdSubStack = {}
+
+function OnStateChange(oldState, newState, token, kwClass)
+
+  if oldState == HL_STRING and token == hereDoc then
+    hereDoc = nil
+    return HL_STRING_END
+  end
+
+  --handling for nested command substitution within strings
+
+  if oldState == HL_STRING then
+
+    local cmdSubStart = string.find(token, "%$%(")
+    if cmdSubStart and cmdSubStack ~= nil then
+      table.insert(cmdSubStack, {depth = #cmdSubStack + 1, inString = true})
+      return HL_STRING
+    end
+
+    local cmdSubEnd = string.find(token, "%)")
+    if cmdSubEnd and cmdSubStack ~= nil and #cmdSubStack > 0  then
+      table.remove(cmdSubStack)
+      return HL_STRING
+    end
+
+    if cmdSubStack ~= nil and #cmdSubStack > 0  then
+      local quoteStart = string.find(token, '["\']')
+      if quoteStart then
+        return HL_STRING
+      end
+    end
+
+  end
+
+  if oldState == HL_STRING and newState ~= HL_STRING then
+    if cmdSubStack ~= nil and #cmdSubStack > 0 and string.find(token, "%)") then
+      table.remove(cmdSubStack)
+      return HL_STRING
+    end
+  end
+
+  if (string.sub(token,1,1) == "$" )  and oldState == HL_STRING and newState == HL_KEYWORD then
+    return HL_INTERPOLATION
+  end
+
+  -- fix of code like case $1 in  *[\\\`\"\$]*)
+  if  kwClass==5 then
+    return HL_OPERATOR
+  end
+
+  if hereDoc~=nil then
+    return HL_STRING
+  end
+
+  --recognize hereDoc multine strings
+  if oldState==HL_STANDARD and newState==HL_STRING  then
+    hereDoc = string.match(token, "<<%-?%s*%'?([%-%a%d_]+)" )
+  end
+
+  return newState
+end

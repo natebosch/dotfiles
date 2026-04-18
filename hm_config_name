@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Prints the name of the `homeConfigurations` entry in flake.nix which matches
+# the current machine.
+set -euo pipefail
+
+case "$(uname -s)" in
+  Darwin)
+    echo mac
+    ;;
+  Linux)
+    if [[ -d /usr/local/google/home ]]; then
+      echo glinux
+    else
+      echo linux
+    fi
+    ;;
+  *)
+    echo "Unsupported OS: $(uname -s)" >&2
+    exit 1
+    ;;
+esac

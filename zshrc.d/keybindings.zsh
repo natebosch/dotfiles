@@ -1,5 +1,4 @@
-#Vi keybindings with a few emacs shortcuts
-bindkey -v
+# A few emacs shortcuts on top of the vi keymap from `defaultKeymap`.
 bindkey "^p" history-search-backward
 bindkey "^n" history-search-forward
 bindkey "^a" beginning-of-line

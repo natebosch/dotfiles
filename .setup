@@ -1,36 +1,47 @@
 #!/bin/bash
+# Bootstrap a new machine: install nix, activate the home-manager flake
+# configuration for this host, and switch the login shell to zsh.
 
-set -e
+set -euo pipefail
 
-if [ ! -x "$(command -v curl)" ]; then
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+conf="$("$repo/hm_config_name")"
+nix_args=(--extra-experimental-features 'nix-command flakes')
+
+if ! command -v curl >/dev/null; then
   echo "Installing curl."
   sudo apt install curl
 fi
 
-nix_install_args=(--no-modify-profile)
-if [ ! -x "$(command -v nix-env)" ]; then
+if ! command -v nix >/dev/null; then
   echo "Installing nix."
-  sh <(curl -L https://nixos.org/nix/install) "${nix_install_args[@]}"
-  # shellcheck source=/dev/null
-  source /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+  sh <(curl -L https://nixos.org/nix/install) --no-modify-profile
+  for profile in \
+    /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh \
+    "$HOME/.nix-profile/etc/profile.d/nix.sh"; do
+    if [[ -e "$profile" ]]; then
+      # shellcheck source=/dev/null
+      source "$profile"
+    fi
+  done
 fi
-if [ ! -x "$(command -v home-manager)" ]; then
-  nix-channel --add \
-    https://github.com/nix-community/home-manager/archive/master.tar.gz \
-    home-manager
-      # TODO: May need HTTPS certs symlinked on mac
-      nix-channel --update
-      nix-shell '<home-manager>' -A install
-fi
-home-manager switch -f nixpkgs/home.nix
+
+# Build and run the activation script directly so the first activation uses
+# the home-manager version pinned in flake.lock. After this the
+# `home-manager` command is installed and the usual update is:
+#   home-manager switch --flake ~/repos/dotfiles#<conf>
+echo "Activating home-manager configuration: $conf"
+activation="$(nix "${nix_args[@]}" build --no-link --print-out-paths \
+  "$repo#homeConfigurations.$conf.activationPackage")"
+"$activation/activate"
 
 vim +PlugInstall +PlugUpdate +qall
 
 if [[ ! "$SHELL" =~ .*zsh.* ]]; then
-  if [ ! -x "$(command -v zsh)" ]; then
+  if ! command -v zsh >/dev/null; then
     echo "Installing zsh."
     sudo apt install zsh
   fi
   echo "Changing shell to zsh."
-  chsh -s "$(which zsh)"
+  chsh -s "$(command -v zsh)"
 fi
