@@ -13,7 +13,6 @@ function! s:Operator(type, ...) abort
   else
     return
   endif
-  let l:content = system('base64', @@)
+  call system('yank', @@)
   let @@ = l:reg
-  call system(printf('printf ''\e]52;c;%s\e\\'' > /dev/tty', l:content))
 endfunction
