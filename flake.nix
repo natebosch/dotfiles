@@ -83,5 +83,23 @@
       );
 
       formatter = forAllSystems (pkgs: pkgs.nixfmt-tree);
+
+      # Development environments for repos that don't carry their own flake.
+      # Each `dev-shells/<repo>.nix` becomes `devShells.<system>.<repo>`, where
+      # `<repo>` is the directory name under `~/repos`. `git enhance` writes an
+      # `.envrc` that uses the shell matching the current checkout.
+      devShells = forAllSystems (
+        pkgs:
+        lib.mapAttrs'
+          (
+            file: _:
+            lib.nameValuePair (lib.removeSuffix ".nix" file) (import ./dev-shells/${file} { inherit pkgs lib; })
+          )
+          (
+            lib.filterAttrs (file: type: type == "regular" && lib.hasSuffix ".nix" file) (
+              builtins.readDir ./dev-shells
+            )
+          )
+      );
     };
 }
