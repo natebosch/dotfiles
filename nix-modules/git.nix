@@ -10,6 +10,7 @@
       ".direnv/"
       "**/doc/api/"
       ".gemini/"
+      ".antigravitycli/"
     ] ++ (if pkgs.stdenv.isDarwin then [ ".DS_Store" ] else [ ]);
 
     settings = {
