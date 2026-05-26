@@ -2,6 +2,7 @@ path=(
   ~/.bin.local
   ~/.bin
   $path
+  ~/.local/bin
 )
 
 # Tools that require their own setup

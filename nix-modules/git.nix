@@ -8,6 +8,7 @@
       ".direnv/"
       "**/doc/api/"
       ".gemini/"
+      ".antigravitycli/"
     ]
     ++ (if pkgs.stdenv.hostPlatform.isDarwin then [ ".DS_Store" ] else [ ]);
 
