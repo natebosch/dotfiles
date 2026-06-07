@@ -6,6 +6,14 @@ path=(
 )
 
 # Tools that require their own setup
+#
+# On macOS, nix-darwin sources nix-daemon.sh in /etc/zshenv which sets
+# __ETC_PROFILE_NIX_SOURCED and prepends nix paths to $PATH. Then
+# /etc/zprofile runs /usr/libexec/path_helper which reorders $PATH,
+# burying the nix entries behind system paths. The guard variable
+# prevents re-sourcing, so we clear it to let nix-daemon.sh re-prepend
+# the nix paths now that path_helper is done.
+unset __ETC_PROFILE_NIX_SOURCED
 if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
   source ~/.nix-profile/etc/profile.d/nix.sh
 fi
