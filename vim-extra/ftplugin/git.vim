@@ -6,3 +6,5 @@ augroup position_restore
 augroup END
 
 setlocal nolist
+
+setlocal foldmethod=syntax
