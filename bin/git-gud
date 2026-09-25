@@ -1,22 +1,171 @@
 #!/bin/bash
 
+set -euo pipefail
+
+# Prints the path of the worktree which has `$1` checked out, if any.
+worktree_for_branch() {
+  git worktree list --porcelain | awk -v ref="refs/heads/$1" '
+    /^worktree / { path = substr($0, length("worktree ") + 1) }
+    $0 == "branch " ref { print path }
+  '
+}
+
+# Fast-forwards the local main branch to the ref `$1` whether or not it is
+# checked out. When it is checked out in any worktree, merge there so the
+# working tree follows. Otherwise move the ref directly.
+#
+# Callers use `||` to tolerate failures, which disables `set -e` in here, so
+# failures are returned explicitly.
+fast_forward_main() {
+  local target="$1" worktree old new
+  old="$(git rev-parse "refs/heads/$main_branch")" || return
+  new="$(git rev-parse "$target")" || return
+  if [[ "$old" == "$new" ]]; then
+    return
+  fi
+  if ! git merge-base --is-ancestor "$old" "$new"; then
+    echo "ERROR: $main_branch has diverged from $target." >&2
+    return 1
+  fi
+  worktree="$(worktree_for_branch "$main_branch")" || return
+  if [[ -n "$worktree" ]]; then
+    git -C "$worktree" merge --ff-only --quiet "$new" || return
+  else
+    git update-ref -m "git gud: fast-forward to $target" \
+      "refs/heads/$main_branch" "$new" "$old" || return
+  fi
+  echo "Updated $main_branch: ${old:0:7}..${new:0:7}"
+}
+
+# Fetches a remote named "upstream", fast-forwards the local main branch to
+# its main branch, and pushes the result to the main branch's own remote.
+sync_upstream() {
+  git fetch upstream || return
+  fast_forward_main "refs/remotes/upstream/$main_branch" || return
+  if [[ "$main_remote" != upstream ]]; then
+    git push "$main_remote" "refs/heads/$main_branch:refs/heads/$main_branch"
+  fi
+}
+
+# Moves the current worktree off of a branch that was deleted upstream. Checks
+# out the main branch, or if that is checked out in another worktree, a new
+# branch named like `main-1` forked from it.
+leave_branch() {
+  local name n=1
+  if [[ -z "$(worktree_for_branch "$main_branch")" ]]; then
+    git switch "$main_branch"
+    return
+  fi
+  name="$main_branch-$n"
+  while git show-ref --verify --quiet "refs/heads/$name"; do
+    n=$((n + 1))
+    name="$main_branch-$n"
+  done
+  git switch -c "$name" "$main_branch"
+}
+
+# Failures to update branches should not prevent cleaning up branches which
+# were pruned during the fetch. Hold on to the first failing exit code and
+# report it at the end.
+exit_code=0
+record_failure() {
+  if (( exit_code == 0 )); then
+    exit_code=$1
+  fi
+}
+
 main_branch="$(git mainbranch)"
-git checkout "$main_branch"
-updates="$(git pull --ff-only 2>&1)"
-exit_code=$?
-if git config remote.upstream.url >/dev/null; then
-  git fetch upstream
-  git merge --ff-only "upstream/$main_branch"
-  git push
+main_remote="$(git config "branch.$main_branch.remote" || echo origin)"
+if ! main_upstream="$(git rev-parse --symbolic-full-name \
+    "$main_branch@{upstream}" 2>/dev/null)"; then
+  main_upstream="refs/remotes/$main_remote/$main_branch"
 fi
+toplevel="$(git rev-parse --show-toplevel)"
+
+fetch_exit=0
+updates="$(git fetch --prune "$main_remote" 2>&1)" || fetch_exit=$?
+if [[ -n "$updates" ]]; then
+  printf '%s\n' "$updates"
+fi
+if (( fetch_exit != 0 )); then
+  echo "ERROR: Failed to fetch $main_remote." >&2
+  record_failure "$fetch_exit"
+fi
+
+main_exit=0
+fast_forward_main "$main_upstream" || main_exit=$?
+if (( main_exit != 0 )); then
+  echo "ERROR: Failed to update $main_branch." >&2
+  record_failure "$main_exit"
+fi
+
+if git config remote.upstream.url >/dev/null; then
+  upstream_exit=0
+  sync_upstream || upstream_exit=$?
+  if (( upstream_exit != 0 )); then
+    echo "ERROR: Failed to sync with upstream." >&2
+    record_failure "$upstream_exit"
+  fi
+fi
+
+current="$(git symbolic-ref --quiet --short HEAD)" || current=""
+if [[ -n "$current" && "$current" != "$main_branch" ]] &&
+    git config "branch.$current.merge" >/dev/null; then
+  current_exit=0
+  if git rev-parse --verify --quiet "$current@{upstream}" >/dev/null; then
+    git pull --rebase || current_exit=$?
+  else
+    echo "The upstream for $current is gone."
+    leave_branch || current_exit=$?
+  fi
+  if (( current_exit != 0 )); then
+    echo "ERROR: Failed to update $current." >&2
+    record_failure "$current_exit"
+  fi
+fi
+
+deleted=()
 while IFS= read -r name; do
   deleted+=("$name")
-done < <(echo "$updates" | awk '/^ - \[deleted\] / {print $NF}')
-echo "$updates"
-echo Removed: "${deleted[@]}"
-for branch in "${deleted[@]/*\//}"; do
-  if [ "$(git rev-parse --verify "$branch" 2>/dev/null)" ]; then
-    git branch -D "$branch"
+done < <(printf '%s\n' "$updates" | awk '/^ - \[deleted\] / {print $NF}')
+
+if (( ${#deleted[@]} > 0 )); then
+  echo Removed: "${deleted[@]}"
+fi
+
+failed_branches=()
+# Strip only the remote name, branch names may contain `/`.
+# The `${arr[@]+...}` form avoids an unbound variable error for empty arrays
+# with `set -u` in bash before 4.4, which is still the system bash on macOS.
+for branch in ${deleted[@]+"${deleted[@]#*/}"}; do
+  if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+    continue
   fi
+  worktree="$(worktree_for_branch "$branch")"
+  if [[ "$worktree" == "$toplevel" ]]; then
+    failed_branches+=("$branch: still checked out in this worktree")
+    continue
+  fi
+  if [[ -n "$worktree" ]]; then
+    # Intentionally no `--force`, fail if the worktree has local changes. The
+    # remote tracking branch is already pruned so a later run won't retry this
+    # branch. Continue cleaning up other branches and report at the end.
+    if ! git worktree remove "$worktree"; then
+      failed_branches+=("$branch: $worktree")
+      continue
+    fi
+  fi
+  git branch -D "$branch"
 done
-exit $exit_code
+
+if (( ${#failed_branches[@]} > 0 )); then
+  {
+    echo
+    echo "ERROR: Could not delete branches:"
+    printf '  %s\n' "${failed_branches[@]}"
+    echo "Clean up manually with 'git worktree remove' and 'git branch -D'."
+  } >&2
+  record_failure 1
+fi
+
+exit "$exit_code"
