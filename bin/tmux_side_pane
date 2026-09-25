@@ -2,10 +2,10 @@
 
 pane_count=$(tmux list-panes | wc -l | xargs)
 window_width=$(tmux display-message -p '#{window_width}')
-if [ "$window_width" \> 400 ]; then
-  main_width=$(( 3*($window_width-20)/4 ))
+if (( window_width > 400 )); then
+  main_width=$(( 3*(window_width-20)/4 ))
 else
-  main_width=$(( 2*($window_width-10)/3 ))
+  main_width=$(( 2*(window_width-10)/3 ))
 fi
 if [[ $pane_count == 1 ]]; then
   tmux split-window -h
