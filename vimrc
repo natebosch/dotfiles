@@ -358,7 +358,7 @@ nnoremap <leader>hF :call ClearMatchWord('Word4')<cr>
 nnoremap <leader>hh :call ClearMatchWords()<cr>
 
 function! ClearMatchWords()
-  for l:i in [1, 2, 3]
+  for l:i in range(1, 4)
     call ClearMatchWord('Word'.l:i)
   endfor
 endfunction
