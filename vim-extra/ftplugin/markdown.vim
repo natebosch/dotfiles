@@ -32,8 +32,13 @@ endfunction
 if expand('%:~') =~ '^\~/snippets/'
   command! -nargs=0 Today call <SID>Today()
 
-  function! s:Today()
-    let l:file = system('date -dmonday +%m-%d.md')
-    execute 'edit' '~/snippets/'.strftime('%Y').'/'.l:file
+  " Open the same snippets file that the tmux shortcut would open.
+  function! s:Today() abort
+    let l:file = trim(system('snippets --print'))
+    if v:shell_error
+      echoerr l:file
+      return
+    endif
+    execute 'edit' fnameescape(l:file)
   endfunction
 endif
