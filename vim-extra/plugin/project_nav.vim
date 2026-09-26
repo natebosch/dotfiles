@@ -254,7 +254,7 @@ function! Tapi_EditNested(bufnum, arglist) abort
   exec 'sbuffer' a:bufnum
   let &switchbuf = l:switchbuf
   call feedkeys("\<c-w>N", 'nix')
-  exec 'split' a:arglist[0]
+  exec 'split' fnameescape(a:arglist[0])
   let b:nested_waiter = a:bufnum
   setlocal bufhidden=delete
   augroup NestedEditing
