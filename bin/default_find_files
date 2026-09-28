@@ -1,11 +1,4 @@
 #!/bin/bash
 
-if command -v ag >/dev/null; then
-  ag -l --nocolor --nogroup --depth 10 --hidden --ignore .git/
-  git ls-files -i --exclude-standard -c 2>/dev/null || true
-else
-  command find -L . \
-    \( -name .git -o -path '*/\\.*' -o -fstype 'dev' -o -fstype 'proc' \) -prune \
-    -o -type f -print \
-    -o -type l -print 2>/dev/null | awk 'NR>1 {print substr($0, 3)}'
-fi
+ag -l --nocolor --nogroup --depth 10 --hidden --ignore .git/
+git ls-files -i --exclude-standard -c 2>/dev/null || true
