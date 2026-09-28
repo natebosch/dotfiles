@@ -1,1 +1,1 @@
-map <buffer> <leader>ff :%!python -m json.tool<cr>
+nnoremap <buffer> <leader>ff :%!jq .<cr>

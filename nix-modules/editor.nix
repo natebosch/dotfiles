@@ -41,15 +41,18 @@ let
         vim-openscad
       ];
     };
+    # Vim finds the standard library for its embedded python by searching
+    # the PATH for `python3`. Without this, a system python found first
+    # provides a mismatched standard library and UltiSnips fails to load.
     vimrcConfig.customRC = ''
       set rtp^=${vimPlugAutoload}
+      set pythonthreehome=${pkgs.python3}
     ''
     + builtins.readFile ../vimrc;
   };
 in
 {
-  home.packages = with pkgs; [
-    python3
+  home.packages = [
     myVim
   ];
 
