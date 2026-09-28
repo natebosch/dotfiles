@@ -1,7 +1,6 @@
 scriptencoding utf-8
 set nomodeline
 set rtp+=~/.vim-extra/
-filetype off
 
 """"""""""""""""""""""""""""""""""
 """ Vim-plug
@@ -92,7 +91,6 @@ set autoread
 " Search
 set ignorecase  " Case insensitive search
 set smartcase   " Well, sometimes case sensitive
-set magic       " Allow pattern matching wish special chars
 set incsearch   " do incremental searching
 set nowrapscan  " Don't wrap, jump up with gg to keep searching
 " Replace
@@ -193,10 +191,7 @@ set splitright
 set splitbelow
 
 " Completion
-set completeopt=menuone
-if has('patch-8.1.1880')
-  set completeopt+=popup
-endif
+set completeopt=menuone,popup
 
 " Hide "Back at Original" and other completion messages
 set shortmess+=c
@@ -229,19 +224,13 @@ set listchars=tab:>-,trail:·
 
 set conceallevel=2
 
-if exists('+colorcolumn')
-  set colorcolumn=+1
-endif
+set colorcolumn=+1
 
 set belloff=cursor,esc,wildmode,error
 
 set diffopt=filler,iwhiteall,vertical,closeoff
 
 set fillchars=diff:\ ,vert:┃
-
-if has('nvim')
-  set inccommand=split
-endif
 """""""""""""""""""""""""""""
 
 
@@ -259,11 +248,11 @@ nnoremap <leader>v? :echo "hi<" . synIDattr(synID(line("."),col("."),1),"name")
     \ . synIDattr(synIDtrans(synID(line("."),col("."),1)),"name") . ">"<CR>
 
 " Move lines or blocks of text up/down
-vmap <C-h> <Plug>SchleppLeft
-vmap <C-j> <Plug>SchleppDown
-vmap <C-k> <Plug>SchleppUp
-vmap <C-l> <Plug>SchleppRight
-vmap D <Plug>SchleppDup
+xmap <C-h> <Plug>SchleppLeft
+xmap <C-j> <Plug>SchleppDown
+xmap <C-k> <Plug>SchleppUp
+xmap <C-l> <Plug>SchleppRight
+xmap D <Plug>SchleppDup
 
 " File/Buffer/Code navigation
 nnoremap <leader>o :edit %:h<cr>
