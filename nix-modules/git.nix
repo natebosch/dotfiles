@@ -26,6 +26,7 @@
       };
       advice = {
         addIgnoredFile = false;
+        skippedCherryPicks = false;
       };
       interactive = {
         diffFilter = "diffr";
