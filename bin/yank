@@ -1,39 +1,77 @@
 #!/bin/sh
+#
+# Copy stdin, a file, or a string argument to the system clipboard.
+#
+# Usage:
+#   some-command | yank
+#   yank path/to/file
+#   yank 'literal text'
+#
+# Tries, in order: xsel or xclip when an X display is available, pbcopy,
+# `tmux load-buffer -w` when running inside tmux, and finally an OSC52
+# escape sequence written to the controlling terminal.
+
+set -eu
+
+# OSC52 payloads are limited by many terminals; keep the original limit.
+max_len=74994
+
+die() {
+  echo "${0##*/}: $*" >&2
+  exit 1
+}
 
 if [ "$#" -gt 1 ]; then
-  echo "Requires 0 or 1 arguments"
-  exit 1
+  die "requires 0 or 1 arguments"
 fi
 if [ "$#" -eq 0 ]; then
-  buf="$(head -c 74995)"
+  buf="$(head -c "$((max_len + 1))")"
+elif [ -f "$1" ]; then
+  buf="$(head -c "$((max_len + 1))" "$1")"
 else
-  if [ -f "$1" ]; then
-    buf="$(head -c 74995 "$1")"
-  else
-    buf="$1"
-  fi
+  buf="$1"
 fi
+
 len="$(printf %s "$buf" | wc -c)"
-if [ "$len" -gt 74994 ]; then
-  echo "$0: File too long, max size 74994 bytes" >&2
+if [ "$len" -gt "$max_len" ]; then
+  echo "${0##*/}: input too long, max size $max_len bytes" >&2
   exit 65
 fi
 
-if [ -n "$TMUX_PANE" ]; then
-  eval "$(tmux show-environment -s DISPLAY)"
+has() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+in_tmux=false
+if [ -n "${TMUX:-}" ] && has tmux; then
+  in_tmux=true
+  # Pick up the DISPLAY of the most recently attached client, which may differ
+  # from the one this shell was started with.
+  eval "$(tmux show-environment -s DISPLAY 2>/dev/null || true)"
 fi
 
-if [ -n "$DISPLAY" ]; then
-  if [ -x "$(command -v xsel)" ]; then
+if [ -n "${DISPLAY:-}" ]; then
+  if has xsel; then
     printf %s "$buf" | xsel -ib && exit
-  elif [ -x "$(command -v xclip)" ]; then
+  elif has xclip; then
     printf %s "$buf" | xclip -sel c && exit
   fi
 fi
-if [ -x "$(command -v pbcopy)" ]; then
+
+if has pbcopy; then
   printf %s "$buf" | pbcopy && exit
+fi
+
+# Hand the content to tmux, which sets its paste buffer and, with
+# `set-clipboard on`, forwards it to the outer terminal with OSC52. This works
+# even when the caller's /dev/tty is not a tmux pane, such as a process running
+# under an agent or another program that allocates its own pty. Requires
+# tmux 3.2+ for `-w`; older versions fall through to the raw escape below.
+if "$in_tmux"; then
+  printf %s "$buf" | tmux load-buffer -w - 2>/dev/null && exit
 fi
 
 encoded="$(printf %s "$buf" | base64 | tr -d '\r\n')"
 
-printf '\033]52;c;%s\a' "$encoded" >/dev/tty
+{ printf '\033]52;c;%s\a' "$encoded" >/dev/tty; } 2>/dev/null ||
+  die "no clipboard method available and /dev/tty is not writable"
