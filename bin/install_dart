@@ -2,6 +2,17 @@
 
 set -e
 
+# `install_dart --current_version` prints the version of the active SDK. It
+# accepts no other arguments, because `dart --version <file>` would run the
+# file. That makes it safe to allow as a command prefix for agents.
+if [ "${1:-}" == "--current_version" ]; then
+  if [ "$#" -ne 1 ]; then
+    echo "install_dart: --current_version takes no other arguments" >&2
+    exit 2
+  fi
+  exec dart --version
+fi
+
 VERSION="${1:-latest}"
 FLAVOR="${2:-release}"
 CHANNEL="${3:-stable}"
