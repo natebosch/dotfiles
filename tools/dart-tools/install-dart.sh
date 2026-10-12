@@ -1,26 +1,33 @@
-#!/bin/bash
-
-set -e
+# `install-dart --current_version` prints the version of the active SDK. It
+# accepts no other arguments, because `dart --version <file>` would run the
+# file. That makes it safe to allow as a command prefix for agents.
+if [ "${1:-}" = "--current_version" ]; then
+  if [ "$#" -ne 1 ]; then
+    echo "install-dart: --current_version takes no other arguments" >&2
+    exit 2
+  fi
+  exec dart --version
+fi
 
 VERSION="${1:-latest}"
 FLAVOR="${2:-release}"
 CHANNEL="${3:-stable}"
 
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" = "Darwin" ]; then
   OS="macos"
 else
   OS="linux"
 fi
 
-if [ "$(uname -m)" == "arm64" ]; then
+if [ "$(uname -m)" = "arm64" ]; then
   ARCHITECTURE="arm64"
 else
   # Normalize because 64 bit X86 architectures can appear as "x86_x64" or "x64".
   ARCHITECTURE="x64"
 fi
 
-if [ "$VERSION" == "local" ]; then
-  if [ "$OS" == "macos" ]; then
+if [ "$VERSION" = "local" ]; then
+  if [ "$OS" = "macos" ]; then
     OUT="xcodebuild"
   else
     OUT="out"
@@ -33,18 +40,18 @@ if [ "$VERSION" == "local" ]; then
   exit
 fi
 
-if [ "$VERSION" == "stable" ]; then
+if [ "$VERSION" = "stable" ]; then
   VERSION="latest"
-elif [ "$VERSION" == "dev" ]; then
+elif [ "$VERSION" = "dev" ]; then
   CHANNEL="dev"
   VERSION="latest"
-elif [[ "$VERSION" =~ "dev" ]]; then
+elif [[ "$VERSION" =~ dev ]]; then
   CHANNEL="dev"
 fi
 
 DOWNLOAD="https://storage.googleapis.com/dart-archive/channels/$CHANNEL"
 
-if [ "$VERSION" == "latest" ]; then
+if [ "$VERSION" = "latest" ]; then
   VERSION="$(curl -s "$DOWNLOAD/$FLAVOR/latest/VERSION" | jq -r '.version')"
 fi
 

@@ -56,7 +56,10 @@
         }:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = { inherit userEmail; };
+          extraSpecialArgs = {
+            inherit userEmail;
+            tools = self.packages.${system};
+          };
           modules = [
             ./nix-modules/core.nix
             ./nix-modules/cli.nix
@@ -83,5 +86,17 @@
       );
 
       formatter = forAllSystems (pkgs: pkgs.nixfmt-tree);
+
+      # Self-contained CLI tools packaged as Nix derivations. Each
+      # `tools/<name>/default.nix` is built with `pkgs.callPackage` and exposed
+      # as `packages.<system>.<name>`.
+      packages = forAllSystems (
+        pkgs:
+        lib.mapAttrs (name: _: pkgs.callPackage ./tools/${name} { }) (
+          lib.filterAttrs (
+            name: type: type == "directory" && builtins.pathExists ./tools/${name}/default.nix
+          ) (builtins.readDir ./tools)
+        )
+      );
     };
 }
