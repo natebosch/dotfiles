@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, tools, ... }:
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
 
@@ -11,6 +11,8 @@ let
   status-core-count = if isDarwin then "sysctl -n hw.ncpu" else "grep -c processor /proc/cpuinfo";
 in
 {
+  home.packages = [ tools.tmux-tools ];
+
   programs.tmux = {
     enable = true;
     shortcut = "Space"; # prefix C-Space
