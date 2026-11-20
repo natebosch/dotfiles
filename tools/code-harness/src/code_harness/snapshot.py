@@ -547,7 +547,8 @@ def is_self_script_proc(info: Mapping) -> bool:
       for tok in argv[:3]
   )
   if has_cmd and any(
-      sub in argv for sub in ("snapshot", "tmux-next", "overview")
+      sub in argv
+      for sub in ("snapshot", "tmux-next", "tmux-status", "overview")
   ):
     return True
   return False
@@ -1281,6 +1282,54 @@ def _iso_gt(ts_a: str, ts_b: str) -> bool:
   return bool(ts_a and ts_b and ts_a > ts_b)
 
 
+def _newer_iso_ts(ts_a: str, ts_b: str) -> str:
+  """Returns whichever ISO-8601 timestamp is newer, or the non-empty one."""
+  if not ts_a:
+    return ts_b or ""
+  if not ts_b:
+    return ts_a
+  dt_a = _parse_iso_dt(ts_a)
+  dt_b = _parse_iso_dt(ts_b)
+  if dt_a is not None and dt_b is not None:
+    return ts_b if dt_b >= dt_a else ts_a
+  return ts_b or ts_a
+
+
+def _step_metadata_iso_ts(meta_blob: bytes | None) -> str:
+  """Extracts step metadata created_at (field 1) as ISO-8601 UTC."""
+  if not meta_blob:
+    return ""
+  try:
+    meta = _proto_fields(meta_blob)
+    ts_raw = _proto_first(meta, 1)
+    if not isinstance(ts_raw, bytes):
+      return ""
+    ts_msg = _proto_fields(ts_raw)
+    secs = _proto_first(ts_msg, 1, 0) or 0
+    if not isinstance(secs, int) or secs <= 0:
+      return ""
+    nanos = _proto_first(ts_msg, 2, 0) or 0
+    dt = datetime.datetime.fromtimestamp(
+        secs + nanos / 1e9, datetime.timezone.utc
+    )
+    return dt.isoformat().replace("+00:00", "Z")
+  except (ValueError, OSError, OverflowError):
+    return ""
+
+
+def _waiting_step_ts(
+    data_dir: str | None,
+    conv_id: str,
+    md_blob: bytes | None,
+    config: HarnessConfig | None = None,
+) -> str:
+  sql_ts = _step_metadata_iso_ts(md_blob)
+  _, tx_ts = _trailing_transcript_entry_and_ts(
+      read_last_transcript_entries(data_dir, conv_id, config=config)
+  )
+  return _newer_iso_ts(sql_ts, tx_ts)
+
+
 def _is_recent_iso_timestamp(iso_str: str, max_age_sec: float = 60) -> bool:
   ts = _parse_iso_dt(iso_str)
   if ts is None:
@@ -1563,9 +1612,11 @@ def _inspect_trajectory_state(
       pl_col = (
           "step_payload" if "step_payload" in cols else "NULL AS step_payload"
       )
+      md_col = "metadata" if "metadata" in cols else "NULL AS metadata"
       raw_rows = con.execute(
-          f"SELECT idx, step_type, status, {td_col}, {pl_col} FROM steps "
-          "WHERE idx >= ? AND status IN (?, ?, ?, ?, ?) ORDER BY idx ASC",
+          f"SELECT idx, step_type, status, {td_col}, {pl_col}, {md_col} "
+          "FROM steps WHERE idx >= ? AND status IN (?, ?, ?, ?, ?) "
+          "ORDER BY idx ASC",
           (
               lower_idx,
               STATUS_PENDING,
@@ -1576,7 +1627,7 @@ def _inspect_trajectory_state(
           ),
       ).fetchall()
       kept = []
-      for row_idx, st_type, st_val, task_blob, payload in raw_rows:
+      for row_idx, st_type, st_val, task_blob, payload, md_blob in raw_rows:
         keep = False
         if st_val == STATUS_WAITING:
           keep = row_idx >= ckpt_idx
@@ -1586,7 +1637,7 @@ def _inspect_trajectory_state(
           keep = row_idx >= min_idx
         if not keep:
           continue
-        kept.append((row_idx, st_type, st_val, task_blob, payload))
+        kept.append((row_idx, st_type, st_val, task_blob, payload, md_blob))
         if st_type == STEP_TYPE_GENERIC and payload:
           for cid in _workflow_agent_ids_from_step(payload):
             if cid not in wf_seen:
@@ -1594,29 +1645,30 @@ def _inspect_trajectory_state(
               wf_ids.append(cid)
       if kept:
         first_question = None
-        for _, st_type, st_val, _, payload in kept:
+        for _, st_type, st_val, _, payload, md_blob in kept:
           if st_val == STATUS_WAITING:
             w_state, w_reason = classify_waiting_step(st_type, payload)
             if w_state == CLI_STATE_PERMISSION:
               return (
                   CLI_STATE_PERMISSION,
                   w_reason,
-                  "",
+                  _waiting_step_ts(data_dir, conv_id, md_blob, config=config),
                   True,
                   False,
                   tuple(wf_ids),
               )
             if first_question is None:
-              first_question = (
-                  w_state,
-                  w_reason,
-                  "",
-                  True,
-                  False,
-                  tuple(wf_ids),
-              )
+              first_question = (w_state, w_reason, md_blob)
         if first_question is not None:
-          return first_question
+          w_state, w_reason, md_blob = first_question
+          return (
+              w_state,
+              w_reason,
+              _waiting_step_ts(data_dir, conv_id, md_blob, config=config),
+              True,
+              False,
+              tuple(wf_ids),
+          )
         if kept[-1][2] == STATUS_GENERATING:
           return (
               CLI_STATE_WORKING,
@@ -2076,7 +2128,7 @@ def live_subagents_for_conv(
   ]
 
 
-def classify_cli_state(
+def classify_cli_state_with_ts(
     cli_info: Mapping,
     is_print: bool,
     pane_id: str,
@@ -2088,10 +2140,10 @@ def classify_cli_state(
     self_ignored: set[int],
     data_dir: str | None,
     config: HarnessConfig | None = None,
-) -> tuple[str, str]:
-  """Returns (state_str, reason_str) where state_str is one of CLI_STATE_*."""
+) -> tuple[str, str, str]:
+  """Returns (state_str, reason_str, last_ts_str) for one coding-agent CLI."""
   if is_print:
-    return CLI_STATE_WORKING, "headless --print run in progress"
+    return CLI_STATE_WORKING, "headless --print run in progress", ""
 
   cli_start_epoch = cli_info.get("start_epoch")
   min_epoch = (cli_start_epoch - 2.0) if cli_start_epoch is not None else None
@@ -2105,16 +2157,17 @@ def classify_cli_state(
       return (
           CLI_STATE_WORKING,
           f"active child task ({sample}, pid {kids[0]['pid']})",
+          "",
       )
-    return CLI_STATE_SETTLED, "empty prompt (no conversation yet)"
+    return CLI_STATE_SETTLED, "empty prompt (no conversation yet)", ""
 
   state, reason, parent_ts, has_db, parent_canceled, wf_ids = (
       _inspect_trajectory_state(data_dir, conv_id, config=config)
   )
   if state in (CLI_STATE_PERMISSION, CLI_STATE_QUESTION):
-    return state, reason
+    return state, reason, parent_ts
 
-  saw_sub_question: tuple[str, str] | None = None
+  saw_sub_question: tuple[str, str, str] | None = None
   saw_sub_working: tuple[str, str] | None = None
   for sub_id, sub_label in discover_active_child_agents(
       data_dir,
@@ -2128,11 +2181,16 @@ def classify_cli_state(
         data_dir, sub_id, is_child=True, config=config
     )
     if sub_state == CLI_STATE_PERMISSION:
-      return CLI_STATE_PERMISSION, f"subagent {sub_label} {sub_reason}"
+      return (
+          CLI_STATE_PERMISSION,
+          f"subagent {sub_label} {sub_reason}",
+          _newer_iso_ts(parent_ts, sub_ts),
+      )
     if sub_state == CLI_STATE_QUESTION and saw_sub_question is None:
       saw_sub_question = (
           CLI_STATE_QUESTION,
           f"subagent {sub_label} {sub_reason}",
+          sub_ts,
       )
     elif sub_state == CLI_STATE_WORKING and saw_sub_working is None:
       saw_sub_working = (
@@ -2159,7 +2217,11 @@ def classify_cli_state(
         )
 
   if saw_sub_question is not None:
-    return saw_sub_question
+    return (
+        saw_sub_question[0],
+        saw_sub_question[1],
+        _newer_iso_ts(parent_ts, saw_sub_question[2]),
+    )
 
   kids = active_cli_child_processes(
       cli_info["pid"], procs, children_map, mcp_sigs, self_ignored
@@ -2169,6 +2231,7 @@ def classify_cli_state(
     return (
         CLI_STATE_WORKING,
         f"active child task ({sample}, pid {kids[0]['pid']})",
+        parent_ts,
     )
 
   # Optional statusLine state file fallback / extra task check if present.
@@ -2181,39 +2244,76 @@ def classify_cli_state(
         ag = st.get("agent_state") or ""
         if not has_db:
           if st.get("tool_confirmation_pending"):
-            return CLI_STATE_PERMISSION, "waiting on permission check"
+            return (
+                CLI_STATE_PERMISSION,
+                "waiting on permission check",
+                parent_ts,
+            )
           if ag == "tool_use":
             return (
                 CLI_STATE_QUESTION,
                 "waiting on tool confirmation or question",
+                parent_ts,
             )
           if ag == "working":
-            return CLI_STATE_WORKING, "agent actively working"
+            return CLI_STATE_WORKING, "agent actively working", parent_ts
         if (st.get("task_count") or 0) > 0:
           return (
               CLI_STATE_WORKING,
               f"{st['task_count']} background task(s) active",
+              parent_ts,
           )
         for sub in st.get("subagents") or []:
           if sub.get("status") == "running":
             return (
                 CLI_STATE_WORKING,
                 f"subagent running ({sub.get('role') or 'subagent'})",
+                parent_ts,
             )
         if (st.get("pending_input_count") or 0) > 0:
-          return CLI_STATE_WORKING, "queued input pending"
+          return CLI_STATE_WORKING, "queued input pending", parent_ts
     except (OSError, ValueError):
       pass
 
   if state != CLI_STATE_SETTLED:
-    return state, reason
+    return state, reason, parent_ts
   if saw_sub_working is not None:
-    return saw_sub_working
+    return saw_sub_working[0], saw_sub_working[1], parent_ts
   if not parent_canceled and has_wakeable_undelivered_message(
       data_dir, conv_id, min_epoch=min_epoch, config=config
   ):
-    return CLI_STATE_WORKING, "wakeup message pending"
-  return CLI_STATE_SETTLED, reason
+    return CLI_STATE_WORKING, "wakeup message pending", parent_ts
+  return CLI_STATE_SETTLED, reason, parent_ts
+
+
+def classify_cli_state(
+    cli_info: Mapping,
+    is_print: bool,
+    pane_id: str,
+    conv_id: str | None,
+    open_dbs: set[str],
+    procs: Mapping[int, dict],
+    children_map: Mapping[int, list[int]],
+    mcp_sigs: set[tuple[str, str | None]],
+    self_ignored: set[int],
+    data_dir: str | None,
+    config: HarnessConfig | None = None,
+) -> tuple[str, str]:
+  """Returns (state_str, reason_str) where state_str is one of CLI_STATE_*."""
+  state, reason, _ = classify_cli_state_with_ts(
+      cli_info,
+      is_print,
+      pane_id,
+      conv_id,
+      open_dbs,
+      procs,
+      children_map,
+      mcp_sigs,
+      self_ignored,
+      data_dir,
+      config=config,
+  )
+  return state, reason
 
 
 def classify_cli_instance(
