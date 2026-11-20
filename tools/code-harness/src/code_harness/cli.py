@@ -15,6 +15,7 @@ from code_harness.config import (
     resolve_cli_bin,
 )
 from code_harness.snapshot import cmd_snapshot
+from code_harness.tmux_next import cmd_tmux_next
 
 CommandHandler = Callable[[HarnessConfig, str | None, list[str]], int]
 
@@ -42,7 +43,9 @@ PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
 
 # Hidden subcommands are omitted from top-level --help. Register agent-facing
 # helpers and low-level plumbing commands here.
-HIDDEN_COMMANDS: dict[str, CommandHandler] = {}
+HIDDEN_COMMANDS: dict[str, CommandHandler] = {
+    "tmux-next": cmd_tmux_next,
+}
 
 
 def _format_help() -> str:

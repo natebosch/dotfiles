@@ -44,6 +44,12 @@ LOCK_RE = re.compile(r"/presence/([0-9a-fA-F-]{36})\.lock$")
 DB_RE = re.compile(r"/conversations/([0-9a-fA-F-]{36})\.db$")
 RESUME_LOG_RE = re.compile(r"Resuming conversation ([0-9a-fA-F-]{36})")
 ISO_FRAC_RE = re.compile(r"\.(\d+)(?=[+-]|$)")
+SWARM_WAIT_OUTPUT_RE = re.compile(
+    r"^Waiting for [^\n]*\bposted after #\d+\.$"
+)
+GENERIC_TS_HEADER_RE = re.compile(
+    r"^(?:(?:Created|Completed) At: [^\r\n]*\r?\n)+"
+)
 
 SHELL_NAMES = frozenset(
     {"sh", "bash", "zsh", "fish", "dash", "ksh", "tcsh", "csh"}
@@ -55,9 +61,12 @@ META_ROOT = 6
 
 STEP_TYPE_FINISH = 2
 STEP_TYPE_USER_INPUT = 14
+STEP_TYPE_PLANNER_RESPONSE = 15
+STEP_TYPE_ERROR_MESSAGE = 17
 STEP_TYPE_CHECKPOINT = 23
 STEP_TYPE_SYSTEM_MESSAGE = 101
 STEP_TYPE_GENERIC = 132
+STEP_TYPE_ASK_QUESTION = 138
 
 STATUS_PENDING = 1
 STATUS_RUNNING = 2
@@ -78,6 +87,16 @@ GENERIC_STEP_RENDER_INFO = 3
 RENDER_INFO_CONTENT_BLOCKS = 10
 CONTENT_BLOCK_AGENT = 4
 AGENT_REF_CONVERSATION_ID = 1
+
+STEP_REQUESTED_INTERACTION = 56
+INTERACTION_ELICITATION = 20
+INTERACTION_PERMISSION = 21
+INTERACTION_ASK_QUESTION = 22
+
+CLI_STATE_SETTLED = "settled"
+CLI_STATE_PERMISSION = "permission"
+CLI_STATE_QUESTION = "question"
+CLI_STATE_WORKING = "working"
 
 
 def _get_config(config: HarnessConfig | None) -> HarnessConfig:
@@ -332,8 +351,40 @@ def _parse_ps_etime(etime: str) -> float | None:
   return days * 86400 + hours * 3600 + mins * 60 + secs
 
 
-def _load_linux_proc_table() -> dict[int, dict]:
-  """Reads `/proc` directly without spawning a `ps` child process."""
+def _populate_proc_cmdline_and_exe(info: dict) -> None:
+  pid = info["pid"]
+  proc_dir = f"/proc/{pid}"
+  argv = None
+  exe = ""
+  try:
+    with open(f"{proc_dir}/cmdline", "rb") as f:
+      raw = f.read()
+    if raw:
+      argv = [
+          p.decode("utf-8", "replace")
+          for p in raw.rstrip(b"\0").split(b"\0")
+      ]
+  except OSError:
+    pass
+  try:
+    exe = os.readlink(f"{proc_dir}/exe").removesuffix(" (deleted)")
+  except OSError:
+    pass
+  if argv:
+    info["argv"] = argv
+    info["args_str"] = " ".join(argv)
+  info["exe"] = exe
+
+
+def _load_linux_proc_table(
+    root_pids: set[int] | None = None,
+) -> tuple[dict[int, dict], dict[int, list[int]]]:
+  """Reads `/proc` directly without spawning a `ps` child process.
+
+  When `root_pids` is provided, reads `/proc/<pid>/stat` to build the full
+  parent-child tree, then reads `cmdline` and `exe` only for `root_pids`,
+  their descendants, and this process's own lineage/descendants.
+  """
   btime = _linux_boot_time()
   try:
     clk_tck = os.sysconf("SC_CLK_TCK")
@@ -341,6 +392,7 @@ def _load_linux_proc_table() -> dict[int, dict]:
     clk_tck = 100
 
   procs: dict[int, dict] = {}
+  children: dict[int, list[int]] = {}
   for entry in os.listdir("/proc"):
     if not entry.isdigit():
       continue
@@ -371,24 +423,6 @@ def _load_linux_proc_table() -> dict[int, dict]:
         start_epoch = btime + int(after[19]) / clk_tck
       except ValueError:
         start_epoch = None
-    argv = None
-    exe = ""
-    try:
-      with open(f"{proc_dir}/cmdline", "rb") as f:
-        raw = f.read()
-      if raw:
-        argv = [
-            p.decode("utf-8", "replace")
-            for p in raw.rstrip(b"\0").split(b"\0")
-        ]
-    except OSError:
-      pass
-    try:
-      exe = os.readlink(f"{proc_dir}/exe").removesuffix(" (deleted)")
-    except OSError:
-      pass
-    if not argv:
-      argv = [comm]
     procs[pid] = {
         "pid": pid,
         "ppid": ppid,
@@ -396,68 +430,93 @@ def _load_linux_proc_table() -> dict[int, dict]:
         "tty": "",
         "tty_nr": tty_nr,
         "comm": comm,
-        "argv": argv,
-        "args_str": " ".join(argv),
-        "exe": exe,
+        "argv": [comm],
+        "args_str": comm,
+        "exe": "",
         "start_epoch": start_epoch,
     }
-  return procs
+    children.setdefault(ppid, []).append(pid)
+
+  if root_pids is None:
+    target_pids = procs.keys()
+  else:
+    target_pids = set()
+    seeds = set(root_pids)
+    my_pid = os.getpid()
+    cur = my_pid
+    while cur and cur not in target_pids:
+      target_pids.add(cur)
+      cur_info = procs.get(cur)
+      cur = cur_info["ppid"] if cur_info else 0
+    seeds.add(my_pid)
+    for rpid in seeds:
+      if rpid in procs:
+        target_pids.add(rpid)
+        target_pids.update(descendants_of(rpid, children))
+
+  for pid in target_pids:
+    info = procs.get(pid)
+    if info is not None:
+      _populate_proc_cmdline_and_exe(info)
+
+  return procs, children
 
 
 def load_process_table(
     config: HarnessConfig | None = None,
+    root_pids: set[int] | None = None,
 ) -> tuple[dict[int, dict], dict[int, list[int]]]:
   """Returns ({pid: proc_dict}, {ppid: [child_pids]})."""
   global _PRELOADED_OPEN_FILES
   cfg = _get_config(config)
   if os.path.isdir("/proc"):
     _PRELOADED_OPEN_FILES = None
-    procs = _load_linux_proc_table()
-  else:
-    now = time.time()
-    res = subprocess.run(
-        ["ps", "-ww", "-eo", "pid=,ppid=,stat=,tty=,etime=,args="],
-        stdin=subprocess.DEVNULL,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    procs = {}
-    for line in res.stdout.splitlines():
-      parts = line.strip().split(None, 5)
-      if len(parts) < 6:
-        continue
-      try:
-        pid = int(parts[0])
-        ppid = int(parts[1])
-      except ValueError:
-        continue
-      stat_ch, tty, etime_s, args_str = parts[2], parts[3], parts[4], parts[5]
-      elapsed = _parse_ps_etime(etime_s)
-      start_epoch = (now - elapsed) if elapsed is not None else None
-      try:
-        argv = shlex.split(args_str)
-      except ValueError:
-        argv = args_str.split()
-      comm = os.path.basename(argv[0]) if argv else args_str
-      procs[pid] = {
-          "pid": pid,
-          "ppid": ppid,
-          "stat": stat_ch,
-          "tty": tty,
-          "tty_nr": 0,
-          "comm": comm,
-          "argv": argv,
-          "args_str": args_str,
-          "exe": "",
-          "start_epoch": start_epoch,
-      }
-    cli_pids = [
-        pid
-        for pid, info in procs.items()
-        if cli_proc_flavor(info, config=cfg)[0] is not None
-    ]
-    _PRELOADED_OPEN_FILES = _lsof_open_files_many(cli_pids)
+    return _load_linux_proc_table(root_pids=root_pids)
+
+  now = time.time()
+  res = subprocess.run(
+      ["ps", "-ww", "-eo", "pid=,ppid=,stat=,tty=,etime=,args="],
+      stdin=subprocess.DEVNULL,
+      capture_output=True,
+      text=True,
+      check=True,
+  )
+  procs: dict[int, dict] = {}
+  for line in res.stdout.splitlines():
+    parts = line.strip().split(None, 5)
+    if len(parts) < 6:
+      continue
+    try:
+      pid = int(parts[0])
+      ppid = int(parts[1])
+    except ValueError:
+      continue
+    stat_ch, tty, etime_s, args_str = parts[2], parts[3], parts[4], parts[5]
+    elapsed = _parse_ps_etime(etime_s)
+    start_epoch = (now - elapsed) if elapsed is not None else None
+    try:
+      argv = shlex.split(args_str)
+    except ValueError:
+      argv = args_str.split()
+    comm = os.path.basename(argv[0]) if argv else args_str
+    procs[pid] = {
+        "pid": pid,
+        "ppid": ppid,
+        "stat": stat_ch,
+        "tty": tty,
+        "tty_nr": 0,
+        "comm": comm,
+        "argv": argv,
+        "args_str": args_str,
+        "exe": "",
+        "start_epoch": start_epoch,
+    }
+  cli_pids = [
+      pid
+      for pid, info in procs.items()
+      if cli_proc_flavor(info, config=cfg)[0] is not None
+  ]
+  _PRELOADED_OPEN_FILES = _lsof_open_files_many(cli_pids)
   children: dict[int, list[int]] = {}
   for pid, info in procs.items():
     children.setdefault(info["ppid"], []).append(pid)
@@ -481,13 +540,13 @@ def descendants_of(
 
 
 def is_self_script_proc(info: Mapping) -> bool:
-  """True if `info` is an invocation of `code-harness snapshot` itself."""
+  """True if `info` is an invocation of `code-harness` tmux helpers."""
   argv = info.get("argv") or ()
   has_cmd = any(
       os.path.basename(tok) in ("code-harness", ".code-harness-wrapped")
       for tok in argv[:3]
   )
-  if has_cmd and "snapshot" in argv:
+  if has_cmd and any(sub in argv for sub in ("snapshot", "tmux-next")):
     return True
   return False
 
@@ -924,7 +983,12 @@ def resolve_cli_conversation_and_dir(
 
   # Primary zero-config source: active presence lock FD.
   if lock_ids:
-    return lock_ids[-1], open_dbs, cli_dir
+    cid = lock_ids[-1]
+    if len(open_dbs) > 1:
+      _, root_cid = get_trajectory_parents(cli_dir, cid, config=cfg)
+      if root_cid and UUID_RE.match(root_cid):
+        return root_cid, open_dbs, cli_dir
+    return cid, open_dbs, cli_dir
 
   # Contention fallback: check CLI stderr log and open root conversation DBs.
   stderr_log = fds.get("2") or ""
@@ -1067,6 +1131,36 @@ def active_cli_child_processes(
   return active
 
 
+def find_pane_cli(
+    pane_pid: int,
+    procs: Mapping[int, dict],
+    children_map: Mapping[int, list[int]],
+    config: HarnessConfig | None = None,
+) -> tuple[dict | None, bool]:
+  """Finds topmost coding-agent CLI in a pane: (proc_or_None, is_print)."""
+  root_info = procs.get(pane_pid)
+  if root_info:
+    ok, is_pr = is_cli_proc(root_info, config=config)
+    if ok:
+      return root_info, is_pr
+  # Breadth/top-down check so we pick the parent CLI, not any child CLI.
+  queue = list(children_map.get(pane_pid, ()))
+  visited = {pane_pid}
+  while queue:
+    cpid = queue.pop(0)
+    if cpid in visited:
+      continue
+    visited.add(cpid)
+    cinfo = procs.get(cpid)
+    if not cinfo:
+      continue
+    ok, is_pr = is_cli_proc(cinfo, config=config)
+    if ok:
+      return cinfo, is_pr
+    queue.extend(children_map.get(cpid, ()))
+  return None, False
+
+
 def _transcript_path(
     data_dir: str | None,
     conv_id: str,
@@ -1116,6 +1210,49 @@ def read_transcript_entries(
   except OSError:
     return []
   return entries
+
+
+def read_last_transcript_entries(
+    data_dir: str | None,
+    conv_id: str,
+    config: HarnessConfig | None = None,
+) -> list[dict]:
+  """Reads the tail of transcript.jsonl needed to inspect trailing steps."""
+  path = _transcript_path(data_dir, conv_id, config=config)
+  if not os.path.isfile(path):
+    return []
+  try:
+    size = os.path.getsize(path)
+  except OSError:
+    return []
+  if size == 0:
+    return []
+
+  chunk = 65536
+  while True:
+    offset = max(0, size - chunk)
+    try:
+      with open(path, "rb") as f:
+        if offset > 0:
+          f.seek(offset)
+        raw = f.read()
+    except OSError:
+      return []
+    lines = raw.splitlines()
+    if offset > 0 and lines:
+      lines = lines[1:]
+    entries: list[dict] = []
+    for raw_line in lines:
+      s = raw_line.strip()
+      if not s:
+        continue
+      try:
+        entries.append(json.loads(s.decode("utf-8", "replace")))
+      except ValueError:
+        continue
+    if offset == 0 or any(not _is_trailing_sdk_hook_entry(e) for e in entries):
+      return entries
+    chunk *= 4
 
 
 def _parse_iso_dt(iso_str: str) -> datetime.datetime | None:
@@ -1301,12 +1438,95 @@ def _trailing_transcript_entry_and_ts(
   return last, last_ts
 
 
-def _inspect_settled_state(
+def _generic_output_body(entry: Mapping) -> str:
+  """Returns generic step `content` with leading timestamp headers stripped."""
+  content = entry.get("content") or ""
+  return GENERIC_TS_HEADER_RE.sub("", content, count=1)
+
+
+def _is_parked_on_swarm_wait(
+    entries: list[dict], has_db: bool = True
+) -> bool:
+  """True when trailing DONE generic steps come from a parking swarm_wait."""
+  i = len(entries) - 1
+  while i >= 0 and _is_trailing_sdk_hook_entry(entries[i]):
+    i -= 1
+  if i < 0:
+    return False
+
+  generics: list[dict] = []
+  while i >= 0:
+    e = entries[i]
+    if _is_trailing_sdk_hook_entry(e):
+      i -= 1
+      continue
+    if e.get("type") == "GENERIC" and e.get("status") == "DONE":
+      generics.append(e)
+      i -= 1
+      continue
+    break
+
+  if not generics:
+    return False
+
+  if i >= 0:
+    prev = entries[i]
+    if prev.get("type") != "PLANNER_RESPONSE" or prev.get("status") != "DONE":
+      return False
+    tool_calls = prev.get("tool_calls") or []
+    if not any(
+        isinstance(tc, dict) and tc.get("name") == "swarm_wait"
+        for tc in tool_calls
+    ):
+      return False
+    if not has_db and len(generics) < len(tool_calls):
+      return False
+    return any(
+        _generic_output_body(g).lstrip().startswith("Waiting for ")
+        for g in generics
+    )
+
+  return bool(
+      has_db
+      and any(
+          SWARM_WAIT_OUTPUT_RE.match(_generic_output_body(g).strip())
+          for g in generics
+      )
+  )
+
+
+def classify_waiting_step(
+    step_type: int, step_payload: bytes | None
+) -> tuple[str, str]:
+  """Classifies a STATUS_WAITING step into (CLI_STATE_*, reason)."""
+  if step_payload:
+    try:
+      step_msg = _proto_fields(step_payload)
+      req_raw = _proto_first(step_msg, STEP_REQUESTED_INTERACTION)
+      if req_raw:
+        req = _proto_fields(req_raw)
+        if INTERACTION_ASK_QUESTION in req:
+          return CLI_STATE_QUESTION, "waiting on user question"
+        if INTERACTION_ELICITATION in req:
+          return CLI_STATE_PERMISSION, "waiting on MCP elicitation"
+        if INTERACTION_PERMISSION in req:
+          return CLI_STATE_PERMISSION, "waiting on permission check"
+        if req:
+          return CLI_STATE_PERMISSION, "waiting on permission check"
+    except ValueError:
+      pass
+  if step_type == STEP_TYPE_ASK_QUESTION:
+    return CLI_STATE_QUESTION, "waiting on user question"
+  return CLI_STATE_PERMISSION, "waiting on permission check"
+
+
+def _inspect_trajectory_state(
     data_dir: str | None,
     conv_id: str,
+    is_child: bool = False,
     config: HarnessConfig | None = None,
-) -> tuple[bool, str, str, bool, bool, tuple[str, ...]]:
-  """Returns (settled_bool, reason, last_ts, has_db, was_canceled, wf_ids)."""
+) -> tuple[str, str, str, bool, bool, tuple[str, ...]]:
+  """Returns (state, reason, last_ts, has_db, was_canceled, wf_ids)."""
   has_db = False
   eff_sql = None
   wf_ids: list[str] = []
@@ -1319,7 +1539,7 @@ def _inspect_settled_state(
           "SELECT idx FROM steps ORDER BY idx DESC LIMIT 1"
       ).fetchone()
       if latest is None:
-        return True, "empty conversation", "", True, False, ()
+        return CLI_STATE_SETTLED, "empty conversation", "", True, False, ()
       max_idx = latest[0]
       ui_row = con.execute(
           "SELECT MAX(idx) FROM steps WHERE step_type = ?",
@@ -1364,25 +1584,40 @@ def _inspect_settled_state(
           keep = row_idx >= min_idx
         if not keep:
           continue
-        kept.append((row_idx, st_type, st_val, task_blob))
+        kept.append((row_idx, st_type, st_val, task_blob, payload))
         if st_type == STEP_TYPE_GENERIC and payload:
           for cid in _workflow_agent_ids_from_step(payload):
             if cid not in wf_seen:
               wf_seen.add(cid)
               wf_ids.append(cid)
       if kept:
-        if any(row[2] == STATUS_WAITING for row in kept):
-          return (
-              False,
-              "waiting on permission check or question",
-              "",
-              True,
-              False,
-              tuple(wf_ids),
-          )
+        first_question = None
+        for _, st_type, st_val, _, payload in kept:
+          if st_val == STATUS_WAITING:
+            w_state, w_reason = classify_waiting_step(st_type, payload)
+            if w_state == CLI_STATE_PERMISSION:
+              return (
+                  CLI_STATE_PERMISSION,
+                  w_reason,
+                  "",
+                  True,
+                  False,
+                  tuple(wf_ids),
+              )
+            if first_question is None:
+              first_question = (
+                  w_state,
+                  w_reason,
+                  "",
+                  True,
+                  False,
+                  tuple(wf_ids),
+              )
+        if first_question is not None:
+          return first_question
         if kept[-1][2] == STATUS_GENERATING:
           return (
-              False,
+              CLI_STATE_WORKING,
               "model generating response",
               "",
               True,
@@ -1400,8 +1635,15 @@ def _inspect_settled_state(
               if label
               else "background task active"
           )
-          return False, msg, "", True, False, tuple(wf_ids)
-        return False, "step currently running", "", True, False, tuple(wf_ids)
+          return CLI_STATE_WORKING, msg, "", True, False, tuple(wf_ids)
+        return (
+            CLI_STATE_WORKING,
+            "step currently running",
+            "",
+            True,
+            False,
+            tuple(wf_ids),
+        )
 
       tail_rows = con.execute(
           "SELECT step_type, status FROM steps ORDER BY idx DESC LIMIT 10"
@@ -1425,21 +1667,51 @@ def _inspect_settled_state(
     finally:
       con.close()
 
-  entries = read_transcript_entries(data_dir, conv_id, config=config)
+  entries = read_last_transcript_entries(data_dir, conv_id, config=config)
   last, last_ts = _trailing_transcript_entry_and_ts(entries)
   if eff_sql and eff_sql[1] in (STATUS_CANCELED, STATUS_INTERRUPTED):
-    return True, "waiting for user input", last_ts, has_db, True, tuple(wf_ids)
+    return (
+        CLI_STATE_SETTLED,
+        "waiting for user input",
+        last_ts,
+        has_db,
+        True,
+        tuple(wf_ids),
+    )
 
   if not entries or last is None:
     if eff_sql and eff_sql[0] == STEP_TYPE_USER_INPUT:
-      return False, "turn starting", "", has_db, False, tuple(wf_ids)
-    return True, "waiting for user input", "", has_db, False, tuple(wf_ids)
+      return (
+          CLI_STATE_WORKING,
+          "turn starting",
+          "",
+          has_db,
+          False,
+          tuple(wf_ids),
+      )
+    return (
+        CLI_STATE_SETTLED,
+        "waiting for user input",
+        "",
+        has_db,
+        False,
+        tuple(wf_ids),
+    )
 
   st = last.get("status") or ""
   tp = last.get("type") or ""
-  if st in ("PENDING", "RUNNING", "WAITING"):
+  if st == "WAITING":
     return (
+        CLI_STATE_PERMISSION,
+        "waiting on permission check",
+        last_ts,
+        has_db,
         False,
+        tuple(wf_ids),
+    )
+  if st in ("PENDING", "RUNNING"):
+    return (
+        CLI_STATE_WORKING,
         f"{tp.lower()} is {st.lower()}",
         last_ts,
         has_db,
@@ -1447,22 +1719,34 @@ def _inspect_settled_state(
         tuple(wf_ids),
     )
   if st == "CANCELED":
-    return True, "waiting for user input", last_ts, has_db, True, tuple(wf_ids)
+    return (
+        CLI_STATE_SETTLED,
+        "waiting for user input",
+        last_ts,
+        has_db,
+        True,
+        tuple(wf_ids),
+    )
   if tp == "PLANNER_RESPONSE":
     if last.get("tool_calls"):
-      return (
-          False,
-          "waiting on tool call or confirmation",
-          last_ts,
-          has_db,
-          False,
-          tuple(wf_ids),
+      msg = (
+          "running tool calls"
+          if has_db
+          else "waiting on tool call or confirmation"
       )
-    return True, "waiting for user input", last_ts, has_db, False, tuple(wf_ids)
+      return CLI_STATE_WORKING, msg, last_ts, has_db, False, tuple(wf_ids)
+    return (
+        CLI_STATE_SETTLED,
+        "waiting for user input",
+        last_ts,
+        has_db,
+        False,
+        tuple(wf_ids),
+    )
   if tp == "ERROR_MESSAGE":
     if _is_recent_iso_timestamp(last.get("created_at") or ""):
       return (
-          False,
+          CLI_STATE_WORKING,
           "model error/retry in progress",
           last_ts,
           has_db,
@@ -1470,7 +1754,7 @@ def _inspect_settled_state(
           tuple(wf_ids),
       )
     return (
-        True,
+        CLI_STATE_SETTLED,
         "waiting for user input (after error)",
         last_ts,
         has_db,
@@ -1478,8 +1762,27 @@ def _inspect_settled_state(
         tuple(wf_ids),
     )
 
+  if tp == "GENERIC" and _is_parked_on_swarm_wait(entries, has_db=has_db):
+    if is_child:
+      return (
+          CLI_STATE_SETTLED,
+          "parked on swarm_wait",
+          last_ts,
+          has_db,
+          False,
+          tuple(wf_ids),
+      )
+    return (
+        CLI_STATE_WORKING,
+        "waiting on swarm board",
+        last_ts,
+        has_db,
+        False,
+        tuple(wf_ids),
+    )
+
   return (
-      False,
+      CLI_STATE_WORKING,
       f"turn in progress after {tp.lower()}",
       last_ts,
       has_db,
@@ -1488,17 +1791,29 @@ def _inspect_settled_state(
   )
 
 
+def check_db_and_transcript_state(
+    data_dir: str | None,
+    conv_id: str,
+    config: HarnessConfig | None = None,
+) -> tuple[str, str, str, bool]:
+  """Returns (state_str, reason_str, last_created_at, has_db)."""
+  state, reason, last_ts, has_db, _, _ = _inspect_trajectory_state(
+      data_dir, conv_id, config=config
+  )
+  return state, reason, last_ts, has_db
+
+
 def check_db_and_transcript_settled(
     data_dir: str | None,
     conv_id: str,
     config: HarnessConfig | None = None,
 ) -> tuple[bool, str, str, list[dict]]:
   """Returns (settled_bool, reason, last_created_at, entries)."""
-  settled, reason, last_ts, _, _, _ = _inspect_settled_state(
+  state, reason, last_ts, _, _, _ = _inspect_trajectory_state(
       data_dir, conv_id, config=config
   )
   entries = read_transcript_entries(data_dir, conv_id, config=config)
-  return settled, reason, last_ts, entries
+  return state == CLI_STATE_SETTLED, reason, last_ts, entries
 
 
 def _subagent_state_from_entries(
@@ -1737,6 +2052,168 @@ def discover_active_child_agents(
   return result
 
 
+def live_subagents_for_conv(
+    data_dir: str | None,
+    conv_id: str,
+    open_dbs: set[str],
+    cli_start_epoch: float | None = None,
+    extra_seed_ids: tuple[str, ...] = (),
+    config: HarnessConfig | None = None,
+) -> list[str]:
+  """Returns live subagent conversation IDs belonging to `conv_id`."""
+  return [
+      cid
+      for cid, _ in discover_active_child_agents(
+          data_dir,
+          conv_id,
+          open_dbs,
+          cli_start_epoch=cli_start_epoch,
+          extra_seed_ids=extra_seed_ids,
+          config=config,
+      )
+  ]
+
+
+def classify_cli_state(
+    cli_info: Mapping,
+    is_print: bool,
+    pane_id: str,
+    conv_id: str | None,
+    open_dbs: set[str],
+    procs: Mapping[int, dict],
+    children_map: Mapping[int, list[int]],
+    mcp_sigs: set[tuple[str, str | None]],
+    self_ignored: set[int],
+    data_dir: str | None,
+    config: HarnessConfig | None = None,
+) -> tuple[str, str]:
+  """Returns (state_str, reason_str) where state_str is one of CLI_STATE_*."""
+  if is_print:
+    return CLI_STATE_WORKING, "headless --print run in progress"
+
+  cli_start_epoch = cli_info.get("start_epoch")
+  min_epoch = (cli_start_epoch - 2.0) if cli_start_epoch is not None else None
+
+  if conv_id is None:
+    kids = active_cli_child_processes(
+        cli_info["pid"], procs, children_map, mcp_sigs, self_ignored
+    )
+    if kids:
+      sample = kids[0]["comm"]
+      return (
+          CLI_STATE_WORKING,
+          f"active child task ({sample}, pid {kids[0]['pid']})",
+      )
+    return CLI_STATE_SETTLED, "empty prompt (no conversation yet)"
+
+  state, reason, parent_ts, has_db, parent_canceled, wf_ids = (
+      _inspect_trajectory_state(data_dir, conv_id, config=config)
+  )
+  if state in (CLI_STATE_PERMISSION, CLI_STATE_QUESTION):
+    return state, reason
+
+  saw_sub_question: tuple[str, str] | None = None
+  saw_sub_working: tuple[str, str] | None = None
+  for sub_id, sub_label in discover_active_child_agents(
+      data_dir,
+      conv_id,
+      open_dbs,
+      cli_start_epoch=cli_start_epoch,
+      extra_seed_ids=wf_ids,
+      config=config,
+  ):
+    sub_state, sub_reason, sub_ts, _, _, _ = _inspect_trajectory_state(
+        data_dir, sub_id, is_child=True, config=config
+    )
+    if sub_state == CLI_STATE_PERMISSION:
+      return CLI_STATE_PERMISSION, f"subagent {sub_label} {sub_reason}"
+    if sub_state == CLI_STATE_QUESTION and saw_sub_question is None:
+      saw_sub_question = (
+          CLI_STATE_QUESTION,
+          f"subagent {sub_label} {sub_reason}",
+      )
+    elif sub_state == CLI_STATE_WORKING and saw_sub_working is None:
+      saw_sub_working = (
+          CLI_STATE_WORKING,
+          f"subagent {sub_label} active ({sub_reason})",
+      )
+    elif sub_state == CLI_STATE_SETTLED and saw_sub_working is None:
+      if has_wakeable_undelivered_message(
+          data_dir, sub_id, min_epoch=min_epoch, config=config
+      ):
+        saw_sub_working = (
+            CLI_STATE_WORKING,
+            f"subagent {sub_label} wakeup pending",
+        )
+      elif (
+          state == CLI_STATE_SETTLED
+          and not parent_canceled
+          and _iso_gt(sub_ts, parent_ts)
+          and _is_recent_iso_timestamp(sub_ts, max_age_sec=5.0)
+      ):
+        saw_sub_working = (
+            CLI_STATE_WORKING,
+            f"subagent {sub_label} wakeup pending",
+        )
+
+  if saw_sub_question is not None:
+    return saw_sub_question
+
+  kids = active_cli_child_processes(
+      cli_info["pid"], procs, children_map, mcp_sigs, self_ignored
+  )
+  if kids:
+    sample = kids[0]["comm"]
+    return (
+        CLI_STATE_WORKING,
+        f"active child task ({sample}, pid {kids[0]['pid']})",
+    )
+
+  # Optional statusLine state file fallback / extra task check if present.
+  pane_state_path = _pane_state_path(pane_id)
+  if os.path.isfile(pane_state_path):
+    try:
+      with open(pane_state_path, encoding="utf-8") as f:
+        st = json.load(f)
+      if st.get("conversation_id") == conv_id:
+        ag = st.get("agent_state") or ""
+        if not has_db:
+          if st.get("tool_confirmation_pending"):
+            return CLI_STATE_PERMISSION, "waiting on permission check"
+          if ag == "tool_use":
+            return (
+                CLI_STATE_QUESTION,
+                "waiting on tool confirmation or question",
+            )
+          if ag == "working":
+            return CLI_STATE_WORKING, "agent actively working"
+        if (st.get("task_count") or 0) > 0:
+          return (
+              CLI_STATE_WORKING,
+              f"{st['task_count']} background task(s) active",
+          )
+        for sub in st.get("subagents") or []:
+          if sub.get("status") == "running":
+            return (
+                CLI_STATE_WORKING,
+                f"subagent running ({sub.get('role') or 'subagent'})",
+            )
+        if (st.get("pending_input_count") or 0) > 0:
+          return CLI_STATE_WORKING, "queued input pending"
+    except (OSError, ValueError):
+      pass
+
+  if state != CLI_STATE_SETTLED:
+    return state, reason
+  if saw_sub_working is not None:
+    return saw_sub_working
+  if not parent_canceled and has_wakeable_undelivered_message(
+      data_dir, conv_id, min_epoch=min_epoch, config=config
+  ):
+    return CLI_STATE_WORKING, "wakeup message pending"
+  return CLI_STATE_SETTLED, reason
+
+
 def classify_cli_instance(
     cli_info: Mapping,
     is_print: bool,
@@ -1751,95 +2228,20 @@ def classify_cli_instance(
     config: HarnessConfig | None = None,
 ) -> tuple[bool, str]:
   """Returns (settled_bool, reason_str)."""
-  if is_print:
-    return False, "headless --print run in progress"
-
-  cli_start_epoch = cli_info.get("start_epoch")
-  min_epoch = (cli_start_epoch - 2.0) if cli_start_epoch is not None else None
-
-  if conv_id is None:
-    kids = active_cli_child_processes(
-        cli_info["pid"], procs, children_map, mcp_sigs, self_ignored
-    )
-    if kids:
-      sample = kids[0]["comm"]
-      return False, f"active child task ({sample}, pid {kids[0]['pid']})"
-    return True, "empty prompt (no conversation yet)"
-
-  settled, reason, parent_ts, has_db, parent_canceled, wf_ids = (
-      _inspect_settled_state(data_dir, conv_id, config=config)
-  )
-
-  saw_sub_active = None
-  for sub_id, sub_label in discover_active_child_agents(
-      data_dir,
+  state, reason = classify_cli_state(
+      cli_info,
+      is_print,
+      pane_id,
       conv_id,
       open_dbs,
-      cli_start_epoch=cli_start_epoch,
-      extra_seed_ids=wf_ids,
+      procs,
+      children_map,
+      mcp_sigs,
+      self_ignored,
+      data_dir,
       config=config,
-  ):
-    sub_settled, sub_reason, sub_ts, _, _, _ = _inspect_settled_state(
-        data_dir, sub_id, config=config
-    )
-    if not sub_settled:
-      saw_sub_active = f"subagent {sub_label} active ({sub_reason})"
-      break
-    if has_wakeable_undelivered_message(
-        data_dir, sub_id, min_epoch=min_epoch, config=config
-    ):
-      saw_sub_active = f"subagent {sub_label} wakeup pending"
-      break
-    if (
-        settled
-        and not parent_canceled
-        and _iso_gt(sub_ts, parent_ts)
-        and _is_recent_iso_timestamp(sub_ts, max_age_sec=5.0)
-    ):
-      saw_sub_active = f"subagent {sub_label} wakeup pending"
-      break
-
-  if not settled:
-    return False, reason
-  if saw_sub_active is not None:
-    return False, saw_sub_active
-
-  kids = active_cli_child_processes(
-      cli_info["pid"], procs, children_map, mcp_sigs, self_ignored
   )
-  if kids:
-    sample = kids[0]["comm"]
-    return False, f"active child task ({sample}, pid {kids[0]['pid']})"
-
-  # Optional real-time statusLine state file fallback / extra task check.
-  pane_state_path = _pane_state_path(pane_id)
-  if os.path.isfile(pane_state_path):
-    try:
-      with open(pane_state_path, encoding="utf-8") as f:
-        st = json.load(f)
-      if st.get("conversation_id") == conv_id:
-        ag = st.get("agent_state") or ""
-        if not has_db:
-          if ag == "working":
-            return False, "agent actively working"
-          if ag == "tool_use" or st.get("tool_confirmation_pending"):
-            return False, "waiting on tool confirmation or question"
-        if (st.get("task_count") or 0) > 0:
-          return False, f"{st['task_count']} background task(s) active"
-        for sub in st.get("subagents") or []:
-          if sub.get("status") == "running":
-            return False, f"subagent running ({sub.get('role') or 'subagent'})"
-        if (st.get("pending_input_count") or 0) > 0:
-          return False, "queued input pending"
-    except (OSError, ValueError):
-      pass
-
-  if not parent_canceled and has_wakeable_undelivered_message(
-      data_dir, conv_id, min_epoch=min_epoch, config=config
-  ):
-    return False, "wakeup message pending"
-
-  return True, reason
+  return state == CLI_STATE_SETTLED, reason
 
 
 def conversation_label(
@@ -2145,38 +2547,16 @@ def scan_tmux(
         "busy_non_agent": [],
     }
 
-    # Find topmost CLI process in this pane (pane_pid or descendant).
-    cli_proc = None
-    cli_is_print = False
-    root_info = procs.get(pane["pane_pid"])
-    if root_info:
-      ok, is_pr = is_cli_proc(root_info, config=cfg)
-      if ok:
-        cli_proc, cli_is_print = root_info, is_pr
-    if cli_proc is None:
-      # Breadth/top-down check so we pick the parent CLI, not any child CLI.
-      queue = list(children_map.get(pane["pane_pid"], ()))
-      visited = {pane["pane_pid"]}
-      while queue:
-        cpid = queue.pop(0)
-        if cpid in visited:
-          continue
-        visited.add(cpid)
-        cinfo = procs.get(cpid)
-        if not cinfo:
-          continue
-        ok, is_pr = is_cli_proc(cinfo, config=cfg)
-        if ok:
-          cli_proc, cli_is_print = cinfo, is_pr
-          break
-        queue.extend(children_map.get(cpid, ()))
+    cli_proc, cli_is_print = find_pane_cli(
+        pane["pane_pid"], procs, children_map, config=cfg
+    )
 
     if cli_proc is not None:
       flavor, _ = cli_proc_flavor(cli_proc, config=cfg)
       conv_id, open_dbs, cli_dir = resolve_cli_conversation_and_dir(
           cli_proc, pane_id, data_dir=data_dir, config=cfg
       )
-      settled, reason = classify_cli_instance(
+      state, reason = classify_cli_state(
           cli_proc,
           cli_is_print,
           pane_id,
@@ -2194,7 +2574,8 @@ def scan_tmux(
           "flavor": flavor or cfg.default_flavor,
           "data_dir": cli_dir,
           "conversation_id": conv_id,
-          "settled": settled,
+          "state": state,
+          "settled": state == CLI_STATE_SETTLED,
           "reason": reason,
           "label": conversation_label(cli_dir, conv_id, config=cfg),
       }
