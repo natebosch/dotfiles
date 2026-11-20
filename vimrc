@@ -176,6 +176,14 @@ set hidden
 
 """ LSC
 let g:lsc_auto_map = v:true
+let g:lsc_server_commands = get(g:, 'lsc_server_commands', {})
+if executable('basedpyright-langserver')
+  let g:lsc_server_commands.python = 'basedpyright-langserver --stdio'
+elseif executable('pyright-langserver')
+  let g:lsc_server_commands.python = 'pyright-langserver --stdio'
+elseif executable('pylsp')
+  let g:lsc_server_commands.python = 'pylsp'
+endif
 
 " FZF
 let g:fzf_commits_log_options = '--graph --color=always '

@@ -2,6 +2,10 @@
 {
   programs.git = {
     enable = true;
+    attributes = [
+      "*.py diff=python"
+      "*.pyi diff=python"
+    ];
     ignores = [
       ".ignore"
       ".envrc"
@@ -10,6 +14,16 @@
       ".gemini/"
       ".antigravitycli/"
       ".agents/skills.json"
+
+      # Python
+      "__pycache__/"
+      "*.py[cod]"
+      ".venv/"
+      "*.egg-info/"
+      ".pytest_cache/"
+      ".ruff_cache/"
+      ".mypy_cache/"
+      ".coverage"
     ]
     ++ (if pkgs.stdenv.hostPlatform.isDarwin then [ ".DS_Store" ] else [ ]);
 
