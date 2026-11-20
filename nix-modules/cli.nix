@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  tools,
+  ...
+}:
 let
   # Installed as `diffr` so the colors apply everywhere it is used as a pager
   # or preview filter.
@@ -21,6 +26,7 @@ in
   home.packages = [
     diffrColored
     pkgs.highlight
+    tools.yank
   ];
 
   programs.zsh = {
