@@ -68,6 +68,10 @@ hi diffFile     ctermfg=003  guifg=#C4A000
 hi diffLine     ctermfg=006  guifg=#06989A
 hi diffSubname  ctermfg=005  guifg=#75507B
 
+hi GitStickyHeader  ctermbg=236 guibg=#303030 ctermfg=003 guifg=#C4A000
+    \ cterm=bold gui=bold
+hi GitStickySubname ctermbg=236 guibg=#303030 ctermfg=006 guifg=#06989A
+
 " Statusline/tabline
 
 hi StatusLine   ctermbg=236  guibg=#303030 cterm=NONE gui=NONE

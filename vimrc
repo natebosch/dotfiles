@@ -236,7 +236,8 @@ set colorcolumn=+1
 
 set belloff=cursor,esc,wildmode,error
 
-set diffopt=filler,iwhiteall,vertical,closeoff
+set diffopt=internal,filler,iwhiteall,vertical,closeoff
+set diffopt+=indent-heuristic,algorithm:histogram,linematch:60,inline:word
 
 set fillchars=diff:\ ,vert:┃
 """""""""""""""""""""""""""""
