@@ -587,11 +587,16 @@ def is_self_script_proc(info: Mapping) -> bool:
   has_cmd = any(
       os.path.basename(tok) in ("code-harness", ".code-harness-wrapped")
       for tok in argv[:3]
+  ) or (
+      len(argv) >= 3
+      and argv[1] == "-m"
+      and argv[2] in ("code_harness", "code_harness.cli")
   )
   if has_cmd and any(
       sub in argv
       for sub in (
           "snapshot",
+          "tmux-editor",
           "tmux-next",
           "tmux-notify",
           "tmux-status",

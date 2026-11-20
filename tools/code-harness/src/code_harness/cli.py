@@ -17,6 +17,7 @@ from code_harness.config import (
 from code_harness.context import cmd_context
 from code_harness.overview import cmd_overview
 from code_harness.snapshot import cmd_snapshot
+from code_harness.tmux_editor import cmd_tmux_editor
 from code_harness.tmux_next import cmd_tmux_next
 from code_harness.tmux_notify import cmd_tmux_notify
 from code_harness.tmux_status import cmd_tmux_status
@@ -53,6 +54,7 @@ PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
 # helpers and low-level plumbing commands here.
 HIDDEN_COMMANDS: dict[str, CommandHandler] = {
     "context": cmd_context,
+    "tmux-editor": cmd_tmux_editor,
     "tmux-next": cmd_tmux_next,
     "tmux-notify": cmd_tmux_notify,
     "tmux-status": cmd_tmux_status,

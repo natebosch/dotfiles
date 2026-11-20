@@ -226,6 +226,19 @@ class ProcessMatchingTests(unittest.TestCase):
             {"comm": "code-harness", "argv": ["code-harness", "tmux-next", "--permission"]}
         )
     )
+    self.assertTrue(
+        snapshot.is_self_script_proc(
+            {"comm": "code-harness", "argv": ["code-harness", "tmux-editor", "--apply-worker"]}
+        )
+    )
+    self.assertTrue(
+        snapshot.is_self_script_proc(
+            {
+                "comm": "python3",
+                "argv": ["python3", "-m", "code_harness.cli", "tmux-editor", "--apply-worker"],
+            }
+        )
+    )
     self.assertFalse(
         snapshot.is_self_script_proc(
             {"comm": "code-harness", "argv": ["code-harness", "run"]}

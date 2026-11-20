@@ -41,6 +41,7 @@ class FlavorConfig:
   match_basenames: tuple[str, ...] = ()
   match_path_substrings: tuple[str, ...] = ()
   match_app_data_basenames: tuple[str, ...] = ()
+  prompt_file_globs: tuple[str, ...] = ()
   context_limits: ContextLimits | None = None
 
 
@@ -99,6 +100,7 @@ BUILTIN_AGY_FLAVOR = FlavorConfig(
     match_basenames=("agy", "antigravity-cli"),
     match_path_substrings=(),
     match_app_data_basenames=("antigravity-cli",),
+    prompt_file_globs=("agy-prompt-*.txt", "antigravity-prompt-*.txt"),
 )
 
 BUILTIN_NON_TUI_SUBCOMMANDS: frozenset[str] = frozenset({
@@ -191,6 +193,7 @@ _FLAVOR_LIST_FIELDS = (
     "match_basenames",
     "match_path_substrings",
     "match_app_data_basenames",
+    "prompt_file_globs",
 )
 
 _FLAVOR_SCALAR_FIELDS = ("env_bin", "data_dir_name")
@@ -255,6 +258,7 @@ def _merge_flavor(
       "match_app_data_basenames": (
           base.match_app_data_basenames if base else ()
       ),
+      "prompt_file_globs": base.prompt_file_globs if base else (),
       "context_limits": base.context_limits if base else None,
   }
 
