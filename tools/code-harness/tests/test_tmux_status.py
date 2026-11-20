@@ -974,6 +974,297 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
           " ".join(set_calls[0]),
       )
 
+  def test_list_panes_12_fields_and_legacy_compat(self) -> None:
+    sep = "\x1f"
+    lines12 = [
+        sep.join([
+            "s1", "0", "0", "0", "%0", "100",
+            "badge0", "pad0", "sl0", "tools#2796", "1", "tools#2796",
+        ]),
+        sep.join([
+            "s1", "1", "0", "0", "%1", "101",
+            "", "pad0", "sl0", "", "0", "custom-tab",
+        ]),
+    ]
+    wins12 = tmux_status.list_tmux_windows_and_panes(
+        _FakeTmux(stdout="\n".join(lines12) + "\n")
+    )
+    self.assertIsNotNone(wins12)
+    assert wins12 is not None
+    self.assertEqual(len(wins12), 2)
+    p0 = wins12[0]["panes"][0]
+    p1 = wins12[1]["panes"][0]
+    self.assertTrue(p0["has_title_fields"])
+    self.assertEqual(p0["code_harness_title"], "tools#2796")
+    self.assertEqual(p0["automatic_rename"], "1")
+    self.assertEqual(p0["window_name"], "tools#2796")
+    self.assertEqual(p1["automatic_rename"], "0")
+    self.assertEqual(p1["window_name"], "custom-tab")
+
+  def test_reconcile_tmux_title_options_set_unset_heal_and_steady_state(
+      self,
+  ) -> None:
+    panes = [
+        ("s1", "0", {
+            "pane_id": "%0",
+            "has_title_fields": True,
+            "code_harness_title": "",
+            "automatic_rename": "1",
+            "window_name": "agy",
+        }, "tools#2796", True),
+        ("s1", "1", {
+            "pane_id": "%1",
+            "has_title_fields": True,
+            "code_harness_title": "old-title",
+            "automatic_rename": "1",
+            "window_name": "zsh",
+        }, "", False),
+        ("s1", "2", {
+            "pane_id": "%2",
+            "has_title_fields": True,
+            "code_harness_title": "",
+            "automatic_rename": "0",
+            "window_name": "cli",
+        }, "pr/1018458", True),
+        ("s1", "3", {
+            "pane_id": "%3",
+            "has_title_fields": True,
+            "code_harness_title": "",
+            "automatic_rename": "0",
+            "window_name": "custom-name",
+        }, "pr/1018458", True),
+    ]
+    tmux = _FakeTmux()
+    tmux_status.reconcile_tmux_title_options(tmux, panes)
+    self.assertEqual(len(tmux.calls), 1)
+    joined = " ".join(tmux.calls[0])
+    self.assertIn("set-option -p -t %0 @code_harness_title tools#2796", joined)
+    self.assertIn("set-window-option -t %0 automatic-rename off", joined)
+    self.assertIn("set-window-option -t %0 automatic-rename on", joined)
+    self.assertIn("set-option -qup -t %1 @code_harness_title", joined)
+    self.assertIn("set-option -p -t %2 @code_harness_title pr/1018458", joined)
+    self.assertIn("set-window-option -t %2 automatic-rename on", joined)
+    self.assertNotIn("set-window-option -t %2 automatic-rename off", joined)
+    self.assertNotIn("set-window-option -t %3 automatic-rename on", joined)
+
+    steady = [
+        ("s1", "0", {
+            "pane_id": "%0",
+            "has_title_fields": True,
+            "code_harness_title": "tools#2796",
+            "automatic_rename": "1",
+            "window_name": "tools#2796",
+        }, "tools#2796", True),
+        ("s1", "1", {
+            "pane_id": "%1",
+            "has_title_fields": True,
+            "code_harness_title": "",
+            "automatic_rename": "1",
+            "window_name": "zsh",
+        }, "", False),
+    ]
+    tmux2 = _FakeTmux()
+    tmux_status.reconcile_tmux_title_options(tmux2, steady)
+    self.assertEqual(tmux2.calls, [])
+
+  def test_resolve_candidate_window_titles_reviews_db_vs_manual_override(
+      self,
+  ) -> None:
+    c_generic = "aaaaaaaa-0000-0000-0000-000000000001"
+    c_manual = "aaaaaaaa-0000-0000-0000-000000000002"
+    c_empty_rev = "aaaaaaaa-0000-0000-0000-000000000003"
+    c_chat = "aaaaaaaa-0000-0000-0000-000000000004"
+    c_var1 = "aaaaaaaa-0000-0000-0000-000000000005"
+    c_var2 = "aaaaaaaa-0000-0000-0000-000000000006"
+    c_nonrev_rev = "aaaaaaaa-0000-0000-0000-000000000007"
+
+    with tempfile.TemporaryDirectory() as tmp:
+      db_path = os.path.join(tmp, "reviews.db")
+      con = sqlite3.connect(db_path)
+      try:
+        con.execute(
+            "CREATE TABLE reviews (target TEXT, kind TEXT, "
+            "conversation_id TEXT, workspace TEXT, worktree TEXT, "
+            "created_at TEXT, updated_at TEXT, last_opened_at TEXT)"
+        )
+        con.execute(
+            "INSERT INTO reviews VALUES (?, 'pr', ?, '', '', '1', '1', '1')",
+            ("dart-lang/tools#2796", c_generic),
+        )
+        con.execute(
+            "INSERT INTO reviews VALUES (?, 'pr', ?, '', '', '1', '1', '1')",
+            ("pr/1018458", c_manual),
+        )
+        con.execute(
+            "INSERT INTO reviews VALUES (?, 'pr', ?, '', '', '1', '1', '1')",
+            ("pr/1019325", c_empty_rev),
+        )
+        con.execute(
+            "INSERT INTO reviews VALUES (?, 'pr', ?, '', '', '1', '1', '1')",
+            ("dart-lang/tools#2796", c_var1),
+        )
+        con.execute(
+            "INSERT INTO reviews VALUES (?, 'pr', ?, '', '', '1', '1', '1')",
+            ("pr/1018458", c_var2),
+        )
+        con.commit()
+      finally:
+        con.close()
+
+      data_dir = os.path.join(tmp, "antigravity-cli")
+      os.makedirs(os.path.join(data_dir, "annotations"))
+      for cid, title in (
+          (c_generic, "Code review"),
+          (c_manual, "TearDown Race Discussion"),
+          (c_var1, "Code Review: Tools PR"),
+          (c_var2, "Reviewing Change"),
+          (c_nonrev_rev, "Reviewing analyzer bug"),
+      ):
+        with open(
+            os.path.join(data_dir, "annotations", f"{cid}.pbtxt"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+          f.write(f'title: "{title}"\n')
+
+      for cid, content in (
+          (c_empty_rev, "Please review pr/1019325 thoroughly"),
+          (c_chat, "<USER_REQUEST>Improve tmux titles</USER_REQUEST>"),
+      ):
+        logs_dir = os.path.join(
+            data_dir, "brain", cid, ".system_generated", "logs"
+        )
+        os.makedirs(logs_dir, exist_ok=True)
+        with open(
+            os.path.join(logs_dir, "transcript.jsonl"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+          f.write(
+              json.dumps({
+                  "step_index": 0,
+                  "source": "USER_EXPLICIT",
+                  "type": "USER_INPUT",
+                  "status": "DONE",
+                  "created_at": "2026-11-17T01:00:00Z",
+                  "content": content,
+              })
+              + "\n"
+          )
+
+      cfg = self._load_default_config(tmp)
+      candidates = [
+          ("s1", "0", {"pane_id": "%0"}, data_dir, c_generic),
+          ("s1", "1", {"pane_id": "%1"}, data_dir, c_manual),
+          ("s1", "2", {"pane_id": "%2"}, data_dir, c_empty_rev),
+          ("s1", "3", {"pane_id": "%3"}, data_dir, c_chat),
+          ("s1", "4", {"pane_id": "%4"}, data_dir, c_var1),
+          ("s1", "5", {"pane_id": "%5"}, data_dir, c_var2),
+          ("s1", "6", {"pane_id": "%6"}, data_dir, c_nonrev_rev),
+      ]
+      resolved = tmux_status.resolve_candidate_window_titles(
+          candidates, config=cfg, db_path=db_path
+      )
+      titles_by_pane = {
+          pane["pane_id"]: title for _, _, pane, title, _ in resolved
+      }
+      self.assertEqual(titles_by_pane["%0"], "tools#2796")
+      self.assertEqual(titles_by_pane["%1"], "TearDown Race")
+      self.assertEqual(titles_by_pane["%2"], "pr/1019325")
+      self.assertEqual(titles_by_pane["%3"], "Improve tmux titles")
+      self.assertEqual(titles_by_pane["%4"], "tools#2796")
+      self.assertEqual(titles_by_pane["%5"], "pr/1018458")
+      self.assertEqual(titles_by_pane["%6"], "Reviewing analyzer bug")
+
+  def test_cmd_reconciles_titles_for_agent_subagent_print_and_shell(
+      self,
+  ) -> None:
+    sep = "\x1f"
+    c_main = "11111111-1111-1111-1111-111111111111"
+    c_sub = "22222222-2222-2222-2222-222222222222"
+    c_print = "33333333-3333-3333-3333-333333333333"
+    list_out = "\n".join([
+        sep.join(["s1", "0", "0", "0", "%0", "100", "", "", "", "", "1", "agy"]),
+        sep.join([
+            "s1", "1", "0", "0", "%1", "101", "", "", "", "stale", "1", "agy"
+        ]),
+        sep.join([
+            "s1", "2", "0", "0", "%2", "102", "", "", "", "stale", "1", "agy"
+        ]),
+        sep.join([
+            "s1", "3", "0", "0", "%3", "103", "", "", "", "stale", "1", "zsh"
+        ]),
+    ]) + "\n"
+
+    with tempfile.TemporaryDirectory() as tmp:
+      ann_dir = os.path.join(tmp, "annotations")
+      os.makedirs(ann_dir, exist_ok=True)
+      with open(
+          os.path.join(ann_dir, f"{c_main}.pbtxt"), "w", encoding="utf-8"
+      ) as f:
+        f.write('title: "Review dart-lang/tools#2796"\n')
+      cfg = self._load_default_config(tmp)
+      fake_tmux = _FakeTmux(stdout=list_out)
+      out = io.StringIO()
+      with (
+          mock.patch.object(tmux_status, "TmuxRunner", return_value=fake_tmux),
+          mock.patch.object(
+              tmux_status, "load_process_table", return_value=({}, {})
+          ),
+          mock.patch.object(
+              tmux_status, "default_data_dir", return_value=tmp
+          ),
+          mock.patch.object(
+              tmux_status, "load_mcp_commands", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status, "self_ignored_pids", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status,
+              "find_pane_cli",
+              side_effect=[
+                  ({"pid": 100, "argv": ["agy"]}, False),
+                  ({"pid": 101, "argv": ["agy"]}, False),
+                  ({"pid": 102, "argv": ["agy", "-p", "hi"]}, True),
+                  (None, False),
+              ],
+          ),
+          mock.patch.object(
+              tmux_status,
+              "resolve_cli_conversation_and_dir",
+              side_effect=[
+                  (c_main, set(), tmp),
+                  (c_sub, set(), tmp),
+                  (c_print, set(), tmp),
+              ],
+          ),
+          mock.patch.object(
+              tmux_status,
+              "is_subagent_db",
+              side_effect=[False, True],
+          ),
+          mock.patch.object(
+              tmux_status,
+              "classify_cli_state_with_ts",
+              side_effect=[
+                  ("settled", "waiting for user input", "2026-11-17T01:00:00Z"),
+                  ("working", "running", "2026-11-17T01:00:00Z"),
+                  ("working", "running", "2026-11-17T01:00:00Z"),
+              ],
+          ),
+          mock.patch("sys.stdout", out),
+      ):
+        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain", "--no-notify"])
+      self.assertEqual(rc, 0)
+      set_calls = [c for c in fake_tmux.calls if c and c[0] == "set-option"]
+      self.assertEqual(len(set_calls), 1)
+      joined = " ".join(set_calls[0])
+      self.assertIn("-p -t %0 @code_harness_title tools#2796", joined)
+      self.assertIn("-qup -t %1 @code_harness_title", joined)
+      self.assertIn("-qup -t %2 @code_harness_title", joined)
+      self.assertIn("-qup -t %3 @code_harness_title", joined)
+
 
 if __name__ == "__main__":
   unittest.main()

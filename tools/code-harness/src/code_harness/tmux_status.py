@@ -15,8 +15,9 @@ prints a compact segment reflecting the 5-tier priority model
 
 While scanning all panes, it also reconciles per-pane `@code_harness_context`
 badges and global `@code_harness_context_pad` for `status-left` (via
-`code_harness.context`) and cleans up legacy session/window context options
-when present.
+`code_harness.context`), cleans up legacy session/window context options when
+present, and reconciles per-pane `@code_harness_title` options for dynamic tmux
+window names.
 
 Urgent prompts ("perm" and "ask", top-level or subagent) remain shown without
 requiring a bell and emit an OSC 777 toast via `code_harness.tmux_notify` on
@@ -33,7 +34,9 @@ import datetime
 import hashlib
 import json
 import os
+import pathlib
 import re
+import sqlite3
 import sys
 import tempfile
 import time
@@ -47,10 +50,14 @@ from code_harness.snapshot import (
     classify_cli_state_with_ts,
     classify_ui_category,
     cli_proc_flavor,
+    compact_window_title,
+    conversation_labels,
     default_data_dir,
     find_pane_cli,
     find_tmux_bin,
     harness_data_dirs,
+    is_generic_review_title,
+    is_subagent_db,
     load_mcp_commands,
     load_process_table,
     resolve_cli_conversation_and_dir,
@@ -79,6 +86,9 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
           "#{@code_harness_context}",
           "#{@code_harness_context_pad}",
           "#{status-left}",
+          "#{@code_harness_title}",
+          "#{automatic-rename}",
+          "#{window_name}",
       ]),
       check=False,
   )
@@ -94,7 +104,9 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
     if len(parts) == 6:
       sname, widx, wbell, pidx_s, pane_id, ppid_s = parts
       ctx_badge, ctx_pad, status_left = "", "", ""
+      ch_title, auto_rename, window_name = "", "", ""
       has_ctx_fields = False
+      has_title_fields = False
     elif len(parts) == 9:
       (
           sname,
@@ -107,7 +119,26 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
           ctx_pad,
           status_left,
       ) = parts
+      ch_title, auto_rename, window_name = "", "", ""
       has_ctx_fields = True
+      has_title_fields = False
+    elif len(parts) == 12:
+      (
+          sname,
+          widx,
+          wbell,
+          pidx_s,
+          pane_id,
+          ppid_s,
+          ctx_badge,
+          ctx_pad,
+          status_left,
+          ch_title,
+          auto_rename,
+          window_name,
+      ) = parts
+      has_ctx_fields = True
+      has_title_fields = True
     else:
       continue
     try:
@@ -124,6 +155,7 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
           "bell": wbell == "1",
           "status_left": status_left,
           "has_ctx_fields": has_ctx_fields,
+          "has_title_fields": has_title_fields,
           "panes": [],
       }
       by_key[key] = win
@@ -133,6 +165,8 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
         win["bell"] = True
       if has_ctx_fields:
         win["has_ctx_fields"] = True
+      if has_title_fields:
+        win["has_title_fields"] = True
     win["panes"].append({
         "index": pidx,
         "pane_id": pane_id,
@@ -141,6 +175,10 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
         "context_pad": ctx_pad,
         "status_left": status_left,
         "has_ctx_fields": has_ctx_fields,
+        "code_harness_title": ch_title,
+        "automatic_rename": auto_rename,
+        "window_name": window_name,
+        "has_title_fields": has_title_fields,
     })
 
   for win in windows:
@@ -785,6 +823,172 @@ def reconcile_tmux_context_options(
     tmux.run(*batch, check=False)
 
 
+def _default_review_db_path() -> pathlib.Path:
+  env_db = os.environ.get("REVIEW_DB", "").strip()
+  if env_db:
+    return pathlib.Path(os.path.expanduser(env_db))
+  return pathlib.Path.home() / "projects" / "code-review" / "reviews.db"
+
+
+def load_review_targets_by_conv(
+    conv_ids: Sequence[str],
+    db_path: pathlib.Path | str | None = None,
+) -> dict[str, str]:
+  """Returns `{conv_id: canonical_target}` from `reviews.db` read-only."""
+  unique_ids = sorted({cid for cid in conv_ids if cid})
+  if not unique_ids:
+    return {}
+  target_db = db_path if db_path is not None else _default_review_db_path()
+  if not target_db or not pathlib.Path(target_db).is_file():
+    return {}
+  try:
+    uri = f"{pathlib.Path(target_db).resolve().as_uri()}?mode=ro"
+    con = sqlite3.connect(uri, uri=True, timeout=0.5)
+  except (OSError, sqlite3.Error):
+    return {}
+  try:
+    placeholders = ",".join("?" for _ in unique_ids)
+    rows = con.execute(
+        f"SELECT conversation_id, target FROM reviews "
+        f"WHERE conversation_id IN ({placeholders}) "
+        "ORDER BY COALESCE(last_opened_at, updated_at) DESC",
+        unique_ids,
+    ).fetchall()
+    out: dict[str, str] = {}
+    for cid, target in rows:
+      if cid and target and cid not in out:
+        out[cid] = str(target).strip()
+    return out
+  except sqlite3.Error:
+    return {}
+  finally:
+    con.close()
+
+
+def resolve_candidate_window_titles(
+    title_candidates: Sequence[tuple[str, str, Mapping[str, Any], str, str]],
+    config: HarnessConfig | None = None,
+    db_path: pathlib.Path | str | None = None,
+) -> list[tuple[str, str, Mapping[str, Any], str, bool]]:
+  """Resolves desired compact `@code_harness_title` values for CLI panes."""
+  if not title_candidates:
+    return []
+  conv_ids = [conv_id for _, _, _, _, conv_id in title_candidates if conv_id]
+  review_targets = load_review_targets_by_conv(conv_ids, db_path=db_path)
+
+  by_dir: dict[str, list[str]] = {}
+  for _, _, _, cli_dir, conv_id in title_candidates:
+    by_dir.setdefault(cli_dir, []).append(conv_id)
+
+  structured_by_dir: dict[str, dict[str, str]] = {}
+  fallback_by_dir: dict[str, dict[str, str]] = {}
+  for cli_dir, ids in by_dir.items():
+    structured = conversation_labels(
+        cli_dir, ids, max_len=0, config=config, include_user_input=False
+    )
+    structured_by_dir[cli_dir] = structured or {}
+    missing = [
+        cid
+        for cid in ids
+        if cid not in structured_by_dir[cli_dir] and cid not in review_targets
+    ]
+    fallback_by_dir[cli_dir] = (
+        conversation_labels(
+            cli_dir, missing, max_len=0, config=config, include_user_input=True
+        )
+        or {}
+        if missing
+        else {}
+    )
+
+  resolved: list[tuple[str, str, Mapping[str, Any], str, bool]] = []
+  for sname, win_idx_str, pane, cli_dir, conv_id in title_candidates:
+    raw = structured_by_dir.get(cli_dir, {}).get(conv_id, "")
+    review_target = review_targets.get(conv_id, "")
+    chosen = ""
+    if review_target:
+      if raw and not is_generic_review_title(raw):
+        chosen = raw
+      else:
+        chosen = f"Review {review_target}"
+    else:
+      raw_low = str(raw or "").strip(".:!?\"' ").lower()
+      is_non_review_blank = (
+          not raw
+          or raw_low in ("new conversation", "untitled")
+          or raw_low.startswith((
+              "/start-code-review",
+              "/review-github-pr",
+              "/review-pr",
+          ))
+      )
+      if not is_non_review_blank:
+        chosen = raw
+      else:
+        fb = fallback_by_dir.get(cli_dir, {}).get(conv_id, "")
+        if fb and not is_generic_review_title(fb):
+          chosen = fb
+    desired = compact_window_title(chosen, max_len=22) if chosen else ""
+    resolved.append((sname, win_idx_str, pane, desired, True))
+  return resolved
+
+
+def reconcile_tmux_title_options(
+    tmux: TmuxRunner,
+    title_panes: Sequence[tuple[str, str, Mapping[str, Any], str, bool]],
+    default_cli_names: set[str] | frozenset[str] | None = None,
+) -> None:
+  """Applies minimal batched tmux updates for per-pane window titles."""
+  if not title_panes:
+    return
+  heal_names = (
+      default_cli_names
+      if default_cli_names is not None
+      else frozenset({"cli", "agy", "antigravity-cli"})
+  )
+  pane_cmds: list[list[str]] = []
+  win_actions: dict[tuple[str, str], tuple[str, str]] = {}
+  for sname, win_idx_str, pane, desired, is_cli_pane in title_panes:
+    if not pane.get("has_title_fields", False):
+      continue
+    pid = pane["pane_id"]
+    cur = pane.get("code_harness_title", "")
+    changed = cur != desired
+    if changed:
+      if desired:
+        pane_cmds.append(
+            ["set-option", "-p", "-t", pid, "@code_harness_title", desired]
+        )
+      else:
+        pane_cmds.append(
+            ["set-option", "-qup", "-t", pid, "@code_harness_title"]
+        )
+
+    wkey = (sname, win_idx_str)
+    auto_val = pane.get("automatic_rename", "")
+    wname = pane.get("window_name", "")
+    if is_cli_pane and auto_val == "0" and wname in heal_names:
+      win_actions[wkey] = (pid, "heal")
+    elif changed and auto_val == "1" and wkey not in win_actions:
+      win_actions[wkey] = (pid, "refresh")
+
+  cmds = list(pane_cmds)
+  for pid, mode in win_actions.values():
+    if mode == "heal":
+      cmds.append(["set-window-option", "-t", pid, "automatic-rename", "on"])
+    else:
+      cmds.append(["set-window-option", "-t", pid, "automatic-rename", "off"])
+      cmds.append(["set-window-option", "-t", pid, "automatic-rename", "on"])
+
+  if cmds:
+    batch: list[str] = []
+    for idx, cmd in enumerate(cmds):
+      if idx > 0:
+        batch.append(";")
+      batch.extend(cmd)
+    tmux.run(*batch, check=False)
+
+
 def cmd_tmux_status(
     config: HarnessConfig,
     flavor: str | None,
@@ -829,17 +1033,22 @@ def cmd_tmux_status(
   done_count = 0
   work_count = 0
   ctx_panes: list[tuple[str, str, Mapping[str, Any], str]] = []
+  title_candidates: list[tuple[str, str, Mapping[str, Any], str, str]] = []
+  title_panes: list[tuple[str, str, Mapping[str, Any], str, bool]] = []
 
   for win_idx, win in enumerate(windows):
     sname = win["session_name"]
     for pane_pos, pane in enumerate(win["panes"]):
       has_ctx = bool(pane.get("has_ctx_fields", False))
+      has_title = bool(pane.get("has_title_fields", False))
       cli_proc, cli_is_print = find_pane_cli(
           pane["pane_pid"], procs, children_map, config=config
       )
       if cli_proc is None:
         if has_ctx:
           ctx_panes.append((sname, win["window_index"], pane, ""))
+        if has_title:
+          title_panes.append((sname, win["window_index"], pane, "", False))
         continue
       if mcp_sigs is None:
         mcp_sigs = load_mcp_commands(data_dir, config=config)
@@ -847,6 +1056,7 @@ def cmd_tmux_status(
       conv_id, open_dbs, cli_dir = resolve_cli_conversation_and_dir(
           cli_proc, pane["pane_id"], data_dir=data_dir, config=config
       )
+      is_subagent: bool | None = None
       if has_ctx:
         pane_flavor = flavor
         if pane_flavor is None:
@@ -869,14 +1079,30 @@ def cmd_tmux_status(
               flavor=pane_flavor,
               extra_child_ids=open_dbs,
           )
+          is_subagent = bool(ctx_info.get("is_subagent"))
           desired = (
               ""
-              if ctx_info["is_subagent"]
+              if is_subagent
               else context.format_tmux_context_badge(
                   ctx_info["tokens"], pane_limits
               )
           )
         ctx_panes.append((sname, win["window_index"], pane, desired))
+      if has_title:
+        if is_subagent is None and not cli_is_print and conv_id:
+          is_subagent = is_subagent_db(cli_dir, conv_id, config=config)
+        if cli_is_print or is_subagent or not conv_id:
+          title_panes.append((
+              sname,
+              win["window_index"],
+              pane,
+              "",
+              not cli_is_print and not bool(is_subagent),
+          ))
+        else:
+          title_candidates.append(
+              (sname, win["window_index"], pane, cli_dir, conv_id)
+          )
       state, reason, last_ts = classify_cli_state_with_ts(
           cli_proc,
           cli_is_print,
@@ -942,6 +1168,13 @@ def cmd_tmux_status(
         work_count += 1
 
   reconcile_tmux_context_options(tmux, limits_enabled, ctx_panes)
+  title_panes.extend(
+      resolve_candidate_window_titles(title_candidates, config=config)
+  )
+  heal_names = {"cli", "agy", "antigravity-cli"} | {
+      b for f in config.flavors.values() for b in f.match_basenames if b
+  }
+  reconcile_tmux_title_options(tmux, title_panes, default_cli_names=heal_names)
 
   ask_sessions = [s for s in ask_sessions if s not in perm_seen]
 

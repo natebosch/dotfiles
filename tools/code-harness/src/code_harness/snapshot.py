@@ -583,7 +583,15 @@ def descendants_of(
 
 def is_self_script_proc(info: Mapping) -> bool:
   """True if `info` is an invocation of `code-harness` tmux helpers."""
+  comm = info.get("comm") or ""
+  if comm in ("auto-title", "auto-diff-p"):
+    return True
   argv = info.get("argv") or ()
+  if any(
+      os.path.basename(tok) in ("auto-title", "auto-diff-pane")
+      for tok in argv[:3]
+  ):
+    return True
   has_cmd = any(
       os.path.basename(tok) in ("code-harness", ".code-harness-wrapped")
       for tok in argv[:3]
@@ -2933,6 +2941,7 @@ def conversation_labels(
     conv_ids: list[str],
     max_len: int = 80,
     config: HarnessConfig | None = None,
+    include_user_input: bool = True,
 ) -> dict[str, str]:
   """Batch lookup of `{conv_id: title}` opening summaries DB at most once."""
   unique_ids: list[str] = []
@@ -3013,12 +3022,13 @@ def conversation_labels(
     except sqlite3.Error:
       pass
 
-  for cid in remaining:
-    text = _first_user_input_label(data_dir, cid, config=config)
-    if text:
-      found[cid] = (
-          _squash_line(text, max_len) if max_len else " ".join(text.split())
-      )
+  if include_user_input:
+    for cid in remaining:
+      text = _first_user_input_label(data_dir, cid, config=config)
+      if text:
+        found[cid] = (
+            _squash_line(text, max_len) if max_len else " ".join(text.split())
+        )
 
   return found
 
@@ -3042,6 +3052,405 @@ def _squash_line(text: str, limit: int) -> str:
   if len(single) <= limit:
     return single
   return single[: limit - 3] + "..."
+
+
+_GH_REMOTE_RE = re.compile(
+    r"^(?:https?://github\.com/|ssh://git@github\.com/|git@github\.com:)"
+    r"([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$",
+    re.IGNORECASE,
+)
+_GERRIT_REMOTE_RE = re.compile(
+    r"^https?://([a-z0-9-]+?)(?:-review)?\.googlesource\.com(?:/|$)",
+    re.IGNORECASE,
+)
+_INLINE_GERRIT_URL_RE = re.compile(
+    r"(?:"
+    r"<\s*(?:https?://)?([a-z0-9-]+)-review\.googlesource\.com"
+    r"(?:/c/[^\s<>]+?/\+/([1-9]\d*)|/(?:c/)?([1-9]\d*))"
+    r"(?:[/#?][^\s<>)\]}\"']*)?\s*>"
+    r"|"
+    r"(?:https?://)?([a-z0-9-]+)-review\.googlesource\.com"
+    r"(?:/c/[^\s<>]+?/\+/([1-9]\d*)|/(?:c/)?([1-9]\d*))"
+    r"(?:[/#?][^\s<>)\]}\"']*(?<![.,;:!?]))?"
+    r")",
+    re.IGNORECASE,
+)
+_INLINE_GERRIT_HASH_RE = re.compile(
+    r"\b([a-z0-9-]+)-review#([1-9]\d*)\b", re.IGNORECASE
+)
+_INLINE_DART_HASH_RE = re.compile(
+    r"(?<![/\w.-])(?:dart-sdk|sdk)#([1-9]\d*)\b", re.IGNORECASE
+)
+_INLINE_GH_URL_RE = re.compile(
+    r"(?:"
+    r"<\s*(?:https?://)?github\.com/"
+    r"([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/pull/([1-9]\d*)"
+    r"(?:[/#?][^\s<>)\]}\"']*)?\s*>"
+    r"|"
+    r"(?:https?://)?github\.com/"
+    r"([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/pull/([1-9]\d*)"
+    r"(?:[/#?][^\s<>)\]}\"']*(?<![.,;:!?]))?"
+    r")",
+    re.IGNORECASE,
+)
+_INLINE_PR_PULL_RE = re.compile(
+    r"(?<![/\w.-])([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/pull/([1-9]\d*)"
+    r"(?:[/#?][^\s<>)\]}\"']*(?<![.,;:!?]))?",
+    re.IGNORECASE,
+)
+_INLINE_REPO_HASH_RE = re.compile(
+    r"(?<![/\w.-])([A-Za-z0-9_.-]+)#([1-9]\d*)\b"
+)
+
+_LEADING_TAG_RE = re.compile(r"^(?:\[[^\]]+\]\s*)+")
+_LEADING_EMOJI_RE = re.compile(
+    r"^(?:[\U0001F000-\U0001FAFF\u2600-\u27BF\u2300-\u23FF"
+    r"\u2B00-\u2BFF\u2190-\u21FF\u200D\uFE0F]+\s*)+"
+)
+_REVIEW_TITLE_PREFIX_RE = re.compile(
+    r"^Review\s+("
+    r"[a-z0-9-]+-review/\d+"
+    r"|[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#\d+"
+    r"|[A-Za-z0-9_.-]+#\d+"
+    r"|[a-z]{1,4}/\d+"
+    r")(?:\b|:|$)",
+    re.IGNORECASE,
+)
+_ANCHOR_ID_RE = re.compile(
+    r"(?:"
+    r"\b[a-z0-9-]+-review/\d+"
+    r"|(?<![/\w.-])[A-Za-z0-9_.-]+#\d+"
+    r"|(?<![/\w.-])[a-z]{1,4}/\d+(?![/\w.-])"
+    r")"
+)
+_GERRIT_TARGET_RE = re.compile(r"^([a-z0-9-]+)-review/(\d+)$", re.IGNORECASE)
+_GH_SLUG_RE = re.compile(r"^([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)#(\d+)$")
+_REPO_HASH_RE = re.compile(r"^([A-Za-z0-9_.-]+)#([1-9]\d*)$")
+_SHORT_REF_RE = re.compile(r"^([a-z]{1,4})/(\d+)$", re.IGNORECASE)
+_TITLE_STOPWORDS = frozenset({
+    "for", "in", "on", "to", "of", "with", "and",
+    "the", "a", "an", "from", "by", "at",
+})
+_TITLE_FILLER_WORDS = frozenset({
+    "please", "help", "can", "you", "investigate", "investigating",
+})
+_GENERIC_REVIEW_TITLES = frozenset({
+    "code review",
+    "code review request",
+    "code review session",
+    "code review task",
+    "start code review",
+    "start-code-review",
+    "review",
+    "review request",
+    "reviewing pr",
+    "reviewing a pr",
+    "reviewing change",
+    "reviewing a change",
+    "reviewing code",
+    "pr review",
+    "code reviewing",
+    "new conversation",
+    "untitled",
+})
+_REVIEW_CMD_PREFIX_RE = re.compile(
+    r"^/(?:start-code-review|review-github-pr|review-pr)\b",
+    re.IGNORECASE,
+)
+
+
+def default_repos_dir() -> pathlib.Path:
+  """Resolves local git checkouts root from `$REVIEW_REPOS_DIR` or `~/repos`."""
+  env_repos = os.environ.get("REVIEW_REPOS_DIR", "").strip()
+  if env_repos:
+    return pathlib.Path(os.path.expanduser(env_repos))
+  return pathlib.Path.home() / "repos"
+
+
+def _run_git_remote_url(repo_dir: pathlib.Path, remote: str) -> str | None:
+  try:
+    proc = subprocess.run(
+        ["git", "remote", "get-url", remote],
+        cwd=repo_dir,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
+        timeout=2.0,
+        check=False,
+    )
+  except (OSError, subprocess.SubprocessError):
+    return None
+  if proc.returncode != 0:
+    return None
+  return proc.stdout.strip() or None
+
+
+def _resolve_repo_hash_target(
+    repo: str, num: int, repos_path: pathlib.Path
+) -> str | None:
+  for cand in (repos_path / repo, repos_path / repo / "sdk"):
+    if not (cand.is_dir() and (cand / ".git").exists()):
+      continue
+    upstream = _run_git_remote_url(cand, "upstream")
+    if upstream:
+      m = _GH_REMOTE_RE.fullmatch(upstream)
+      if m:
+        return f"{m.group(1).lower()}/{m.group(2).lower()}#{num}"
+    origin = _run_git_remote_url(cand, "origin")
+    if origin:
+      m = _GH_REMOTE_RE.fullmatch(origin)
+      if m:
+        return f"{m.group(1).lower()}/{m.group(2).lower()}#{num}"
+      mg = _GERRIT_REMOTE_RE.match(origin)
+      if mg:
+        return f"{mg.group(1).lower().removesuffix('-review')}-review/{num}"
+    if upstream:
+      mg = _GERRIT_REMOTE_RE.match(upstream)
+      if mg:
+        return f"{mg.group(1).lower().removesuffix('-review')}-review/{num}"
+    return None
+  return None
+
+
+def normalize_inline_review_refs(
+    text: str, repos_dir: str | pathlib.Path | None = None
+) -> str:
+  """Replaces Gerrit/GitHub PR URLs and shorthands with short IDs."""
+  if not text:
+    return ""
+  repos_path = (
+      pathlib.Path(os.path.expanduser(str(repos_dir)))
+      if repos_dir is not None
+      else default_repos_dir()
+  )
+
+  def _gerrit_sub(m: re.Match[str]) -> str:
+    host = (m.group(1) or m.group(4)).lower()
+    num = m.group(2) or m.group(3) or m.group(5) or m.group(6)
+    return f"{host}-review/{int(num)}"
+
+  def _gh_sub(m: re.Match[str]) -> str:
+    owner = (m.group(1) or m.group(4)).lower()
+    repo = (m.group(2) or m.group(5)).lower()
+    num = int(m.group(3) or m.group(6))
+    return f"{owner}/{repo}#{num}"
+
+  out = _INLINE_GERRIT_URL_RE.sub(_gerrit_sub, text)
+  out = _INLINE_GERRIT_HASH_RE.sub(
+      lambda m: f"{m.group(1).lower()}-review/{int(m.group(2))}", out
+  )
+  out = _INLINE_GH_URL_RE.sub(_gh_sub, out)
+  out = _INLINE_PR_PULL_RE.sub(
+      lambda m: f"{m.group(1).lower()}/{m.group(2).lower()}#{int(m.group(3))}",
+      out,
+  )
+  out = _INLINE_DART_HASH_RE.sub(
+      lambda m: f"dart-review/{int(m.group(1))}", out
+  )
+
+  cache: dict[tuple[str, int], str] = {}
+
+  def _repo_sub(m: re.Match[str]) -> str:
+    key = (m.group(1), int(m.group(2)))
+    if key not in cache:
+      cache[key] = (
+          _resolve_repo_hash_target(key[0], key[1], repos_path) or m.group(0)
+      )
+    return cache[key]
+
+  return _INLINE_REPO_HASH_RE.sub(_repo_sub, out)
+
+
+def _strip_leading_title_prefixes(title: str) -> str:
+  s = title.strip()
+  while s:
+    prev = s
+    s = _LEADING_TAG_RE.sub("", s).strip()
+    s = _LEADING_EMOJI_RE.sub("", s).strip()
+    if s == prev:
+      break
+  return s
+
+
+def is_generic_review_title(title: str | None) -> bool:
+  """True when `title` is empty, generic review boilerplate, or a slash cmd."""
+  if not title or not str(title).strip():
+    return True
+  s = _strip_leading_title_prefixes(" ".join(str(title).split()))
+  if not s:
+    return True
+  if _REVIEW_TITLE_PREFIX_RE.match(s):
+    return False
+  if _REVIEW_CMD_PREFIX_RE.match(s) or re.match(
+      r"^(?:code[- ]review|reviewing|start[- ]code[- ]review|pr[- ]review)\b",
+      s,
+      re.IGNORECASE,
+  ):
+    return True
+  return s.strip(".:!?\"' ").lower() in _GENERIC_REVIEW_TITLES
+
+
+def _compact_review_target(target_str: str, max_len: int = 22) -> str:
+  s = target_str.strip()
+  m = _GH_SLUG_RE.fullmatch(s)
+  if m:
+    repo = m.group(2)
+    suffix = f"#{m.group(3)}"
+    full = f"{repo}{suffix}"
+    if len(full) <= max_len:
+      return full
+    if len(suffix) < max_len:
+      return f"{repo[: max_len - len(suffix)]}{suffix}"
+    return full[:max_len]
+
+  m = _REPO_HASH_RE.fullmatch(s)
+  if m:
+    repo = m.group(1)
+    suffix = f"#{m.group(2)}"
+    full = f"{repo}{suffix}"
+    if len(full) <= max_len:
+      return full
+    if len(suffix) < max_len:
+      return f"{repo[: max_len - len(suffix)]}{suffix}"
+    return full[:max_len]
+
+  m = _GERRIT_TARGET_RE.fullmatch(s)
+  if m:
+    host = m.group(1).lower()
+    num = m.group(2)
+    full = f"{host}-review/{num}"
+    if len(full) <= max_len:
+      return full
+    short = f"{host}/{num}"
+    if len(short) <= max_len:
+      return short
+    slash_num = f"/{num}"
+    if len(slash_num) < max_len:
+      return f"{host[: max_len - len(slash_num)]}{slash_num}"
+    return short[:max_len]
+
+  m = _SHORT_REF_RE.fullmatch(s)
+  if m:
+    norm = f"{m.group(1).lower()}/{m.group(2)}"
+    if len(norm) <= max_len:
+      return norm
+    return norm[: max_len - 1] + "…"
+
+  if len(s) <= max_len:
+    return s
+  return s[: max_len - 1] + "…"
+
+
+def _clean_word_token(word: str) -> str:
+  return word.strip(".,;:!?()[]{}\"'")
+
+
+def _compact_with_anchor(text: str, max_len: int) -> str:
+  m = _ANCHOR_ID_RE.search(text)
+  if not m:
+    return ""
+  anchor = m.group(0)
+  gh = _GH_SLUG_RE.fullmatch(anchor)
+  if gh:
+    anchor = f"{gh.group(2)}#{gh.group(3)}"
+  gm = _GERRIT_TARGET_RE.fullmatch(anchor)
+  if gm and len(anchor) > max_len:
+    anchor = f"{gm.group(1).lower()}/{gm.group(2)}"
+  if len(anchor) > max_len:
+    return anchor[: max_len - 1] + "…"
+  if len(anchor) == max_len:
+    return anchor
+
+  def _sig_tokens(tokens: list[str]) -> list[str]:
+    out: list[str] = []
+    for tok in tokens:
+      cleaned = tok.strip(",;:")
+      low = _clean_word_token(cleaned).lower()
+      if low and low not in _TITLE_STOPWORDS:
+        out.append(cleaned)
+    return out
+
+  left = _sig_tokens(text[: m.start()].split())
+  right = _sig_tokens(text[m.end() :].split())
+  left_indexed = [(-1 - idx, tok) for idx, tok in enumerate(left)]
+  right_indexed = [(idx + 1, tok) for idx, tok in enumerate(right)]
+  candidates: list[tuple[int, str]] = []
+  if len(left_indexed) <= 2:
+    candidates.extend(left_indexed)
+    candidates.extend(right_indexed)
+  else:
+    left_no_filler = [
+        item
+        for item in left_indexed
+        if _clean_word_token(item[1]).lower() not in _TITLE_FILLER_WORDS
+    ]
+    left_pool = list(reversed(left_no_filler or left_indexed))
+    right_pool = list(right_indexed)
+    while left_pool or right_pool:
+      if right_pool:
+        candidates.append(right_pool.pop(0))
+      if left_pool:
+        candidates.append(left_pool.pop(0))
+
+  chosen: list[tuple[int, str]] = [(0, anchor)]
+  cur_len = len(anchor)
+  for pos, tok in candidates:
+    if cur_len + 1 + len(tok) <= max_len:
+      chosen.append((pos, tok))
+      cur_len += 1 + len(tok)
+
+  chosen.sort(key=lambda item: item[0])
+  return " ".join(tok for _, tok in chosen)
+
+
+def compact_window_title(
+    title: str | None,
+    max_len: int = 22,
+    repos_dir: str | pathlib.Path | None = None,
+) -> str:
+  """Compacts a conversation title for a narrow tmux window tab."""
+  if not title or not str(title).strip():
+    return ""
+  s = _strip_leading_title_prefixes(" ".join(str(title).split()))
+  if not s:
+    return ""
+  s = normalize_inline_review_refs(s, repos_dir=repos_dir)
+  s = re.sub(
+      r"(?<![/\w.-])([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)#(\d+)\b",
+      lambda m: f"{m.group(2)}#{m.group(3)}",
+      s,
+  )
+
+  m_rev = _REVIEW_TITLE_PREFIX_RE.match(s)
+  if m_rev:
+    rest = m_rev.group(1).strip()
+    tok = re.split(r"[\s:]+", rest, maxsplit=1)[0]
+    if tok:
+      return _compact_review_target(tok, max_len=max_len)
+
+  if len(s) <= max_len:
+    return s
+
+  anchored = _compact_with_anchor(s, max_len)
+  if anchored:
+    return anchored
+
+  selected: list[str] = []
+  cur_len = 0
+  for w in s.split():
+    w_clean = w.strip(".,;:!?")
+    if not w_clean:
+      continue
+    add = len(w_clean) if not selected else len(w_clean) + 1
+    if cur_len + add > max_len:
+      break
+    selected.append(w_clean)
+    cur_len += add
+  while selected and _clean_word_token(selected[-1]).lower() in _TITLE_STOPWORDS:
+    selected.pop()
+  if selected:
+    return " ".join(selected)
+  return s[: max_len - 1] + "…"
 
 
 # --- Non-agent shell idle check ---
@@ -3213,13 +3622,18 @@ def scan_tmux(
           "#{window_active}",
           "#{window_layout}",
           "#{window_name}",
+          "#{automatic-rename}",
       ]),
   )
   for line in win_res.stdout.splitlines():
-    parts = line.split(sep, 5)
-    if len(parts) != 6:
+    parts = line.split(sep, 6)
+    if len(parts) == 6:
+      sname, widx_s, wid, wact, wlayout, wname = parts
+      auto_s = "1"
+    elif len(parts) == 7:
+      sname, widx_s, wid, wact, wlayout, wname, auto_s = parts
+    else:
       continue
-    sname, widx_s, wid, wact, wlayout, wname = parts
     sess = sessions_by_name.get(sname)
     if not sess:
       continue
@@ -3230,6 +3644,7 @@ def scan_tmux(
         "active": wact == "1",
         "layout": wlayout,
         "name": wname,
+        "automatic_rename": auto_s == "1",
         "panes": [],
     }
     sess["window_order"].append(widx)
@@ -3498,6 +3913,7 @@ def render_restore_script(
         continue
       p0 = panes[0]
       q_wname = shlex.quote(win["name"])
+      name_opt = "" if win.get("automatic_rename", True) else f" -n {q_wname}"
       q_p0_cwd = shlex.quote(p0["cwd"])
 
       if pos == 0:
@@ -3509,7 +3925,7 @@ def render_restore_script(
             f'  read -r cur_win cur_idx pane_0 < <(TMUX="" "${{tmux_cmd[@]}}"'
             f" -2 new-session -d -P"
             " -F '#{window_id} #{window_index} #{pane_id}'"
-            f' -s {q_sname} -n {q_wname} -c "$d0"{env_part})'
+            f' -s {q_sname}{name_opt} -c "$d0"{env_part})'
         )
         lines.append(f'  if [[ "$cur_idx" != "{widx}" ]]; then')
         lines.append(
@@ -3522,7 +3938,7 @@ def render_restore_script(
         lines.append(
             f'  read -r cur_win pane_0 < <("${{tmux_cmd[@]}}" new-window -d -P'
             " -F '#{window_id} #{pane_id}'"
-            f' -t {shlex.quote(f"={sname}:{widx}")} -n {q_wname} -c "$d0")'
+            f' -t {shlex.quote(f"={sname}:{widx}")}{name_opt} -c "$d0")'
         )
 
       active_pane_var = "$pane_0"

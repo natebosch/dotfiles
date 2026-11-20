@@ -1430,5 +1430,208 @@ class SwarmStateClassificationTests(unittest.TestCase):
       self.assertEqual(sig1, sig2)
 
 
+class WindowTitleAndRestoreTests(unittest.TestCase):
+
+  def test_is_self_script_proc_ignores_auto_title_and_diff_pane(self) -> None:
+    self.assertTrue(
+        snapshot.is_self_script_proc({
+            "comm": "auto-title",
+            "argv": ["/usr/bin/python3", "/home/u/.config/hooks/auto-title"],
+        })
+    )
+    self.assertTrue(
+        snapshot.is_self_script_proc({
+            "comm": "python3",
+            "argv": [
+                "/usr/bin/python3",
+                "/home/u/.config/hooks/auto-title",
+                "--worker",
+                "/tmp/job.json",
+            ],
+        })
+    )
+    self.assertTrue(
+        snapshot.is_self_script_proc({
+            "comm": "auto-diff-pane",
+            "argv": ["/home/u/.config/hooks/auto-diff-pane"],
+        })
+    )
+    self.assertFalse(
+        snapshot.is_self_script_proc({
+            "comm": "pytest",
+            "argv": ["pytest", "tests/"],
+        })
+    )
+
+  def test_compact_window_title_and_inline_ref_normalization(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      tools_dir = os.path.join(tmp, "tools")
+      os.makedirs(os.path.join(tools_dir, ".git"))
+
+      def _fake_remote_url(repo_dir: pathlib.Path, remote: str) -> str | None:
+        if repo_dir == pathlib.Path(tools_dir) and remote == "upstream":
+          return "https://github.com/dart-lang/tools.git"
+        return None
+
+      with mock.patch.object(
+          snapshot, "_run_git_remote_url", side_effect=_fake_remote_url
+      ):
+        self.assertEqual(
+            snapshot.normalize_inline_review_refs(
+                "Check tools#2796, https://github.com/dart-lang/test/pull/42, "
+                "and https://dart-review.googlesource.com/c/sdk/+/563524",
+                repos_dir=tmp,
+            ),
+            "Check dart-lang/tools#2796, dart-lang/test#42, "
+            "and dart-review/563524",
+        )
+        self.assertEqual(
+            snapshot.compact_window_title(
+                "Review dart-lang/tools#2796", repos_dir=tmp
+            ),
+            "tools#2796",
+        )
+        self.assertEqual(
+            snapshot.compact_window_title(
+                "Review https://github.com/dart-lang/tools/pull/2796",
+                repos_dir=tmp,
+            ),
+            "tools#2796",
+        )
+        self.assertEqual(
+            snapshot.compact_window_title("Review pr/1019325", repos_dir=tmp),
+            "pr/1019325",
+        )
+        self.assertEqual(
+            snapshot.compact_window_title(
+                "Review https://dart-review.googlesource.com/c/sdk/+/563524",
+                repos_dir=tmp,
+            ),
+            "dart-review/563524",
+        )
+
+    comp_long_repo = snapshot.compact_window_title(
+        "Review verylongreponameforstuff#12345"
+    )
+    self.assertLessEqual(len(comp_long_repo), 22)
+    self.assertTrue(comp_long_repo.endswith("#12345"))
+
+    comp_bug = snapshot.compact_window_title(
+        "[SWARM] Fix dart-lang/tools#2796 failure in CI integration"
+    )
+    self.assertLessEqual(len(comp_bug), 22)
+    self.assertIn("tools#2796", comp_bug)
+
+  def test_is_generic_review_title(self) -> None:
+    for title in (
+        "",
+        "Code review",
+        "Code review request",
+        "Code Review: Tools PR",
+        "Code Review for Change",
+        "Reviewing Tools 2796",
+        "/start-code-review pr/12345",
+        "New conversation",
+        "Untitled",
+    ):
+      self.assertTrue(snapshot.is_generic_review_title(title), title)
+    for title in (
+        "Review pr/12345",
+        "Review dart-lang/tools#2796",
+        "TearDown Race Discussion",
+        "Tighten auth error",
+    ):
+      self.assertFalse(snapshot.is_generic_review_title(title), title)
+
+  def test_scan_tmux_captures_automatic_rename_and_restore_respects_it(
+      self,
+  ) -> None:
+    sep = "\x1f"
+    win_stdout = "\n".join([
+        sep.join(["work", "0", "@0", "1", "abc", "tools#2796", "1"]),
+        sep.join(["work", "1", "@1", "0", "def", "custom-tab", "0"]),
+        sep.join(["work", "2", "@2", "0", "ghi", "legacy"]),
+    ])
+    sess_stdout = sep.join(["work", "1", "100"]) + "\n"
+    pane_stdout = "\n".join([
+        sep.join(["work", "0", "0", "%0", "9001", "/dev/pts/0", "1", "/tmp"]),
+        sep.join(["work", "1", "0", "%1", "9002", "/dev/pts/1", "1", "/tmp"]),
+        sep.join(["work", "2", "0", "%2", "9003", "/dev/pts/2", "1", "/tmp"]),
+    ])
+
+    class _FakeScanTmux:
+
+      def run(self, *args, check=True):
+        del check
+        cmd = args[0] if args else ""
+        if cmd == "list-sessions":
+          return subprocess.CompletedProcess(args, 0, sess_stdout, "")
+        if cmd == "list-windows":
+          return subprocess.CompletedProcess(args, 0, win_stdout + "\n", "")
+        if cmd == "list-panes":
+          return subprocess.CompletedProcess(args, 0, pane_stdout + "\n", "")
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    with tempfile.TemporaryDirectory() as tmp:
+      env = {"XDG_CONFIG_HOME": tmp}
+      with mock.patch("pathlib.Path.home", return_value=pathlib.Path(tmp)):
+        cfg = load_config(env=env)
+      with (
+          mock.patch.object(
+              snapshot, "load_mcp_commands", return_value=set()
+          ),
+          mock.patch.object(
+              snapshot, "self_ignored_pids", return_value=set()
+          ),
+          mock.patch.object(
+              snapshot, "find_pane_cli", return_value=(None, False)
+          ),
+          mock.patch.object(
+              snapshot, "busy_non_agent_processes", return_value=[]
+          ),
+      ):
+        sessions = snapshot.scan_tmux(
+            _FakeScanTmux(), {}, {}, tmp, config=cfg
+        )
+
+    self.assertTrue(sessions[0]["windows"][0]["automatic_rename"])
+    self.assertFalse(sessions[0]["windows"][1]["automatic_rename"])
+    self.assertTrue(sessions[0]["windows"][2]["automatic_rename"])
+
+    script = snapshot.render_restore_script(
+        sessions,
+        cfg,
+        "2026-11-20T00:00:00Z",
+        cli_bins={"agy": "/usr/bin/agy"},
+    )
+    self.assertNotIn("-n tools", script)
+    self.assertNotIn("-n legacy", script)
+    self.assertIn("-t =work:1 -n custom-tab", script)
+
+  def test_conversation_labels_include_user_input_flag(self) -> None:
+    cid = "33333333-3333-3333-3333-333333333399"
+    with tempfile.TemporaryDirectory() as tmp:
+      _make_conv(
+          tmp,
+          cid,
+          transcript=[{
+              "step_index": 0,
+              "source": "USER_EXPLICIT",
+              "type": "USER_INPUT",
+              "status": "DONE",
+              "created_at": "2026-11-17T01:00:00Z",
+              "content": "<USER_REQUEST>Investigate flaky test</USER_REQUEST>",
+          }],
+      )
+      self.assertEqual(
+          snapshot.conversation_labels(tmp, [cid], include_user_input=False),
+          {},
+      )
+      self.assertEqual(
+          snapshot.conversation_labels(tmp, [cid], include_user_input=True),
+          {cid: "Investigate flaky test"},
+      )
+
+
 if __name__ == "__main__":
   unittest.main()
