@@ -11,6 +11,9 @@ changing this repository.
 code-harness [--flavor NAME] [--builtin] <command> [args...]
 ```
 
+- `code-harness overview [options] [session]` opens a full-screen `fzf`
+  overview of tmux sessions, `~/projects`, `~/repos`, live coding-agent CLI
+  states, and conversation context sizes (bound to tmux `prefix t`).
 - `code-harness run [args...]` resolves the active flavor's CLI binary and
   `exec`s it with all trailing arguments forwarded verbatim. In zsh, `c` is
   aliased to `code-harness run`.
@@ -53,7 +56,8 @@ duplicating the built-in `agy` definition:
       "data_dir_name": "custom-cli",
       "match_basenames": ["custom-cli"],
       "match_path_substrings": ["/path/to/custom/"],
-      "match_app_data_basenames": ["custom-cli"]
+      "match_app_data_basenames": ["custom-cli"],
+      "context_limits": { "warn": 150000, "high": 250000 }
     },
     "agy": {
       "extra_match_path_substrings": ["/local/build/path"]
@@ -63,6 +67,10 @@ duplicating the built-in `agy` definition:
   "extra_cli_takes_value": ["--local-flag"]
 }
 ```
+
+`context_limits` (`{"warn": <int>, "high": <int>}`) may be set per flavor or at
+top level as a host default. When omitted, context warning badges and the `CTX`
+column in `code-harness overview` are suppressed.
 
 Use declarative config for all path, binary-name, process-matching, and
 default-setting differences. Multi-flavor machines (running `agy` and another

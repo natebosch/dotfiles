@@ -546,7 +546,9 @@ def is_self_script_proc(info: Mapping) -> bool:
       os.path.basename(tok) in ("code-harness", ".code-harness-wrapped")
       for tok in argv[:3]
   )
-  if has_cmd and any(sub in argv for sub in ("snapshot", "tmux-next")):
+  if has_cmd and any(
+      sub in argv for sub in ("snapshot", "tmux-next", "overview")
+  ):
     return True
   return False
 
@@ -2244,17 +2246,190 @@ def classify_cli_instance(
   return state == CLI_STATE_SETTLED, reason
 
 
-def conversation_label(
+def _decode_pbtxt_literal(raw_inner: str) -> str:
+  """Unescapes a prototext string literal (preserving UTF-8 octal byte runs)."""
+  out = bytearray()
+  i = 0
+  n = len(raw_inner)
+  simple = {
+      "a": 7,
+      "b": 8,
+      "f": 12,
+      "n": 10,
+      "r": 13,
+      "t": 9,
+      "v": 11,
+      "\\": 92,
+      "'": 39,
+      '"': 34,
+      "?": 63,
+  }
+  hex_digits = "0123456789abcdefABCDEF"
+  while i < n:
+    ch = raw_inner[i]
+    if ch != "\\" or i + 1 >= n:
+      out.extend(ch.encode("utf-8"))
+      i += 1
+      continue
+    esc = raw_inner[i + 1]
+    if esc in simple:
+      out.append(simple[esc])
+      i += 2
+    elif "0" <= esc <= "7":
+      end = i + 2
+      while end < n and end < i + 4 and "0" <= raw_inner[end] <= "7":
+        end += 1
+      out.append(int(raw_inner[i + 1 : end], 8) & 0xFF)
+      i = end
+    elif esc in ("x", "X"):
+      end = i + 2
+      while end < n and end < i + 4 and raw_inner[end] in hex_digits:
+        end += 1
+      if end > i + 2:
+        out.append(int(raw_inner[i + 2 : end], 16) & 0xFF)
+        i = end
+      else:
+        out.extend(b"\\" + esc.encode("utf-8"))
+        i += 2
+    elif esc in ("u", "U"):
+      width = 4 if esc == "u" else 8
+      hex_s = raw_inner[i + 2 : i + 2 + width]
+      if len(hex_s) == width and all(c in hex_digits for c in hex_s):
+        cp = int(hex_s, 16)
+        if cp <= 0x10FFFF:
+          out.extend(chr(cp).encode("utf-8"))
+          i += 2 + width
+          continue
+      out.extend(b"\\" + esc.encode("utf-8"))
+      i += 2
+    else:
+      out.extend(b"\\" + esc.encode("utf-8"))
+      i += 2
+  return out.decode("utf-8", "replace")
+
+
+def _pbtxt_title(text: str) -> str:
+  """Extracts top-level `title: "..."` / `'...'` from prototext content."""
+  matches = list(re.finditer(r"^([ \t]*)title\s*:\s*([\"'])", text, re.M))
+  if not matches:
+    return ""
+  chosen = next((m for m in matches if m.group(1) == ""), matches[0])
+  n = len(text)
+  q = chosen.group(2)
+  start = j = chosen.start(2) + 1
+  raw_chunks: list[str] = []
+  while True:
+    while j < n and text[j] != q:
+      if text[j] == "\\":
+        j += 2
+      else:
+        j += 1
+    if j >= n:
+      return ""
+    raw_chunks.append(text[start:j])
+    k = j + 1
+    while k < n and text[k] in " \t\r\n":
+      k += 1
+    if k < n and text[k] in ('"', "'"):
+      q = text[k]
+      start = j = k + 1
+      continue
+    break
+  return _decode_pbtxt_literal("".join(raw_chunks))
+
+
+def _annotation_title(
     data_dir: str | None,
-    conv_id: str | None,
+    conv_id: str,
     config: HarnessConfig | None = None,
 ) -> str:
-  """Short human-readable summary/title for `conv_id`, if available."""
-  if not conv_id:
-    return "(new prompt)"
-
-  # Try conversation_summaries.db if accessible.
+  """Returns custom title from `annotations/<conv_id>.{pbtxt,json}`."""
   for d in harness_data_dirs(data_dir, config=config):
+    pb_path = os.path.join(d, "annotations", f"{conv_id}.pbtxt")
+    if os.path.isfile(pb_path):
+      try:
+        with open(pb_path, encoding="utf-8", errors="replace") as f:
+          title = _pbtxt_title(f.read()).strip()
+        if title:
+          return title
+      except OSError:
+        pass
+    for ext in (".json", ""):
+      path = os.path.join(d, "annotations", f"{conv_id}{ext}")
+      if not os.path.isfile(path):
+        continue
+      try:
+        with open(path, encoding="utf-8") as f:
+          data = json.load(f)
+        if isinstance(data, dict):
+          title = (data.get("title") or "").strip()
+          if title:
+            return title
+      except (OSError, ValueError):
+        continue
+  return ""
+
+
+def _first_user_input_label(
+    data_dir: str | None,
+    conv_id: str,
+    config: HarnessConfig | None = None,
+) -> str:
+  """Streams transcript.jsonl from the top and stops at the first USER_INPUT."""
+  path = _transcript_path(data_dir, conv_id, config=config)
+  if not os.path.isfile(path):
+    return ""
+  try:
+    with open(path, encoding="utf-8", errors="replace") as f:
+      for line in f:
+        if "USER_INPUT" not in line:
+          continue
+        try:
+          entry = json.loads(line)
+        except ValueError:
+          continue
+        if entry.get("type") != "USER_INPUT":
+          continue
+        text = entry.get("content") or ""
+        m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", text, re.S)
+        if m:
+          text = m.group(1)
+        if text.strip():
+          return text
+        break
+  except OSError:
+    return ""
+  return ""
+
+
+def conversation_labels(
+    data_dir: str | None,
+    conv_ids: list[str],
+    max_len: int = 80,
+    config: HarnessConfig | None = None,
+) -> dict[str, str]:
+  """Batch lookup of `{conv_id: title}` opening summaries DB at most once."""
+  unique_ids: list[str] = []
+  seen: set[str] = set()
+  for cid in conv_ids:
+    if cid and UUID_RE.match(cid) and cid not in seen:
+      seen.add(cid)
+      unique_ids.append(cid)
+  if not unique_ids:
+    return {}
+
+  found: dict[str, str] = {}
+  for cid in unique_ids:
+    ann = _annotation_title(data_dir, cid, config=config)
+    if ann:
+      found[cid] = (
+          _squash_line(ann, max_len) if max_len else " ".join(ann.split())
+      )
+
+  remaining = [cid for cid in unique_ids if cid not in found]
+  for d in harness_data_dirs(data_dir, config=config):
+    if not remaining:
+      break
     sum_db = os.path.join(d, "conversation_summaries.db")
     if not os.path.isfile(sum_db):
       continue
@@ -2262,13 +2437,15 @@ def conversation_label(
       uri = pathlib.Path(sum_db).as_uri() + "?mode=ro"
       con = sqlite3.connect(uri, uri=True, timeout=0.5)
       try:
-        tables = {
+        tables = [
             r[0]
             for r in con.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"
             )
-        }
+        ]
         for tbl in tables:
+          if not remaining:
+            break
           cols = {
               r[1] for r in con.execute(f"PRAGMA table_info({tbl})").fetchall()
           }
@@ -2283,29 +2460,55 @@ def conversation_label(
           title_col = next(
               (c for c in ("title", "summary") if c in cols), None
           )
-          if id_col and title_col:
-            row = con.execute(
-                f"SELECT {title_col} FROM {tbl} WHERE {id_col} = ? LIMIT 1",
-                (conv_id,),
-            ).fetchone()
-            if row and row[0] and str(row[0]).strip():
-              return _squash_line(str(row[0]), 64)
+          if not (id_col and title_col):
+            continue
+          placeholders = ",".join("?" for _ in remaining)
+          rows = con.execute(
+              f"SELECT {id_col}, {title_col} FROM {tbl} "
+              f"WHERE {id_col} IN ({placeholders})",
+              remaining,
+          ).fetchall()
+          for cid, raw_title in rows:
+            if (
+                cid
+                and raw_title
+                and str(raw_title).strip()
+                and cid not in found
+            ):
+              raw_s = str(raw_title)
+              found[cid] = (
+                  _squash_line(raw_s, max_len)
+                  if max_len
+                  else " ".join(raw_s.split())
+              )
+          remaining = [cid for cid in remaining if cid not in found]
       finally:
         con.close()
     except sqlite3.Error:
       pass
 
-  # Fallback: first USER_INPUT in transcript.jsonl.
-  for entry in read_transcript_entries(data_dir, conv_id, config=config):
-    if entry.get("type") == "USER_INPUT":
-      text = entry.get("content") or ""
-      m = re.search(r"<USER_REQUEST>\s*(.*?)\s*</USER_REQUEST>", text, re.S)
-      if m:
-        text = m.group(1)
-      if text.strip():
-        return _squash_line(text, 64)
-      break
-  return ""
+  for cid in remaining:
+    text = _first_user_input_label(data_dir, cid, config=config)
+    if text:
+      found[cid] = (
+          _squash_line(text, max_len) if max_len else " ".join(text.split())
+      )
+
+  return found
+
+
+def conversation_label(
+    data_dir: str | None,
+    conv_id: str | None,
+    max_len: int = 64,
+    config: HarnessConfig | None = None,
+) -> str:
+  """Short human-readable summary/title for `conv_id`, if available."""
+  if not conv_id:
+    return "(new prompt)"
+  return conversation_labels(
+      data_dir, [conv_id], max_len=max_len, config=config
+  ).get(conv_id, "")
 
 
 def _squash_line(text: str, limit: int) -> str:

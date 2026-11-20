@@ -19,6 +19,17 @@ class CliNotFoundError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class ContextLimits:
+  """Prompt token thresholds for context-size warnings."""
+
+  warn: int
+  high: int
+
+  def to_dict(self) -> dict[str, int]:
+    return {"warn": self.warn, "high": self.high}
+
+
+@dataclass(frozen=True)
 class FlavorConfig:
   """Declarative description of a coding-agent CLI flavor."""
 
@@ -30,6 +41,7 @@ class FlavorConfig:
   match_basenames: tuple[str, ...] = ()
   match_path_substrings: tuple[str, ...] = ()
   match_app_data_basenames: tuple[str, ...] = ()
+  context_limits: ContextLimits | None = None
 
 
 @dataclass(frozen=True)
@@ -42,6 +54,7 @@ class HarnessConfig:
   flavors: Mapping[str, FlavorConfig] = field(default_factory=dict)
   non_tui_subcommands: frozenset[str] = frozenset()
   cli_takes_value: frozenset[str] = frozenset()
+  context_limits: ContextLimits | None = None
 
   def get_flavor(
       self,
@@ -56,6 +69,25 @@ class HarnessConfig:
           f"Unknown flavor {selected!r}; configured flavors: {known}"
       )
     return self.flavors[selected]
+
+  def get_context_limits(
+      self,
+      flavor: str | None = None,
+      env: Mapping[str, str] | None = None,
+  ) -> ContextLimits | None:
+    """Returns effective context limits for `flavor` (or default flavor)."""
+    if flavor is not None and flavor in self.flavors:
+      flavor_limits = self.flavors[flavor].context_limits
+      if flavor_limits is not None:
+        return flavor_limits
+      return self.context_limits
+    try:
+      selected = self.get_flavor(flavor=flavor, env=env)
+    except ConfigError:
+      return self.context_limits
+    if selected.context_limits is not None:
+      return selected.context_limits
+    return self.context_limits
 
 
 BUILTIN_AGY_FLAVOR = FlavorConfig(
@@ -180,6 +212,30 @@ def _as_str_tuple(raw: Any, field_name: str) -> tuple[str, ...]:
   return tuple(raw)
 
 
+def _parse_context_limits(
+    raw: Any, field_name: str
+) -> ContextLimits | None:
+  if raw is None:
+    return None
+  if not isinstance(raw, Mapping):
+    raise ConfigError(f"{field_name!r} must be a JSON object or null")
+  warn = raw.get("warn")
+  high = raw.get("high")
+  if (
+      isinstance(warn, bool)
+      or isinstance(high, bool)
+      or not isinstance(warn, int)
+      or not isinstance(high, int)
+      or warn <= 0
+      or high < warn
+  ):
+    raise ConfigError(
+        f"{field_name!r} must specify positive integer 'warn' and 'high' "
+        f"with high >= warn"
+    )
+  return ContextLimits(warn=warn, high=high)
+
+
 def _merge_flavor(
     name: str,
     base: FlavorConfig | None,
@@ -199,6 +255,7 @@ def _merge_flavor(
       "match_app_data_basenames": (
           base.match_app_data_basenames if base else ()
       ),
+      "context_limits": base.context_limits if base else None,
   }
 
   for key in _FLAVOR_SCALAR_FIELDS:
@@ -217,6 +274,11 @@ def _merge_flavor(
     if extra_key in override:
       extra = _as_str_tuple(override[extra_key], f"flavors.{name}.{extra_key}")
       values[key] = _dedupe(values[key] + extra)
+
+  if "context_limits" in override:
+    values["context_limits"] = _parse_context_limits(
+        override["context_limits"], f"flavors.{name}.context_limits"
+    )
 
   return FlavorConfig(**values)
 
@@ -253,6 +315,7 @@ def load_config(
   env_data_dir = "CODE_HARNESS_DATA_DIR"
   non_tui: set[str] = set(BUILTIN_NON_TUI_SUBCOMMANDS)
   takes_value: set[str] = set(BUILTIN_CLI_TAKES_VALUE)
+  context_limits: ContextLimits | None = None
 
   selected_path: pathlib.Path | None = None
   if config_path is not None:
@@ -320,6 +383,11 @@ def load_config(
           _as_str_tuple(raw["extra_cli_takes_value"], "extra_cli_takes_value")
       )
 
+    if "context_limits" in raw:
+      context_limits = _parse_context_limits(
+          raw["context_limits"], "context_limits"
+      )
+
   if default_flavor not in flavors:
     known = ", ".join(sorted(flavors))
     raise ConfigError(
@@ -333,6 +401,7 @@ def load_config(
       flavors=flavors,
       non_tui_subcommands=frozenset(non_tui),
       cli_takes_value=frozenset(takes_value),
+      context_limits=context_limits,
   )
 
 

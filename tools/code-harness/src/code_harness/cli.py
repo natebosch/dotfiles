@@ -14,6 +14,8 @@ from code_harness.config import (
     load_config,
     resolve_cli_bin,
 )
+from code_harness.context import cmd_context
+from code_harness.overview import cmd_overview
 from code_harness.snapshot import cmd_snapshot
 from code_harness.tmux_next import cmd_tmux_next
 
@@ -31,6 +33,10 @@ def _cmd_run(
 
 
 PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
+    "overview": (
+        "Fuzzy overview of tmux sessions, projects, repos, and agent CLIs",
+        cmd_overview,
+    ),
     "run": (
         "Launch the configured coding-agent CLI with forwarded args",
         _cmd_run,
@@ -44,6 +50,7 @@ PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
 # Hidden subcommands are omitted from top-level --help. Register agent-facing
 # helpers and low-level plumbing commands here.
 HIDDEN_COMMANDS: dict[str, CommandHandler] = {
+    "context": cmd_context,
     "tmux-next": cmd_tmux_next,
 }
 
