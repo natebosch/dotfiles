@@ -50,3 +50,10 @@ export PAGER=less       # less is more :)
 # fewer bells, case insensitive searching, status line, and colors
 export LESS='-q -i -M -R'
 export BROWSER=yank
+
+# Coding-agent commands run in a non-interactive bash, which skips direnv's
+# hook but sources $BASH_ENV. This file loads direnv environments there, and
+# does nothing in other bash processes.
+if [[ -r ${XDG_CONFIG_HOME:-$HOME/.config}/code-harness/bash-env.sh ]]; then
+  export BASH_ENV=${XDG_CONFIG_HOME:-$HOME/.config}/code-harness/bash-env.sh
+fi

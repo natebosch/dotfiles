@@ -2,10 +2,12 @@
   symlinkJoin,
   python3Packages,
   writeShellApplication,
+  writeTextFile,
   coreutils,
   findutils,
   gnused,
   jq,
+  shellcheck,
 }:
 let
   code-harness-cli = python3Packages.buildPythonApplication {
@@ -35,11 +37,21 @@ let
     ];
     text = builtins.readFile ./git-enhance.sh;
   };
+
+  bash-env = writeTextFile {
+    name = "code-harness-bash-env";
+    destination = "/share/code-harness/bash-env.sh";
+    text = builtins.readFile ./bash-env.sh;
+    checkPhase = ''
+      ${shellcheck}/bin/shellcheck "$target"
+    '';
+  };
 in
 symlinkJoin {
   name = "code-harness";
   paths = [
     code-harness-cli
     git-enhance
+    bash-env
   ];
 }
