@@ -14,6 +14,7 @@ from code_harness.config import (
     load_config,
     resolve_cli_bin,
 )
+from code_harness.snapshot import cmd_snapshot
 
 CommandHandler = Callable[[HarnessConfig, str | None, list[str]], int]
 
@@ -29,7 +30,14 @@ def _cmd_run(
 
 
 PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
-    "run": ("Launch the configured coding-agent CLI with forwarded args", _cmd_run),
+    "run": (
+        "Launch the configured coding-agent CLI with forwarded args",
+        _cmd_run,
+    ),
+    "snapshot": (
+        "Snapshot and close coding-agent tmux sessions, or restore them",
+        cmd_snapshot,
+    ),
 }
 
 # Hidden subcommands are omitted from top-level --help. Register agent-facing

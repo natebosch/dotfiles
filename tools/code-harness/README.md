@@ -14,6 +14,11 @@ code-harness [--flavor NAME] [--builtin] <command> [args...]
 - `code-harness run [args...]` resolves the active flavor's CLI binary and
   `exec`s it with all trailing arguments forwarded verbatim. In zsh, `c` is
   aliased to `code-harness run`.
+- `code-harness snapshot [options]` scans active tmux sessions for configured
+  coding-agent CLI processes, checks whether each conversation has settled,
+  writes an executable restore script under
+  `${XDG_STATE_HOME:-~/.local/state}/code-harness-tmux/latest.sh`, and closes
+  cleanly (or restores with `--restore`).
 - `--flavor NAME` (or `CODE_HARNESS_FLAVOR`) selects a configured flavor.
 - `--builtin` (or `CODE_HARNESS_NO_PLUGINS=1`) skips `PATH` subcommand
   overrides and invokes the built-in command handler.

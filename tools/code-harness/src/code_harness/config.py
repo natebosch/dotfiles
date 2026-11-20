@@ -69,6 +69,90 @@ BUILTIN_AGY_FLAVOR = FlavorConfig(
     match_app_data_basenames=("antigravity-cli",),
 )
 
+BUILTIN_NON_TUI_SUBCOMMANDS: frozenset[str] = frozenset({
+    "acp",
+    "agent",
+    "agents",
+    "agentapi",
+    "attach",
+    "changelog",
+    "help",
+    "hub",
+    "install",
+    "mcp",
+    "mic-serve",
+    "models",
+    "multicall",
+    "plugin",
+    "plugincli",
+    "plugins",
+    "remote-control",
+    "swarm",
+    "update",
+    "web",
+})
+
+BUILTIN_CLI_TAKES_VALUE: frozenset[str] = frozenset({
+    "--add-dir",
+    "--agent",
+    "--analytics_server_url",
+    "--api_server_url",
+    "--app_data_dir",
+    "--cdp_port",
+    "--cli_log_file",
+    "--conversation",
+    "--conversation_path",
+    "--csrf_token",
+    "--effort",
+    "--extension_server_csrf_token",
+    "--extension_server_port",
+    "--file_watch_max_dir_count",
+    "--fs_error_probability",
+    "--fs_latency_ms",
+    "--gemini_dir",
+    "--host_bridge_url",
+    "--http_server_port",
+    "--https_server_port",
+    "--hub-port",
+    "-i",
+    "--prompt-interactive",
+    "--inference_api_server_url",
+    "--input-format",
+    "--json-schema",
+    "--limit_go_max_procs",
+    "--local_chrome_user_data_dir",
+    "--log-file",
+    "--lsp_port",
+    "--mock_fixture",
+    "--mode",
+    "--model",
+    "--model_api_client_type",
+    "--output-format",
+    "--override_business_oauth_client_id",
+    "--override_business_oauth_client_secret",
+    "--override_ide_name",
+    "--override_ide_version",
+    "--override_logo_for_test",
+    "--override_oauth_client_id",
+    "--override_oauth_client_secret",
+    "--override_user_agent_name",
+    "-p",
+    "--print",
+    "--prompt",
+    "--print-timeout",
+    "--parent_pipe_path",
+    "--profile",
+    "--project",
+    "--read_dir_latency_ms",
+    "--read_file_latency_ms",
+    "--release_base_url",
+    "--remote-control-name",
+    "--request_criticality",
+    "--settings",
+    "--stat_latency_ms",
+    "--workspace_id",
+})
+
 _FLAVOR_LIST_FIELDS = (
     "candidate_bins",
     "exclude_path_substrings",
@@ -167,8 +251,8 @@ def load_config(
   default_flavor = "agy"
   env_bin = "CODE_HARNESS_BIN"
   env_data_dir = "CODE_HARNESS_DATA_DIR"
-  non_tui: set[str] = set()
-  takes_value: set[str] = set()
+  non_tui: set[str] = set(BUILTIN_NON_TUI_SUBCOMMANDS)
+  takes_value: set[str] = set(BUILTIN_CLI_TAKES_VALUE)
 
   selected_path: pathlib.Path | None = None
   if config_path is not None:
@@ -252,8 +336,8 @@ def load_config(
   )
 
 
-def _is_excluded_path(path: str, exclude_substrings: tuple[str, ...]) -> bool:
-  if not exclude_substrings:
+def is_excluded_path(path: str, exclude_substrings: tuple[str, ...]) -> bool:
+  if not path or not exclude_substrings:
     return False
   paths = [path]
   try:
@@ -267,6 +351,30 @@ def _is_excluded_path(path: str, exclude_substrings: tuple[str, ...]) -> bool:
     if any(sub.lower() in low for sub in exclude_substrings):
       return True
   return False
+
+
+def ordered_flavors(config: HarnessConfig) -> tuple[FlavorConfig, ...]:
+  """Returns configured flavors with `default_flavor` first."""
+  out: list[FlavorConfig] = []
+  if config.default_flavor in config.flavors:
+    out.append(config.flavors[config.default_flavor])
+  for name, flavor_cfg in config.flavors.items():
+    if name != config.default_flavor:
+      out.append(flavor_cfg)
+  return tuple(out)
+
+
+def default_app_data_dirs(config: HarnessConfig) -> tuple[str, ...]:
+  """Returns default `~/.gemini/<data_dir_name>` paths for configured flavors."""
+  dirs: list[str] = []
+  for flavor_cfg in ordered_flavors(config):
+    if flavor_cfg.data_dir_name:
+      candidate = os.path.expanduser(f"~/.gemini/{flavor_cfg.data_dir_name}")
+      if candidate not in dirs:
+        dirs.append(candidate)
+  if not dirs:
+    dirs.append(os.path.expanduser("~/.gemini/antigravity-cli"))
+  return tuple(dirs)
 
 
 def resolve_cli_bin(
@@ -292,11 +400,11 @@ def resolve_cli_bin(
     if "/" in candidate or candidate.startswith("~"):
       expanded = os.path.expanduser(candidate)
       if os.path.isfile(expanded) and os.access(expanded, os.X_OK):
-        if not _is_excluded_path(expanded, flavor_cfg.exclude_path_substrings):
+        if not is_excluded_path(expanded, flavor_cfg.exclude_path_substrings):
           return expanded
     else:
       found = shutil.which(candidate, path=path_env)
-      if found and not _is_excluded_path(
+      if found and not is_excluded_path(
           found, flavor_cfg.exclude_path_substrings
       ):
         return found
