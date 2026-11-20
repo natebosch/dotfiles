@@ -6,6 +6,7 @@ import io
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import tempfile
 import unittest
@@ -14,6 +15,8 @@ from unittest import mock
 from code_harness import cli
 from code_harness import context as ctx
 from code_harness.config import ConfigError, ContextLimits, load_config
+
+STYLE_TAG_RE = re.compile(r"#\[[^\]]*\]")
 
 
 def _varint(val: int) -> bytes:
@@ -147,6 +150,45 @@ class ContextInspectionTests(unittest.TestCase):
     self.assertEqual(ctx.tier_of(150_000, lims), 1)
     self.assertEqual(ctx.tier_of(250_000, lims), 2)
     self.assertEqual(ctx.tier_of(300_000, None), 0)
+
+  def test_format_tmux_context_badge_tiers_and_widths(self) -> None:
+    limits = {"warn": 150_000, "high": 250_000}
+
+    # Preserve format_tokens(0) == "" for overview.
+    self.assertEqual(ctx.format_tokens(0), "")
+    self.assertEqual(ctx.TMUX_CONTEXT_SLOT_WIDTH, 12)
+    self.assertEqual(ctx.TMUX_CONTEXT_PAD, " " * 12)
+    self.assertEqual(len(ctx.TMUX_CONTEXT_PAD), 12)
+
+    self.assertEqual(ctx.format_tokens_or_zero(None), "0")
+    self.assertEqual(ctx.format_tokens_or_zero(0), "0")
+    self.assertEqual(ctx.format_tokens_or_zero(42_000), "42K")
+    self.assertEqual(ctx.format_tokens_or_zero(180_000), "180K")
+    self.assertEqual(ctx.format_tokens_or_zero(280_000), "280K")
+    self.assertEqual(ctx.format_tokens_or_zero(12_000_000), "12M")
+    self.assertEqual(ctx.format_tmux_context_badge(280_000, limits=None), "")
+    self.assertEqual(
+        ctx.format_tmux_context_badge(
+            180_000, limits=ContextLimits(warn=150_000, high=250_000)
+        ),
+        " #[fg=black,bg=colour214,bold] ctx: 180K #[default]",
+    )
+
+    cases = [
+        (0, "#[fg=colour246]", " ctx: 0    ", False),
+        (42_000, "#[fg=colour246]", " ctx: 42K  ", False),
+        (180_000, "#[fg=black,bg=colour214,bold]", " ctx: 180K ", True),
+        (280_000, "#[fg=white,bg=colour160,bold]", " ctx: 280K ", True),
+        (12_000_000, "#[fg=white,bg=colour160,bold]", " ctx: 12M  ", True),
+    ]
+    for tok, style_prefix, vis_tail, has_bg in cases:
+      badge = ctx.format_tmux_context_badge(tok, limits=limits)
+      self.assertIn(style_prefix, badge)
+      if not has_bg:
+        self.assertNotIn("bg=", badge)
+      vis = STYLE_TAG_RE.sub("", badge)
+      self.assertEqual(len(vis), 12)
+      self.assertEqual(vis, " " + vis_tail)
 
   def test_inspect_from_planner_usage_and_gen_metadata_fallback(self) -> None:
     cid1 = "11111111-1111-1111-1111-111111111111"

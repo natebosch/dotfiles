@@ -51,6 +51,9 @@ META_PARENT, META_ROOT = 5, 6
 # gen_metadata: chat model > chat start > context window > estimated tokens.
 GEN_CHAT_MODEL, CHAT_START, CONTEXT_WINDOW, ESTIMATED = 1, 9, 10, 1
 
+TMUX_CONTEXT_SLOT_WIDTH = 12
+TMUX_CONTEXT_PAD = " " * TMUX_CONTEXT_SLOT_WIDTH
+
 _UNSET = object()
 
 
@@ -283,6 +286,43 @@ def format_tokens(n: int) -> str:
   if n >= 1_000_000:
     return f"{n / 1_000_000:.1f}M"
   return f"{max(1, round(n / 1000))}K"
+
+
+def format_tokens_or_zero(n: int | None) -> str:
+  """Formats token count as compact label, returning '0' when zero/unset."""
+  if n is None or n <= 0:
+    return "0"
+  if n >= 10_000_000:
+    return f"{round(n / 1_000_000)}M"
+  return format_tokens(n)
+
+
+def format_tmux_context_badge(
+    tokens: int | None,
+    limits: Any = _UNSET,
+    config: HarnessConfig | None = None,
+    flavor: str | None = None,
+    env: Mapping[str, str] | None = None,
+) -> str:
+  """Formats a fixed 12-column tmux status-left badge for an agent pane."""
+  if limits is _UNSET:
+    limits = load_context_limits(config=config, flavor=flavor, env=env)
+  elif isinstance(limits, ContextLimits):
+    limits = limits.to_dict()
+  if limits is None:
+    return ""
+  tok = max(0, int(tokens or 0))
+  tier = tier_of(tok, limits)
+  label = format_tokens_or_zero(tok)
+  inner = TMUX_CONTEXT_SLOT_WIDTH - 1
+  if tier == 0:
+    body = f" ctx: {label}".ljust(inner)[:inner]
+    return f" #[fg=colour246]{body}#[default]"
+  pill = f" ctx: {label} "
+  pad = " " * max(0, inner - len(pill))
+  if tier == 1:
+    return f" #[fg=black,bg=colour214,bold]{pill}#[default]{pad}"
+  return f" #[fg=white,bg=colour160,bold]{pill}#[default]{pad}"
 
 
 def tier_of(tokens: int, limits: Mapping[str, int] | None) -> int:

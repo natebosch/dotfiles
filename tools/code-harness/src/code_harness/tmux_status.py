@@ -13,6 +13,11 @@ prints a compact segment reflecting the 5-tier priority model
      (Ties break via ctrl-space F next-window order.)
   2. Always-shown counts: `◆ <plan> ● <done> ◐ <work>`.
 
+While scanning all panes, it also reconciles per-pane `@code_harness_context`
+badges and global `@code_harness_context_pad` for `status-left` (via
+`code_harness.context`) and cleans up legacy session/window context options
+when present.
+
 Urgent prompts ("perm" and "ask", top-level or subagent) remain shown without
 requiring a bell and emit an OSC 777 toast via `code_harness.tmux_notify` on
 newly observed prompts when no attached tmux client is focused. Plan-approval
@@ -34,13 +39,14 @@ import tempfile
 import time
 from typing import Any, Callable, Mapping, Sequence
 
-from code_harness import tmux_notify
+from code_harness import context, tmux_notify
 from code_harness.config import HarnessConfig
 from code_harness.snapshot import (
     TmuxRunner,
     _transcript_path,
     classify_cli_state_with_ts,
     classify_ui_category,
+    cli_proc_flavor,
     default_data_dir,
     find_pane_cli,
     find_tmux_bin,
@@ -70,6 +76,9 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
           "#{pane_index}",
           "#{pane_id}",
           "#{pane_pid}",
+          "#{@code_harness_context}",
+          "#{@code_harness_context_pad}",
+          "#{status-left}",
       ]),
       check=False,
   )
@@ -82,9 +91,25 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
   by_key: dict[tuple[str, str], dict] = {}
   for line in res.stdout.splitlines():
     parts = line.split(sep)
-    if len(parts) != 6:
+    if len(parts) == 6:
+      sname, widx, wbell, pidx_s, pane_id, ppid_s = parts
+      ctx_badge, ctx_pad, status_left = "", "", ""
+      has_ctx_fields = False
+    elif len(parts) == 9:
+      (
+          sname,
+          widx,
+          wbell,
+          pidx_s,
+          pane_id,
+          ppid_s,
+          ctx_badge,
+          ctx_pad,
+          status_left,
+      ) = parts
+      has_ctx_fields = True
+    else:
       continue
-    sname, widx, wbell, pidx_s, pane_id, ppid_s = parts
     try:
       pidx = int(pidx_s)
       ppid = int(ppid_s)
@@ -97,16 +122,25 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
           "session_name": sname,
           "window_index": widx,
           "bell": wbell == "1",
+          "status_left": status_left,
+          "has_ctx_fields": has_ctx_fields,
           "panes": [],
       }
       by_key[key] = win
       windows.append(win)
-    elif wbell == "1":
-      win["bell"] = True
+    else:
+      if wbell == "1":
+        win["bell"] = True
+      if has_ctx_fields:
+        win["has_ctx_fields"] = True
     win["panes"].append({
         "index": pidx,
         "pane_id": pane_id,
         "pane_pid": ppid,
+        "context_badge": ctx_badge,
+        "context_pad": ctx_pad,
+        "status_left": status_left,
+        "has_ctx_fields": has_ctx_fields,
     })
 
   for win in windows:
@@ -679,6 +713,78 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
   return p.parse_args(argv)
 
 
+def reconcile_tmux_context_options(
+    tmux: TmuxRunner,
+    limits_enabled: bool,
+    ctx_panes: Sequence[tuple[str, str, Mapping[str, Any], str]],
+) -> None:
+  """Applies minimal batched tmux updates for per-pane context badges."""
+  if not ctx_panes:
+    return
+
+  cmds: list[list[str]] = []
+  desired_pad = context.TMUX_CONTEXT_PAD if limits_enabled else ""
+  if any(p.get("context_pad", "") != desired_pad for _, _, p, _ in ctx_panes):
+    if desired_pad:
+      cmds.append(["set-option", "-g", "@code_harness_context_pad", desired_pad])
+    else:
+      cmds.append(["set-option", "-gqu", "@code_harness_context_pad"])
+
+  migrated_sessions: set[str] = set()
+  for sname, _, pane, _ in ctx_panes:
+    if sname in migrated_sessions:
+      continue
+    s_left = pane.get("status_left", "")
+    if s_left.endswith("#{@code_harness_context} ") and (
+        "#{?@code_harness_context," not in s_left
+    ):
+      migrated_sessions.add(sname)
+      # `set-option -t` parses target-pane syntax, so `=name:` matches exact
+      # session rather than bare `=name` (which tmux rejects).
+      sess_target = f"={sname}:"
+      cmds.append(["set-option", "-qu", "-t", sess_target, "status-left"])
+      cmds.append(
+          ["set-option", "-qu", "-t", sess_target, "status-left-length"]
+      )
+      cmds.append(
+          ["set-option", "-qu", "-t", sess_target, "@code_harness_auto_status"]
+      )
+
+  cleaned_windows: set[tuple[str, str]] = set()
+  for sname, win_idx_str, pane, desired in ctx_panes:
+    if pane.get("context_badge", "") == desired:
+      continue
+    pid = pane["pane_id"]
+    if desired:
+      cmds.append(
+          ["set-option", "-p", "-t", pid, "@code_harness_context", desired]
+      )
+    else:
+      for opt in (
+          "@code_harness_context",
+          "@code_harness_context_conv",
+          "@code_harness_context_tier",
+      ):
+        cmds.append(["set-option", "-qup", "-t", pid, opt])
+    wkey = (sname, win_idx_str)
+    if wkey not in cleaned_windows:
+      cleaned_windows.add(wkey)
+      for opt in (
+          "@code_harness_context",
+          "@code_harness_context_conv",
+          "@code_harness_context_tier",
+      ):
+        cmds.append(["set-option", "-quw", "-t", pid, opt])
+
+  if cmds:
+    batch: list[str] = []
+    for idx, cmd in enumerate(cmds):
+      if idx > 0:
+        batch.append(";")
+      batch.extend(cmd)
+    tmux.run(*batch, check=False)
+
+
 def cmd_tmux_status(
     config: HarnessConfig,
     flavor: str | None,
@@ -688,6 +794,14 @@ def cmd_tmux_status(
     config.get_flavor(flavor=flavor)
 
   args = parse_args(argv)
+  default_limits = context.load_context_limits(config=config, flavor=flavor)
+  limits_enabled = default_limits is not None or (
+      flavor is None
+      and any(f.context_limits is not None for f in config.flavors.values())
+  )
+  limits_by_flavor: dict[str | None, dict[str, int] | None] = {
+      flavor: default_limits,
+  }
   tmux = TmuxRunner(find_tmux_bin(), args.tmux_socket)
 
   windows = list_tmux_windows_and_panes(tmux)
@@ -714,14 +828,18 @@ def cmd_tmux_status(
   done_candidates: list[dict] = []
   done_count = 0
   work_count = 0
+  ctx_panes: list[tuple[str, str, Mapping[str, Any], str]] = []
 
   for win_idx, win in enumerate(windows):
     sname = win["session_name"]
     for pane_pos, pane in enumerate(win["panes"]):
+      has_ctx = bool(pane.get("has_ctx_fields", False))
       cli_proc, cli_is_print = find_pane_cli(
           pane["pane_pid"], procs, children_map, config=config
       )
       if cli_proc is None:
+        if has_ctx:
+          ctx_panes.append((sname, win["window_index"], pane, ""))
         continue
       if mcp_sigs is None:
         mcp_sigs = load_mcp_commands(data_dir, config=config)
@@ -729,6 +847,35 @@ def cmd_tmux_status(
       conv_id, open_dbs, cli_dir = resolve_cli_conversation_and_dir(
           cli_proc, pane["pane_id"], data_dir=data_dir, config=config
       )
+      if has_ctx:
+        pane_flavor = flavor
+        if pane_flavor is None:
+          pane_flavor, _ = cli_proc_flavor(cli_proc, config=config)
+        if pane_flavor not in limits_by_flavor:
+          limits_by_flavor[pane_flavor] = context.load_context_limits(
+              config=config, flavor=pane_flavor
+          )
+        pane_limits = limits_by_flavor[pane_flavor]
+        if pane_limits is None or cli_is_print:
+          desired = ""
+        elif not conv_id:
+          desired = context.format_tmux_context_badge(0, pane_limits)
+        else:
+          ctx_info = context.inspect_conversation_context(
+              conv_id,
+              data_dir=cli_dir,
+              limits=pane_limits,
+              config=config,
+              flavor=pane_flavor,
+          )
+          desired = (
+              ""
+              if ctx_info["is_subagent"]
+              else context.format_tmux_context_badge(
+                  ctx_info["tokens"], pane_limits
+              )
+          )
+        ctx_panes.append((sname, win["window_index"], pane, desired))
       state, reason, last_ts = classify_cli_state_with_ts(
           cli_proc,
           cli_is_print,
@@ -792,6 +939,8 @@ def cmd_tmux_status(
           })
       elif cat == "work":
         work_count += 1
+
+  reconcile_tmux_context_options(tmux, limits_enabled, ctx_panes)
 
   ask_sessions = [s for s in ask_sessions if s not in perm_seen]
 

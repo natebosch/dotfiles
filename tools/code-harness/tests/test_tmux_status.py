@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from code_harness import cli, snapshot, tmux_status
+from code_harness import cli, context, snapshot, tmux_status
 from code_harness.config import load_config
 
 
@@ -50,9 +50,11 @@ class _FakeTmux:
     self._stdout = stdout
     self._returncode = returncode
     self._client_loc = client_loc
+    self.calls: list[tuple[str, ...]] = []
 
   def run(self, *args, check=True):
     del check
+    self.calls.append(args)
     cmd = args[0] if args else ""
     if cmd == "list-panes":
       return subprocess.CompletedProcess(
@@ -66,6 +68,8 @@ class _FakeTmux:
     if cmd == "display-message" and self._client_loc:
       out = f"{self._client_loc[0]}\x1f{self._client_loc[1]}\n"
       return subprocess.CompletedProcess(["tmux", *args], 0, out, "")
+    if cmd == "set-option":
+      return subprocess.CompletedProcess(["tmux", *args], 0, "", "")
     return subprocess.CompletedProcess(["tmux", *args], 1, "", "")
 
 
@@ -674,6 +678,226 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
       self.assertEqual(state, snapshot.CLI_STATE_QUESTION)
       self.assertEqual(reason, "waiting on user question")
       self.assertEqual(ts, "2026-11-17T02:00:00Z")
+
+  def test_list_panes_backward_compat_and_reconcile_idempotency(self) -> None:
+    sep = "\x1f"
+    legacy_line = sep.join(["s1", "0", "0", "0", "%0", "100"])
+    legacy_wins = tmux_status.list_tmux_windows_and_panes(
+        _FakeTmux(stdout=legacy_line + "\n")
+    )
+    assert legacy_wins is not None
+    self.assertEqual(len(legacy_wins), 1)
+    self.assertFalse(legacy_wins[0]["has_ctx_fields"])
+    self.assertFalse(legacy_wins[0]["panes"][0]["has_ctx_fields"])
+
+    lines9 = [
+        sep.join([
+            "s1",
+            "0",
+            "0",
+            "0",
+            "%0",
+            "100",
+            " #[fg=black,bg=colour214,bold] Context: 210K #[default]",
+            "",
+            "#[fg=colour129][#S]#{@code_harness_context} ",
+        ]),
+        sep.join([
+            "s1",
+            "0",
+            "0",
+            "1",
+            "%1",
+            "101",
+            " #[fg=black,bg=colour214,bold] Context: 210K #[default]",
+            "",
+            "#[fg=colour129][#S]#{@code_harness_context} ",
+        ]),
+    ]
+    wins9 = tmux_status.list_tmux_windows_and_panes(
+        _FakeTmux(stdout="\n".join(lines9) + "\n")
+    )
+    assert wins9 is not None
+    self.assertEqual(len(wins9), 1)
+    self.assertTrue(wins9[0]["panes"][0]["has_ctx_fields"])
+
+    limits = {"warn": 150_000, "high": 250_000}
+    desired0 = context.format_tmux_context_badge(280_000, limits)
+    tmux = _FakeTmux()
+    tmux_status.reconcile_tmux_context_options(
+        tmux,
+        True,
+        [
+            ("s1", "0", wins9[0]["panes"][0], desired0),
+            ("s1", "0", wins9[0]["panes"][1], ""),
+        ],
+    )
+    self.assertEqual(len(tmux.calls), 1)
+    joined = " ".join(tmux.calls[0])
+    self.assertIn("-g @code_harness_context_pad", joined)
+    self.assertIn("=s1:", joined)
+    self.assertIn("status-left", joined)
+    self.assertIn("@code_harness_auto_status", joined)
+    self.assertIn("-p -t %0 @code_harness_context", joined)
+    self.assertIn("-qup -t %1 @code_harness_context", joined)
+    self.assertIn("-quw -t %0 @code_harness_context", joined)
+
+    # Steady state executes zero set-option calls.
+    steady_status_left = (
+        "#{?client_prefix,#[reverse],}#[fg=colour129][#S]#[default]"
+        "#{?@code_harness_context,#{@code_harness_context},"
+        "#{@code_harness_context_pad}}"
+    )
+    steady_panes = [
+        (
+            "s1",
+            "0",
+            {
+                "index": 0,
+                "pane_id": "%0",
+                "pane_pid": 100,
+                "context_badge": desired0,
+                "context_pad": context.TMUX_CONTEXT_PAD,
+                "status_left": steady_status_left,
+                "has_ctx_fields": True,
+            },
+            desired0,
+        ),
+        (
+            "s1",
+            "0",
+            {
+                "index": 1,
+                "pane_id": "%1",
+                "pane_pid": 101,
+                "context_badge": "",
+                "context_pad": context.TMUX_CONTEXT_PAD,
+                "status_left": steady_status_left,
+                "has_ctx_fields": True,
+            },
+            "",
+        ),
+    ]
+    tmux2 = _FakeTmux()
+    tmux_status.reconcile_tmux_context_options(tmux2, True, steady_panes)
+    self.assertEqual(tmux2.calls, [])
+
+    # Disabling limits clears global pad and pane badges.
+    tmux3 = _FakeTmux()
+    tmux_status.reconcile_tmux_context_options(
+        tmux3,
+        False,
+        [
+            ("s1", "0", steady_panes[0][2], ""),
+            ("s1", "0", steady_panes[1][2], ""),
+        ],
+    )
+    self.assertEqual(len(tmux3.calls), 1)
+    joined3 = " ".join(tmux3.calls[0])
+    self.assertIn("-gqu @code_harness_context_pad", joined3)
+    self.assertIn("-qup -t %0 @code_harness_context", joined3)
+
+  def test_cmd_reconciles_context_badges_for_agent_subagent_print_and_shell(
+      self,
+  ) -> None:
+    sep = "\x1f"
+    status_left = (
+        "#{?client_prefix,#[reverse],}#[fg=colour129][#S]#[default]"
+        "#{?@code_harness_context,#{@code_harness_context},"
+        "#{@code_harness_context_pad}}"
+    )
+    list_out = "\n".join([
+        sep.join(["s1", "0", "0", "0", "%0", "100", "", "", status_left]),
+        sep.join(["s1", "0", "0", "1", "%1", "101", "", "", status_left]),
+        sep.join(["s1", "0", "0", "2", "%2", "102", "stale", "", status_left]),
+        sep.join(["s1", "0", "0", "3", "%3", "103", "stale", "", status_left]),
+        sep.join(["s1", "0", "0", "4", "%4", "104", "stale", "", status_left]),
+    ]) + "\n"
+
+    with tempfile.TemporaryDirectory() as tmp:
+      cfg_file = pathlib.Path(tmp) / "config.json"
+      cfg_file.write_text(
+          json.dumps({"context_limits": {"warn": 150000, "high": 250000}}),
+          encoding="utf-8",
+      )
+      cfg = load_config(config_path=cfg_file)
+      fake_tmux = _FakeTmux(stdout=list_out)
+      out = io.StringIO()
+      with (
+          mock.patch.object(tmux_status, "TmuxRunner", return_value=fake_tmux),
+          mock.patch.object(
+              tmux_status, "load_process_table", return_value=({}, {})
+          ),
+          mock.patch.object(
+              tmux_status, "default_data_dir", return_value=tmp
+          ),
+          mock.patch.object(
+              tmux_status, "load_mcp_commands", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status, "self_ignored_pids", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status,
+              "find_pane_cli",
+              side_effect=[
+                  ({"pid": 100, "argv": ["agy"]}, False),
+                  ({"pid": 101, "argv": ["agy"]}, False),
+                  ({"pid": 102, "argv": ["agy"]}, False),
+                  ({"pid": 103, "argv": ["agy", "-p", "hi"]}, True),
+                  (None, False),
+              ],
+          ),
+          mock.patch.object(
+              tmux_status,
+              "resolve_cli_conversation_and_dir",
+              side_effect=[
+                  ("11111111-1111-1111-1111-111111111111", set(), tmp),
+                  (None, set(), tmp),
+                  ("22222222-2222-2222-2222-222222222222", set(), tmp),
+                  ("33333333-3333-3333-3333-333333333333", set(), tmp),
+              ],
+          ),
+          mock.patch.object(
+              context,
+              "inspect_conversation_context",
+              side_effect=[
+                  {"tokens": 280_000, "is_subagent": False},
+                  {"tokens": 280_000, "is_subagent": True},
+              ],
+          ),
+          mock.patch.object(
+              tmux_status,
+              "classify_cli_state_with_ts",
+              side_effect=[
+                  ("settled", "waiting for user input", "2026-11-17T01:00:00Z"),
+                  ("settled", "empty prompt (no conversation yet)", ""),
+                  ("working", "running", "2026-11-17T01:00:00Z"),
+                  ("working", "running", "2026-11-17T01:00:00Z"),
+              ],
+          ),
+          mock.patch("sys.stdout", out),
+      ):
+        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain", "--no-notify"])
+      self.assertEqual(rc, 0)
+      set_calls = [c for c in fake_tmux.calls if c and c[0] == "set-option"]
+      self.assertEqual(len(set_calls), 1)
+      joined = " ".join(set_calls[0])
+      self.assertIn("-g @code_harness_context_pad", joined)
+      self.assertIn(
+          "-p -t %0 @code_harness_context "
+          " #[fg=white,bg=colour160,bold] ctx: 280K #[default]",
+          joined,
+      )
+      self.assertIn(
+          "-p -t %1 @code_harness_context "
+          " #[fg=colour246] ctx: 0    #[default]",
+          joined,
+      )
+      # Subagent (%2), print-mode (%3), and shell (%4) panes are cleared.
+      self.assertIn("-qup -t %2 @code_harness_context", joined)
+      self.assertIn("-qup -t %3 @code_harness_context", joined)
+      self.assertIn("-qup -t %4 @code_harness_context", joined)
 
 
 if __name__ == "__main__":
