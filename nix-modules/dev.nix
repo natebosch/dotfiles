@@ -9,6 +9,7 @@
       silver-searcher
     ])
     ++ [
+      tools.code-harness
       tools.dart-tools
     ];
 }

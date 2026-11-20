@@ -9,3 +9,4 @@ alias shuf="awk 'BEGIN{srand();}{print rand()\"\t\"\$1}' | sort -k1 -n | cut -f2
 alias trim="sed 's/^ *//;s/ *$//'"
 alias ag="ag -W100"
 alias vt="vim +'term ++curwin'"
+alias c='code-harness run'

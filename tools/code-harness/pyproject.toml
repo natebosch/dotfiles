@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "code-harness"
+version = "0.1.0"
+description = "CLI wrapper and automation harness for coding agents"
+requires-python = ">=3.11"
+
+[project.scripts]
+code-harness = "code_harness.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
