@@ -462,6 +462,55 @@ def _task_details_blob(is_daemon: bool = False, title: str = "task") -> bytes:
   ) + _proto_bytes_field(snapshot.TASK_DETAILS_TITLE, title.encode("utf-8"))
 
 
+def _step_metadata_blob(epoch_sec: int) -> bytes:
+  return _proto_bytes_field(1, _proto_varint_field(1, int(epoch_sec)))
+
+
+def _generic_file_edit_payload(
+    path: str,
+    is_artifact: bool = True,
+    request_feedback: bool | None = None,
+    empty_meta: bool = False,
+) -> bytes:
+  fe = bytearray()
+  fe.extend(_proto_bytes_field(2, path.encode("utf-8")))
+  if empty_meta:
+    fe.extend(_proto_bytes_field(5, b""))
+  elif request_feedback is not None:
+    am = (
+        _proto_varint_field(6, 1)
+        if request_feedback
+        else _proto_varint_field(7, 1)
+    )
+    fe.extend(_proto_bytes_field(5, am))
+  if is_artifact:
+    fe.extend(_proto_varint_field(6, 1))
+  any_msg = _proto_bytes_field(
+      1, b"type.googleapis.com/exa.cortex.core.tools.FileEdit"
+  ) + _proto_bytes_field(2, bytes(fe))
+  gres = _proto_bytes_field(6, any_msg)
+  gen = _proto_bytes_field(2, gres)
+  return _proto_bytes_field(140, gen)
+
+
+def _code_action_payload(
+    is_artifact: bool = True,
+    request_feedback: bool | None = None,
+    path: str | None = None,
+) -> bytes:
+  ca = bytearray()
+  if path:
+    create_spec = _proto_bytes_field(1, path.encode("utf-8"))
+    action_spec = _proto_bytes_field(1, create_spec)
+    ca.extend(_proto_bytes_field(1, action_spec))
+  if is_artifact:
+    ca.extend(_proto_varint_field(21, 1))
+  if request_feedback is not None:
+    am = _proto_varint_field(6, 1 if request_feedback else 0)
+    ca.extend(_proto_bytes_field(23, am))
+  return _proto_bytes_field(10, bytes(ca))
+
+
 def _make_conv(
     data_dir: str,
     conv_id: str,
@@ -484,16 +533,14 @@ def _make_conv(
       )
       con.execute("DELETE FROM steps")
       for row in steps or ((1, 15, 3, None),):
-        if len(row) == 4:
-          idx, st_type, status, task_blob = row
-          payload = None
-        else:
-          idx, st_type, status, task_blob, payload = row
+        idx, st_type, status, task_blob = row[:4]
+        payload = row[4] if len(row) > 4 else None
+        md_blob = row[5] if len(row) > 5 else None
         con.execute(
             "INSERT INTO steps "
-            "(idx, step_type, status, task_details, step_payload) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (idx, st_type, status, task_blob, payload),
+            "(idx, step_type, status, task_details, step_payload, metadata) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (idx, st_type, status, task_blob, payload, md_blob),
         )
       if root_id:
         con.execute(
@@ -1114,6 +1161,260 @@ class SwarmStateClassificationTests(unittest.TestCase):
           snapshot._pane_state_path("%42"),
           f"/run/user/{os.getuid()}/code-harness-pane-%42.json",
       )
+
+  def _classify_with_ts(self, data_dir: str, conv_id: str):
+    return snapshot.classify_cli_state_with_ts(
+        {"pid": 999999, "start_epoch": None},
+        False,
+        "%test-swarm-0",
+        conv_id,
+        set(),
+        {},
+        {},
+        set(),
+        set(),
+        data_dir,
+    )
+
+  def _classify_instance(self, data_dir: str, conv_id: str):
+    return snapshot.classify_cli_instance(
+        {"pid": 999999, "start_epoch": None},
+        False,
+        "%test-swarm-0",
+        conv_id,
+        set(),
+        {},
+        {},
+        set(),
+        set(),
+        data_dir,
+    )
+
+  def test_urgent_helpers_and_ui_category(self) -> None:
+    self.assertEqual(
+        snapshot.CLI_URGENT_STATES,
+        frozenset({
+            snapshot.CLI_STATE_PERMISSION,
+            snapshot.CLI_STATE_QUESTION,
+        }),
+    )
+    self.assertEqual(
+        snapshot.CLI_SETTLED_STATES,
+        frozenset({
+            snapshot.CLI_STATE_SETTLED,
+            snapshot.CLI_STATE_PLAN,
+        }),
+    )
+    self.assertTrue(snapshot.is_urgent_cli_state(snapshot.CLI_STATE_PERMISSION))
+    self.assertTrue(snapshot.is_urgent_cli_state(snapshot.CLI_STATE_QUESTION))
+    self.assertFalse(snapshot.is_urgent_cli_state(snapshot.CLI_STATE_PLAN))
+    self.assertFalse(snapshot.is_urgent_cli_state(snapshot.CLI_STATE_SETTLED))
+    self.assertFalse(snapshot.is_urgent_cli_state(snapshot.CLI_STATE_WORKING))
+
+    cid = "11111111-1111-1111-1111-111111111111"
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_PERMISSION, "waiting on permission check", cid
+        ),
+        "perm",
+    )
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_QUESTION, "waiting on user question", cid
+        ),
+        "ask",
+    )
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_PLAN, "waiting for plan approval", cid
+        ),
+        "plan",
+    )
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_SETTLED, "waiting for user input", cid
+        ),
+        "done",
+    )
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_SETTLED, "waiting for user input", None
+        ),
+        "new",
+    )
+    self.assertEqual(
+        snapshot.classify_ui_category(
+            snapshot.CLI_STATE_WORKING, "model generating response", cid
+        ),
+        "work",
+    )
+
+  def test_child_permission_overrides_parent_question(self) -> None:
+    root_id = "11111111-1111-1111-1111-111111111113"
+    child_id = "22222222-2222-2222-2222-222222222236"
+    with tempfile.TemporaryDirectory() as tmp:
+      _make_conv(
+          tmp,
+          root_id,
+          steps=[(1, 138, 9, None, None, _step_metadata_blob(1700000100))],
+          transcript=_settled_entries(ts="2026-11-17T01:00:00Z"),
+      )
+      _make_conv(
+          tmp,
+          child_id,
+          steps=[(1, 132, 9, None, None, _step_metadata_blob(1700000200))],
+          transcript=_settled_entries(ts="2026-11-17T01:05:00Z"),
+      )
+      _register_subagent(tmp, root_id, child_id, role="Runner")
+      state, reason, ts = self._classify_with_ts(tmp, root_id)
+      self.assertEqual(state, snapshot.CLI_STATE_PERMISSION)
+      self.assertIn("Runner", reason)
+      self.assertEqual(ts, "2026-11-17T01:05:00Z")
+
+  def test_newest_urgent_child_timestamp_wins_across_children(self) -> None:
+    root_id = "11111111-1111-1111-1111-111111111114"
+    old_id = "22222222-2222-2222-2222-222222222237"
+    new_id = "22222222-2222-2222-2222-222222222238"
+    for step_type, expected_state in (
+        (132, snapshot.CLI_STATE_PERMISSION),
+        (138, snapshot.CLI_STATE_QUESTION),
+    ):
+      with tempfile.TemporaryDirectory() as tmp:
+        _make_conv(tmp, root_id, transcript=_settled_entries())
+        _make_conv(
+            tmp,
+            old_id,
+            steps=[(1, step_type, 9, None)],
+            transcript=_settled_entries(ts="2026-11-17T01:21:00Z"),
+        )
+        _make_conv(
+            tmp,
+            new_id,
+            steps=[(1, step_type, 9, None)],
+            transcript=_settled_entries(ts="2026-11-17T01:29:00Z"),
+        )
+        _register_subagent(tmp, root_id, old_id, role="Older")
+        _register_subagent(tmp, root_id, new_id, role="Newer")
+        state, reason, ts = self._classify_with_ts(tmp, root_id)
+        self.assertEqual(state, expected_state)
+        self.assertIn("Newer", reason)
+        self.assertEqual(ts, "2026-11-17T01:29:00Z")
+
+  def test_plan_approval_generic_code_action_and_sidecar(self) -> None:
+    cid = "33333333-3333-3333-3333-333333333301"
+    with tempfile.TemporaryDirectory() as tmp:
+      plan_dir = os.path.join(tmp, "brain", cid)
+      os.makedirs(plan_dir, exist_ok=True)
+      plan_path = os.path.join(plan_dir, "implementation_plan.md")
+      walk_path = os.path.join(plan_dir, "walkthrough.md")
+      task_path = os.path.join(plan_dir, "task.md")
+      pl = _generic_file_edit_payload(
+          plan_path, is_artifact=True, request_feedback=True
+      )
+      _make_conv(
+          tmp,
+          cid,
+          steps=[
+              (0, 14, 3, None, None, _step_metadata_blob(1700000000)),
+              (1, 132, 3, None, pl, _step_metadata_blob(1700000010)),
+              (2, 15, 3, None, None, _step_metadata_blob(1700000020)),
+          ],
+          transcript=_settled_entries(ts="2026-11-17T02:00:00Z"),
+      )
+      state, reason, ts = self._classify_with_ts(tmp, cid)
+      self.assertEqual(state, snapshot.CLI_STATE_PLAN)
+      self.assertEqual(reason, "waiting for plan approval")
+      self.assertEqual(ts, "2026-11-17T02:00:00Z")
+      self.assertEqual(
+          self._classify_instance(tmp, cid),
+          (True, "waiting for plan approval"),
+      )
+
+      # Legacy CODE_ACTION (step_type=5) with requestFeedback=True.
+      ca_pl = _code_action_payload(is_artifact=True, request_feedback=True)
+      _make_conv(
+          tmp,
+          cid,
+          steps=[
+              (0, 14, 3, None),
+              (1, 5, 3, None, ca_pl, _step_metadata_blob(1700000030)),
+              (2, 15, 3, None),
+          ],
+          transcript=_settled_entries(ts="2026-11-17T03:00:00Z"),
+      )
+      state, _, ts = self._classify_with_ts(tmp, cid)
+      self.assertEqual(state, snapshot.CLI_STATE_PLAN)
+      self.assertEqual(ts, "2026-11-17T03:00:00Z")
+
+      # Same-turn edit setting requestFeedback=False supersedes earlier True.
+      pl_false = _generic_file_edit_payload(
+          plan_path, is_artifact=True, request_feedback=False
+      )
+      _make_conv(
+          tmp,
+          cid,
+          steps=[
+              (0, 14, 3, None),
+              (1, 132, 3, None, pl),
+              (2, 132, 3, None, pl_false),
+              (3, 15, 3, None),
+          ],
+          transcript=_settled_entries(),
+      )
+      self.assertEqual(self._classify(tmp, cid)[0], snapshot.CLI_STATE_SETTLED)
+
+      # walkthrough.md and task.md are never classified as plan.
+      for ignored_path in (walk_path, task_path):
+        ig_pl = _generic_file_edit_payload(
+            ignored_path, is_artifact=True, request_feedback=True
+        )
+        _make_conv(
+            tmp,
+            cid,
+            steps=[(0, 14, 3, None), (1, 132, 3, None, ig_pl), (2, 15, 3, None)],
+            transcript=_settled_entries(),
+        )
+        self.assertEqual(
+            self._classify(tmp, cid)[0], snapshot.CLI_STATE_SETTLED
+        )
+
+      # Sidecar .metadata.json fallback when ArtifactMetadata is omitted.
+      pl_no_meta = _generic_file_edit_payload(
+          plan_path, is_artifact=True, request_feedback=None
+      )
+      _make_conv(
+          tmp,
+          cid,
+          steps=[(0, 14, 3, None), (1, 132, 3, None, pl_no_meta), (2, 15, 3, None)],
+          transcript=_settled_entries(),
+      )
+      self.assertEqual(self._classify(tmp, cid)[0], snapshot.CLI_STATE_SETTLED)
+      with open(f"{plan_path}.metadata.json", "w", encoding="utf-8") as f:
+        json.dump({"requestFeedback": True}, f)
+      self.assertEqual(self._classify(tmp, cid)[0], snapshot.CLI_STATE_PLAN)
+
+  def test_urgent_waiting_signature_stable_across_transcript_flush(
+      self,
+  ) -> None:
+    cid = "33333333-3333-3333-3333-333333333306"
+    with tempfile.TemporaryDirectory() as tmp:
+      _make_conv(
+          tmp,
+          cid,
+          steps=[(4, 132, 9, None, None, _step_metadata_blob(1700000100))],
+          transcript=_settled_entries(ts="2026-11-17T01:00:00Z"),
+      )
+      sig1 = snapshot.urgent_waiting_signature(tmp, cid)
+      self.assertTrue(sig1.startswith(f"{cid}:4:2023-11-14T"))
+
+      _make_conv(
+          tmp,
+          cid,
+          steps=[(4, 132, 9, None, None, _step_metadata_blob(1700000100))],
+          transcript=_settled_entries(ts="2026-11-17T01:05:00Z"),
+      )
+      sig2 = snapshot.urgent_waiting_signature(tmp, cid)
+      self.assertEqual(sig1, sig2)
 
 
 if __name__ == "__main__":

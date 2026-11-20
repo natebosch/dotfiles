@@ -18,6 +18,7 @@ from code_harness.context import cmd_context
 from code_harness.overview import cmd_overview
 from code_harness.snapshot import cmd_snapshot
 from code_harness.tmux_next import cmd_tmux_next
+from code_harness.tmux_notify import cmd_tmux_notify
 from code_harness.tmux_status import cmd_tmux_status
 
 CommandHandler = Callable[[HarnessConfig, str | None, list[str]], int]
@@ -53,6 +54,7 @@ PUBLIC_COMMANDS: dict[str, tuple[str, CommandHandler]] = {
 HIDDEN_COMMANDS: dict[str, CommandHandler] = {
     "context": cmd_context,
     "tmux-next": cmd_tmux_next,
+    "tmux-notify": cmd_tmux_notify,
     "tmux-status": cmd_tmux_status,
 }
 

@@ -37,6 +37,7 @@ def fg256(code: int, bold: bool = False) -> str:
 
 C_PERM = fg256(203, bold=True)   # coral red
 C_ASK = fg256(220, bold=True)    # bright gold
+C_PLAN = fg256(206, bold=True)   # magenta
 C_DONE = fg256(78, bold=True)    # bright green
 C_WORK = fg256(75, bold=False)   # sky blue
 C_NEW = fg256(39, bold=False)    # cyan
@@ -49,6 +50,11 @@ C_SESS = fg256(141, bold=False)
 C_WARN = fg256(214, bold=True)   # amber (tier 1)
 C_HIGH = fg256(196, bold=True)   # red (tier 2)
 C_CUR = fg256(214, bold=True)
+
+PRIO_NONE = 7
+PRIO_PROJ_WORK = 8
+PRIO_PROJ_DONE = 9
+PRIO_UNSTARTED = 10
 
 FILTER_MODES = ("all", "attention", "active")
 
@@ -385,22 +391,20 @@ def strip_self_overview_window(
 def classify_ui_state(agent_dict: Mapping[str, Any] | None) -> tuple[str, int]:
   """Maps `pane['agent']` into `(ui_state, priority_rank)`."""
   if not agent_dict:
-    return "none", 6
+    return "none", PRIO_NONE
   st = agent_dict["state"]
   reason = agent_dict.get("reason") or ""
   cid = agent_dict.get("conversation_id")
-  if st == "permission":
-    return "perm", 1
-  if st == "question":
-    return "ask", 2
-  if st == "settled":
-    if not cid or reason in (
-        "empty prompt (no conversation yet)",
-        "empty conversation",
-    ):
-      return "new", 5
-    return "done", 3
-  return "work", 4
+  cat = snap_lib.classify_ui_category(st, reason, cid)
+  prio_map = {
+      "perm": 1,
+      "ask": 2,
+      "plan": 3,
+      "done": 4,
+      "work": 5,
+      "new": 6,
+  }
+  return cat, prio_map[cat]
 
 
 def collect_overview_data(
@@ -609,7 +613,7 @@ def collect_overview_data(
 
       rows.append({
           "key": next_key(),
-          "priority": 6,
+          "priority": PRIO_NONE,
           "ui_state": "none",
           "tmux_active": True,
           "kind": kind,
@@ -716,7 +720,7 @@ def collect_overview_data(
   if not sessions:
     rows.append({
         "key": next_key(),
-        "priority": 6,
+        "priority": PRIO_NONE,
         "ui_state": "none",
         "tmux_active": False,
         "kind": "S",
@@ -745,7 +749,7 @@ def collect_overview_data(
     if pname in claimed_projects:
       continue
     st_word = (pinfo["status"].split() or [""])[0].lower()
-    prio = 8 if st_word == "done" else 7
+    prio = PRIO_PROJ_DONE if st_word == "done" else PRIO_PROJ_WORK
     linked_cid = ""
     linked_title = ""
     if pinfo["conversations"]:
@@ -787,7 +791,7 @@ def collect_overview_data(
       continue
     rows.append({
         "key": next_key(),
-        "priority": 9,
+        "priority": PRIO_UNSTARTED,
         "ui_state": "none",
         "tmux_active": False,
         "kind": "R",
@@ -839,6 +843,8 @@ def format_state_col(ui_state: str) -> str:
     return f"{C_PERM}! PERM{RESET}"
   if ui_state == "ask":
     return f"{C_ASK}? ASK {RESET}"
+  if ui_state == "plan":
+    return f"{C_PLAN}◆ PLAN{RESET}"
   if ui_state == "done":
     return f"{C_DONE}● DONE{RESET}"
   if ui_state == "work":
@@ -882,7 +888,9 @@ def filter_rows(
     rows: list[dict[str, Any]], filter_mode: str
 ) -> list[dict[str, Any]]:
   if filter_mode == "attention":
-    return [r for r in rows if r["ui_state"] in ("perm", "ask", "done")]
+    return [
+        r for r in rows if r["ui_state"] in ("perm", "ask", "plan", "done")
+    ]
   if filter_mode == "active":
     return [r for r in rows if r["conversation_live"]]
   return rows
@@ -896,7 +904,13 @@ def render_table_lines(
   limits_enabled = data["limits_enabled"]
   shown = filter_rows(all_rows, filter_mode)
 
-  counts: dict[str, int] = {"perm": 0, "ask": 0, "done": 0, "work": 0}
+  counts: dict[str, int] = {
+      "perm": 0,
+      "ask": 0,
+      "plan": 0,
+      "done": 0,
+      "work": 0,
+  }
   active_sessions: set[str] = set()
   for r in all_rows:
     if r["tmux_active"]:
@@ -909,6 +923,8 @@ def render_table_lines(
     summary_parts.append(f"{C_PERM}{counts['perm']} perm{RESET}")
   if counts["ask"]:
     summary_parts.append(f"{C_ASK}{counts['ask']} ask{RESET}")
+  if counts["plan"]:
+    summary_parts.append(f"{C_PLAN}{counts['plan']} plan{RESET}")
   if counts["done"]:
     summary_parts.append(f"{C_DONE}{counts['done']} done{RESET}")
   if counts["work"]:

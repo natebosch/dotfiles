@@ -60,6 +60,7 @@ META_PARENT = 5
 META_ROOT = 6
 
 STEP_TYPE_FINISH = 2
+STEP_TYPE_CODE_ACTION = 5
 STEP_TYPE_USER_INPUT = 14
 STEP_TYPE_PLANNER_RESPONSE = 15
 STEP_TYPE_ERROR_MESSAGE = 17
@@ -81,9 +82,23 @@ TASK_DETAILS_DESCRIPTION = 4
 TASK_DETAILS_IS_DAEMON = 6
 TASK_DETAILS_TITLE = 7
 
+STEP_CODE_ACTION = 10
+CODE_ACTION_SPEC = 1
+ACTION_SPEC_SUBFIELDS = (1, 2, 3)
+ACTION_PATH_FIELDS = (1, 4)
+CODE_ACTION_IS_ARTIFACT_FILE = 21
+CODE_ACTION_ARTIFACT_METADATA = 23
+
 STEP_GENERIC = 140
 GENERIC_RESULT = 2
 GENERIC_STEP_RENDER_INFO = 3
+GENERIC_RESULT_PAYLOAD = 6
+ANY_TYPE_URL = 1
+ANY_VALUE = 2
+FILE_EDIT_PATH = 2
+FILE_EDIT_ARTIFACT_METADATA = 5
+FILE_EDIT_IS_ARTIFACT_FILE = 6
+ARTIFACT_METADATA_REQUEST_FEEDBACK = 6
 RENDER_INFO_CONTENT_BLOCKS = 10
 CONTENT_BLOCK_AGENT = 4
 AGENT_REF_CONVERSATION_ID = 1
@@ -96,7 +111,34 @@ INTERACTION_ASK_QUESTION = 22
 CLI_STATE_SETTLED = "settled"
 CLI_STATE_PERMISSION = "permission"
 CLI_STATE_QUESTION = "question"
+CLI_STATE_PLAN = "plan"
 CLI_STATE_WORKING = "working"
+CLI_URGENT_STATES = frozenset({CLI_STATE_PERMISSION, CLI_STATE_QUESTION})
+CLI_SETTLED_STATES = frozenset({CLI_STATE_SETTLED, CLI_STATE_PLAN})
+
+
+def is_urgent_cli_state(state: str) -> bool:
+  return state in CLI_URGENT_STATES
+
+
+def classify_ui_category(
+    state: str, reason: str, conv_id: str | None
+) -> str:
+  """Maps CLI state metadata into perm/ask/plan/done/new/work."""
+  if state == CLI_STATE_PERMISSION:
+    return "perm"
+  if state == CLI_STATE_QUESTION:
+    return "ask"
+  if state == CLI_STATE_PLAN:
+    return "plan"
+  if state == CLI_STATE_SETTLED:
+    if not conv_id or reason in (
+        "empty prompt (no conversation yet)",
+        "empty conversation",
+    ):
+      return "new"
+    return "done"
+  return "work"
 
 
 def _get_config(config: HarnessConfig | None) -> HarnessConfig:
@@ -548,7 +590,13 @@ def is_self_script_proc(info: Mapping) -> bool:
   )
   if has_cmd and any(
       sub in argv
-      for sub in ("snapshot", "tmux-next", "tmux-status", "overview")
+      for sub in (
+          "snapshot",
+          "tmux-next",
+          "tmux-notify",
+          "tmux-status",
+          "overview",
+      )
   ):
     return True
   return False
@@ -1571,6 +1619,139 @@ def classify_waiting_step(
   return CLI_STATE_PERMISSION, "waiting on permission check"
 
 
+def _meta_blob_requests_feedback(am_vals: list | None) -> bool | None:
+  """Returns True/False when ArtifactMetadata is present, or None if omitted."""
+  if not am_vals:
+    return None
+  am_raw = am_vals[0]
+  if not isinstance(am_raw, bytes):
+    return False
+  try:
+    am = _proto_fields(am_raw)
+  except ValueError:
+    return False
+  return bool(_proto_first(am, ARTIFACT_METADATA_REQUEST_FEEDBACK, 0))
+
+
+def _sidecar_requests_feedback(path: str) -> bool:
+  """Reads `<path>.metadata.json` sidecar for `requestFeedback == True`."""
+  if not path:
+    return False
+  try:
+    with open(f"{path}.metadata.json", encoding="utf-8", errors="replace") as f:
+      data = json.load(f)
+    return isinstance(data, dict) and data.get("requestFeedback") is True
+  except (OSError, ValueError):
+    return False
+
+
+def _code_action_artifact_path(ca: Mapping[int, list]) -> str:
+  """Extracts optional target file path from `CortexStepCodeAction`."""
+  raw = _proto_first(ca, CODE_ACTION_SPEC)
+  if not isinstance(raw, bytes) or not raw:
+    return ""
+  try:
+    spec = _proto_fields(raw)
+  except ValueError:
+    text = raw.decode("utf-8", "replace").strip()
+    if text and "\x00" not in text and ("/" in text or text.endswith(".md")):
+      return text
+    return ""
+  for sf_num in ACTION_SPEC_SUBFIELDS:
+    sub_raw = _proto_first(spec, sf_num)
+    if not isinstance(sub_raw, bytes) or not sub_raw:
+      continue
+    try:
+      sub = _proto_fields(sub_raw)
+    except ValueError:
+      continue
+    for pf_num in ACTION_PATH_FIELDS:
+      p_raw = _proto_first(sub, pf_num)
+      if isinstance(p_raw, bytes) and p_raw:
+        p_text = p_raw.decode("utf-8", "replace").strip()
+        if p_text and "\x00" not in p_text:
+          return p_text
+  return ""
+
+
+def _artifact_edit_feedback(
+    step_type: int, step_payload: bytes | None
+) -> tuple[str | None, bool]:
+  """Returns `(artifact_key_or_None, requests_feedback_bool)` for an edit."""
+  if not step_payload:
+    return None, False
+  try:
+    sf = _proto_fields(step_payload)
+  except ValueError:
+    return None, False
+
+  if step_type == STEP_TYPE_GENERIC:
+    gen_raw = _proto_first(sf, STEP_GENERIC)
+    if not isinstance(gen_raw, bytes):
+      return None, False
+    try:
+      gen = _proto_fields(gen_raw)
+      res_raw = _proto_first(gen, GENERIC_RESULT)
+      if not isinstance(res_raw, bytes):
+        return None, False
+      gres = _proto_fields(res_raw)
+      any_raw = _proto_first(gres, GENERIC_RESULT_PAYLOAD)
+      if not isinstance(any_raw, bytes):
+        return None, False
+      any_msg = _proto_fields(any_raw)
+      type_url = _proto_first(any_msg, ANY_TYPE_URL)
+      if not isinstance(type_url, bytes) or not type_url.endswith(b"FileEdit"):
+        return None, False
+      val_raw = _proto_first(any_msg, ANY_VALUE)
+      if not isinstance(val_raw, bytes):
+        return None, False
+      fe = _proto_fields(val_raw)
+    except ValueError:
+      return None, False
+
+    if not _proto_first(fe, FILE_EDIT_IS_ARTIFACT_FILE, 0):
+      return None, False
+    path = ""
+    path_raw = _proto_first(fe, FILE_EDIT_PATH)
+    if isinstance(path_raw, bytes) and path_raw:
+      path = path_raw.decode("utf-8", "replace")
+      if os.path.basename(path) in ("walkthrough.md", "task.md"):
+        return None, False
+
+    fb = _meta_blob_requests_feedback(fe.get(FILE_EDIT_ARTIFACT_METADATA))
+    if fb is None and path:
+      fb = _sidecar_requests_feedback(path)
+    return (path or "__unnamed_artifact__"), bool(fb)
+
+  if step_type == STEP_TYPE_CODE_ACTION:
+    ca_raw = _proto_first(sf, STEP_CODE_ACTION)
+    if not isinstance(ca_raw, bytes):
+      return None, False
+    try:
+      ca = _proto_fields(ca_raw)
+    except ValueError:
+      return None, False
+    if not _proto_first(ca, CODE_ACTION_IS_ARTIFACT_FILE, 0):
+      return None, False
+    path = _code_action_artifact_path(ca)
+    if path and os.path.basename(path) in ("walkthrough.md", "task.md"):
+      return None, False
+    fb = _meta_blob_requests_feedback(ca.get(CODE_ACTION_ARTIFACT_METADATA))
+    if fb is None and path:
+      fb = _sidecar_requests_feedback(path)
+    return (path or "__code_action__"), bool(fb)
+
+  return None, False
+
+
+def _step_requests_plan_approval(
+    step_type: int, step_payload: bytes | None
+) -> bool:
+  """True when a completed edit step wrote an artifact requesting feedback."""
+  _, req_fb = _artifact_edit_feedback(step_type, step_payload)
+  return bool(req_fb)
+
+
 def _inspect_trajectory_state(
     data_dir: str | None,
     conv_id: str,
@@ -1580,6 +1761,8 @@ def _inspect_trajectory_state(
   """Returns (state, reason, last_ts, has_db, was_canceled, wf_ids)."""
   has_db = False
   eff_sql = None
+  pending_plan = False
+  plan_step_ts = ""
   wf_ids: list[str] = []
   wf_seen: set[str] = set()
   con = open_conv_db(data_dir, conv_id, config=config)
@@ -1596,7 +1779,9 @@ def _inspect_trajectory_state(
           "SELECT MAX(idx) FROM steps WHERE step_type = ?",
           (STEP_TYPE_USER_INPUT,),
       ).fetchone()
-      ui_idx = ui_row[0] if (ui_row and ui_row[0] is not None) else 0
+      ui_val = ui_row[0] if (ui_row and ui_row[0] is not None) else None
+      ui_idx = ui_val if ui_val is not None else 0
+      last_ui_idx = ui_val if ui_val is not None else -1
       min_idx = min(ui_idx, max(0, max_idx - 25))
       ckpt_row = con.execute(
           "SELECT COALESCE(MAX(idx), 0) FROM steps "
@@ -1716,6 +1901,35 @@ def _inspect_trajectory_state(
             ),
             tail_rows[0],
         )
+      if (
+          not is_child
+          and not kept
+          and "step_payload" in cols
+          and not (
+              eff_sql and eff_sql[1] in (STATUS_CANCELED, STATUS_INTERRUPTED)
+          )
+      ):
+        plan_rows = con.execute(
+            f"SELECT step_type, step_payload, {md_col} FROM steps "
+            "WHERE idx > ? AND status = ? AND step_type IN (?, ?) "
+            "ORDER BY idx DESC",
+            (
+                last_ui_idx,
+                STATUS_DONE,
+                STEP_TYPE_GENERIC,
+                STEP_TYPE_CODE_ACTION,
+            ),
+        ).fetchall()
+        seen_artifacts: set[str] = set()
+        for st_type, pl_blob, md_blob in plan_rows:
+          art_key, req_fb = _artifact_edit_feedback(st_type, pl_blob)
+          if art_key is None or art_key in seen_artifacts:
+            continue
+          seen_artifacts.add(art_key)
+          if req_fb:
+            pending_plan = True
+            plan_step_ts = _step_metadata_iso_ts(md_blob)
+            break
     except sqlite3.Error:
       has_db = False
     finally:
@@ -1739,6 +1953,15 @@ def _inspect_trajectory_state(
           CLI_STATE_WORKING,
           "turn starting",
           "",
+          has_db,
+          False,
+          tuple(wf_ids),
+      )
+    if pending_plan:
+      return (
+          CLI_STATE_PLAN,
+          "waiting for plan approval",
+          plan_step_ts,
           has_db,
           False,
           tuple(wf_ids),
@@ -1789,6 +2012,15 @@ def _inspect_trajectory_state(
           else "waiting on tool call or confirmation"
       )
       return CLI_STATE_WORKING, msg, last_ts, has_db, False, tuple(wf_ids)
+    if pending_plan:
+      return (
+          CLI_STATE_PLAN,
+          "waiting for plan approval",
+          last_ts or plan_step_ts,
+          has_db,
+          False,
+          tuple(wf_ids),
+      )
     return (
         CLI_STATE_SETTLED,
         "waiting for user input",
@@ -1867,7 +2099,7 @@ def check_db_and_transcript_settled(
       data_dir, conv_id, config=config
   )
   entries = read_transcript_entries(data_dir, conv_id, config=config)
-  return state == CLI_STATE_SETTLED, reason, last_ts, entries
+  return state in CLI_SETTLED_STATES, reason, last_ts, entries
 
 
 def _subagent_state_from_entries(
@@ -2164,10 +2396,11 @@ def classify_cli_state_with_ts(
   state, reason, parent_ts, has_db, parent_canceled, wf_ids = (
       _inspect_trajectory_state(data_dir, conv_id, config=config)
   )
-  if state in (CLI_STATE_PERMISSION, CLI_STATE_QUESTION):
+  if state == CLI_STATE_PERMISSION:
     return state, reason, parent_ts
 
-  saw_sub_question: tuple[str, str, str] | None = None
+  best_sub_perm: tuple[str, str, str] | None = None
+  best_sub_question: tuple[str, str, str] | None = None
   saw_sub_working: tuple[str, str] | None = None
   for sub_id, sub_label in discover_active_child_agents(
       data_dir,
@@ -2181,17 +2414,27 @@ def classify_cli_state_with_ts(
         data_dir, sub_id, is_child=True, config=config
     )
     if sub_state == CLI_STATE_PERMISSION:
-      return (
-          CLI_STATE_PERMISSION,
-          f"subagent {sub_label} {sub_reason}",
-          _newer_iso_ts(parent_ts, sub_ts),
-      )
-    if sub_state == CLI_STATE_QUESTION and saw_sub_question is None:
-      saw_sub_question = (
-          CLI_STATE_QUESTION,
-          f"subagent {sub_label} {sub_reason}",
-          sub_ts,
-      )
+      if (
+          best_sub_perm is None
+          or _iso_gt(sub_ts, best_sub_perm[2])
+          or (bool(sub_ts) and not best_sub_perm[2])
+      ):
+        best_sub_perm = (
+            CLI_STATE_PERMISSION,
+            f"subagent {sub_label} {sub_reason}",
+            sub_ts,
+        )
+    elif sub_state == CLI_STATE_QUESTION:
+      if (
+          best_sub_question is None
+          or _iso_gt(sub_ts, best_sub_question[2])
+          or (bool(sub_ts) and not best_sub_question[2])
+      ):
+        best_sub_question = (
+            CLI_STATE_QUESTION,
+            f"subagent {sub_label} {sub_reason}",
+            sub_ts,
+        )
     elif sub_state == CLI_STATE_WORKING and saw_sub_working is None:
       saw_sub_working = (
           CLI_STATE_WORKING,
@@ -2206,7 +2449,7 @@ def classify_cli_state_with_ts(
             f"subagent {sub_label} wakeup pending",
         )
       elif (
-          state == CLI_STATE_SETTLED
+          state in CLI_SETTLED_STATES
           and not parent_canceled
           and _iso_gt(sub_ts, parent_ts)
           and _is_recent_iso_timestamp(sub_ts, max_age_sec=5.0)
@@ -2216,11 +2459,27 @@ def classify_cli_state_with_ts(
             f"subagent {sub_label} wakeup pending",
         )
 
-  if saw_sub_question is not None:
+  if best_sub_perm is not None:
     return (
-        saw_sub_question[0],
-        saw_sub_question[1],
-        _newer_iso_ts(parent_ts, saw_sub_question[2]),
+        CLI_STATE_PERMISSION,
+        best_sub_perm[1],
+        _newer_iso_ts(parent_ts, best_sub_perm[2]),
+    )
+  if state == CLI_STATE_QUESTION:
+    if best_sub_question is not None and _iso_gt(
+        best_sub_question[2], parent_ts
+    ):
+      return (
+          CLI_STATE_QUESTION,
+          best_sub_question[1],
+          _newer_iso_ts(parent_ts, best_sub_question[2]),
+      )
+    return state, reason, parent_ts
+  if best_sub_question is not None:
+    return (
+        CLI_STATE_QUESTION,
+        best_sub_question[1],
+        _newer_iso_ts(parent_ts, best_sub_question[2]),
     )
 
   kids = active_cli_child_processes(
@@ -2275,7 +2534,7 @@ def classify_cli_state_with_ts(
     except (OSError, ValueError):
       pass
 
-  if state != CLI_STATE_SETTLED:
+  if state not in CLI_SETTLED_STATES:
     return state, reason, parent_ts
   if saw_sub_working is not None:
     return saw_sub_working[0], saw_sub_working[1], parent_ts
@@ -2283,7 +2542,7 @@ def classify_cli_state_with_ts(
       data_dir, conv_id, min_epoch=min_epoch, config=config
   ):
     return CLI_STATE_WORKING, "wakeup message pending", parent_ts
-  return CLI_STATE_SETTLED, reason, parent_ts
+  return state, reason, parent_ts
 
 
 def classify_cli_state(
@@ -2343,7 +2602,169 @@ def classify_cli_instance(
       data_dir,
       config=config,
   )
-  return state == CLI_STATE_SETTLED, reason
+  return state in CLI_SETTLED_STATES, reason
+
+
+def _sql_waiting_step_info(
+    data_dir: str | None,
+    conv_id: str,
+    config: HarnessConfig | None = None,
+) -> tuple[str | None, int | None, str, tuple[str, ...]]:
+  """Returns `(wait_state_or_None, step_idx, sql_ts, wf_ids)` from SQLite."""
+  con = open_conv_db(data_dir, conv_id, config=config)
+  if con is None:
+    return None, None, "", ()
+  wf_ids: list[str] = []
+  wf_seen: set[str] = set()
+  try:
+    latest = con.execute(
+        "SELECT idx FROM steps ORDER BY idx DESC LIMIT 1"
+    ).fetchone()
+    if latest is None:
+      return None, None, "", ()
+    max_idx = latest[0]
+    ui_row = con.execute(
+        "SELECT MAX(idx) FROM steps WHERE step_type = ?",
+        (STEP_TYPE_USER_INPUT,),
+    ).fetchone()
+    ui_idx = ui_row[0] if (ui_row and ui_row[0] is not None) else 0
+    min_idx = min(ui_idx, max(0, max_idx - 25))
+    ckpt_row = con.execute(
+        "SELECT COALESCE(MAX(idx), 0) FROM steps "
+        "WHERE step_type = ? AND status = ?",
+        (STEP_TYPE_CHECKPOINT, STATUS_DONE),
+    ).fetchone()
+    ckpt_idx = ckpt_row[0] if (ckpt_row and ckpt_row[0] is not None) else 0
+    lower_idx = min(min_idx, ckpt_idx)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(steps)").fetchall()}
+    td_col = (
+        "task_details" if "task_details" in cols else "NULL AS task_details"
+    )
+    pl_col = (
+        "step_payload" if "step_payload" in cols else "NULL AS step_payload"
+    )
+    md_col = "metadata" if "metadata" in cols else "NULL AS metadata"
+    rows = con.execute(
+        f"SELECT idx, step_type, status, {td_col}, {pl_col}, {md_col} "
+        "FROM steps WHERE idx >= ? AND status IN (?, ?, ?, ?, ?) "
+        "ORDER BY idx ASC",
+        (
+            lower_idx,
+            STATUS_PENDING,
+            STATUS_RUNNING,
+            STATUS_GENERATING,
+            STATUS_WAITING,
+            STATUS_QUEUED,
+        ),
+    ).fetchall()
+    first_q: tuple[str, int, str] | None = None
+    for row_idx, st_type, st_val, task_blob, payload, md_blob in rows:
+      if st_val == STATUS_WAITING:
+        keep = row_idx >= ckpt_idx
+      elif task_blob:
+        keep = row_idx >= ckpt_idx and not _is_daemon_task(task_blob)
+      else:
+        keep = row_idx >= min_idx
+      if not keep:
+        continue
+      if st_type == STEP_TYPE_GENERIC and payload:
+        for cid in _workflow_agent_ids_from_step(payload):
+          if cid not in wf_seen:
+            wf_seen.add(cid)
+            wf_ids.append(cid)
+      if st_val != STATUS_WAITING:
+        continue
+      w_state, _ = classify_waiting_step(st_type, payload)
+      if w_state == CLI_STATE_PERMISSION:
+        return (
+            CLI_STATE_PERMISSION,
+            row_idx,
+            _step_metadata_iso_ts(md_blob),
+            tuple(wf_ids),
+        )
+      if first_q is None:
+        first_q = (w_state, row_idx, _step_metadata_iso_ts(md_blob))
+    if first_q is not None:
+      return first_q[0], first_q[1], first_q[2], tuple(wf_ids)
+    return None, None, "", tuple(wf_ids)
+  except sqlite3.Error:
+    return None, None, "", ()
+  finally:
+    con.close()
+
+
+def urgent_waiting_signature(
+    data_dir: str | None,
+    conv_id: str | None,
+    open_dbs: set[str] | tuple[str, ...] = (),
+    cli_start_epoch: float | None = None,
+    config: HarnessConfig | None = None,
+) -> str:
+  """Returns stable `<conv_id>:<idx>:<sql_ts>` for winning urgent wait."""
+  if not conv_id:
+    return ""
+  r_state, r_idx, r_sql_ts, wf_ids = _sql_waiting_step_info(
+      data_dir, conv_id, config=config
+  )
+  if r_state == CLI_STATE_PERMISSION:
+    return f"{conv_id}:{r_idx}:{r_sql_ts}" if r_sql_ts else ""
+
+  parent_ts = r_sql_ts
+  if r_state == CLI_STATE_QUESTION:
+    _, parent_tx_ts = _trailing_transcript_entry_and_ts(
+        read_last_transcript_entries(data_dir, conv_id, config=config)
+    )
+    parent_ts = _newer_iso_ts(r_sql_ts, parent_tx_ts)
+
+  best_sub_perm: tuple[str, int | None, str, str] | None = None
+  best_sub_question: tuple[str, int | None, str, str] | None = None
+  for sub_id, _ in discover_active_child_agents(
+      data_dir,
+      conv_id,
+      set(open_dbs),
+      cli_start_epoch=cli_start_epoch,
+      extra_seed_ids=wf_ids,
+      config=config,
+  ):
+    s_state, s_idx, s_sql_ts, _ = _sql_waiting_step_info(
+        data_dir, sub_id, config=config
+    )
+    if s_state not in (CLI_STATE_PERMISSION, CLI_STATE_QUESTION):
+      continue
+    _, s_tx_ts = _trailing_transcript_entry_and_ts(
+        read_last_transcript_entries(data_dir, sub_id, config=config)
+    )
+    s_rank_ts = _newer_iso_ts(s_sql_ts, s_tx_ts)
+    if s_state == CLI_STATE_PERMISSION:
+      if (
+          best_sub_perm is None
+          or _iso_gt(s_rank_ts, best_sub_perm[3])
+          or (bool(s_rank_ts) and not best_sub_perm[3])
+      ):
+        best_sub_perm = (sub_id, s_idx, s_sql_ts, s_rank_ts)
+    elif (
+        best_sub_question is None
+        or _iso_gt(s_rank_ts, best_sub_question[3])
+        or (bool(s_rank_ts) and not best_sub_question[3])
+    ):
+      best_sub_question = (sub_id, s_idx, s_sql_ts, s_rank_ts)
+
+  winner: tuple[str, int | None, str] | None = None
+  if best_sub_perm is not None:
+    winner = best_sub_perm[:3]
+  elif r_state == CLI_STATE_QUESTION:
+    if best_sub_question is not None and _iso_gt(
+        best_sub_question[3], parent_ts
+    ):
+      winner = best_sub_question[:3]
+    else:
+      winner = (conv_id, r_idx, r_sql_ts)
+  elif best_sub_question is not None:
+    winner = best_sub_question[:3]
+
+  if winner and winner[2]:
+    return f"{winner[0]}:{winner[1]}:{winner[2]}"
+  return ""
 
 
 def _decode_pbtxt_literal(raw_inner: str) -> str:
@@ -2878,7 +3299,7 @@ def scan_tmux(
           "data_dir": cli_dir,
           "conversation_id": conv_id,
           "state": state,
-          "settled": state == CLI_STATE_SETTLED,
+          "settled": state in CLI_SETTLED_STATES,
           "reason": reason,
           "label": conversation_label(cli_dir, conv_id, config=cfg),
       }

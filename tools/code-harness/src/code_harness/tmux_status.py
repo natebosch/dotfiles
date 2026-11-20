@@ -1,34 +1,46 @@
 """Render coding-agent CLI attention status for the tmux right status line.
 
 Inspects all tmux panes (using code_harness.snapshot detection logic) and
-prints a compact segment showing:
-  1. Session name(s) needing attention (permission, then ask or belled done
-     ranked by recency and falling back to ctrl-space F next-window order),
-     left-truncated to fit --max-width.
-  2. Count of done/ask CLIs (always shown, even when 0).
-  3. Count of working CLIs (always shown, even when 0).
+prints a compact segment reflecting the 5-tier priority model
+(`perm` > `ask` > `plan` > `done` > `work`):
+  1. Session-name segment (fit to --max-width):
+     - Urgent session name(s): `! <perm>` in coral bold and `? <ask>` in gold
+       bold.
+     - Otherwise, if any CLI is waiting on plan approval (`plan`), the most
+       recent plan session with `◆ <session>` in magenta bold (without
+       requiring a bell).
+     - Otherwise, the most recently settled belled `done` session in green.
+     (Ties break via ctrl-space F next-window order.)
+  2. Always-shown counts: `◆ <plan> ● <done> ◐ <work>`.
 
-Settled "done" sessions require tmux's `window_bell_flag` to be set on their
-window (cleared natively by tmux once viewed), whereas "perm" and "ask"
-prompts remain shown without requiring a bell.
+Urgent prompts ("perm" and "ask", top-level or subagent) remain shown without
+requiring a bell and emit an OSC 777 toast via `code_harness.tmux_notify` on
+newly observed prompts when no attached tmux client is focused. Plan-approval
+sessions (`plan`) surface their session name and `◆` counter unconditionally
+without firing urgent OSC 777 toasts. Settled "done" sessions require
+`window_bell_flag` to surface their session name.
 """
 
 from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
+import json
 import os
 import re
 import sys
+import tempfile
+import time
+from typing import Any, Callable, Mapping, Sequence
 
+from code_harness import tmux_notify
 from code_harness.config import HarnessConfig
 from code_harness.snapshot import (
-    CLI_STATE_PERMISSION,
-    CLI_STATE_QUESTION,
-    CLI_STATE_SETTLED,
     TmuxRunner,
     _transcript_path,
     classify_cli_state_with_ts,
+    classify_ui_category,
     default_data_dir,
     find_pane_cli,
     find_tmux_bin,
@@ -37,9 +49,11 @@ from code_harness.snapshot import (
     load_process_table,
     resolve_cli_conversation_and_dir,
     self_ignored_pids,
+    urgent_waiting_signature,
 )
 
 ISO_FRAC_RE = re.compile(r"\.(\d+)(?=[+-]|$)")
+NOTIFY_SEEN_GRACE_SEC = 15.0
 
 
 def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
@@ -103,41 +117,52 @@ def list_tmux_windows_and_panes(tmux: TmuxRunner) -> list[dict] | None:
 def current_window_location(
     tmux: TmuxRunner,
     tmux_socket: str | None = None,
+    clients: Sequence[Mapping[str, Any]] | None = None,
 ) -> tuple[str | None, str | None]:
   """Returns (session_name, window_index) for active client, or (None, None)."""
   sep = "\x1f"
-  c_res = tmux.run(
-      "list-clients",
-      "-F",
-      sep.join(["#{client_session}", "#{client_activity}", "#{client_tty}"]),
-      check=False,
-  )
-  if c_res.returncode == 0 and c_res.stdout.strip():
-    best = (-1, "", "")
-    for line in c_res.stdout.splitlines():
-      parts = line.split(sep)
-      if len(parts) != 3:
+  best: tuple[int, str, str] = (-1, "", "")
+  if clients is not None:
+    for c in clients:
+      ctty = c.get("tty") or ""
+      if not ctty:
         continue
-      csess, act_s, ctty = parts
-      try:
-        act = int(act_s or "0")
-      except ValueError:
-        act = 0
+      act = c.get("activity") or 0
       if act > best[0]:
-        best = (act, csess, ctty)
-    if best[2]:
-      d_res = tmux.run(
-          "display-message",
-          "-t",
-          best[2],
-          "-p",
-          sep.join(["#{session_name}", "#{window_index}"]),
-          check=False,
-      )
-      if d_res.returncode == 0 and d_res.stdout.strip():
-        parts = d_res.stdout.rstrip("\r\n").split(sep)
-        if len(parts) == 2:
-          return parts[0], parts[1]
+        best = (act, c.get("session") or "", ctty)
+  else:
+    c_res = tmux.run(
+        "list-clients",
+        "-F",
+        sep.join(["#{client_session}", "#{client_activity}", "#{client_tty}"]),
+        check=False,
+    )
+    if c_res.returncode == 0 and c_res.stdout.strip():
+      for line in c_res.stdout.splitlines():
+        parts = line.split(sep)
+        if len(parts) != 3:
+          continue
+        csess, act_s, ctty = parts
+        try:
+          act = int(act_s or "0")
+        except ValueError:
+          act = 0
+        if act > best[0]:
+          best = (act, csess, ctty)
+
+  if best[2]:
+    d_res = tmux.run(
+        "display-message",
+        "-t",
+        best[2],
+        "-p",
+        sep.join(["#{session_name}", "#{window_index}"]),
+        check=False,
+    )
+    if d_res.returncode == 0 and d_res.stdout.strip():
+      parts = d_res.stdout.rstrip("\r\n").split(sep)
+      if len(parts) == 2:
+        return parts[0], parts[1]
 
   my_pane = os.environ.get("TMUX_PANE") or ""
   if my_pane:
@@ -161,22 +186,6 @@ def current_window_location(
           return parts[0], parts[1]
 
   return None, None
-
-
-def classify_ui_category(state: str, reason: str, conv_id: str | None) -> str:
-  """Maps snapshot CLI state into perm/ask/done/new/work."""
-  if state == CLI_STATE_PERMISSION:
-    return "perm"
-  if state == CLI_STATE_QUESTION:
-    return "ask"
-  if state == CLI_STATE_SETTLED:
-    if not conv_id or reason in (
-        "empty prompt (no conversation yet)",
-        "empty conversation",
-    ):
-      return "new"
-    return "done"
-  return "work"
 
 
 def parse_iso_epoch(iso_str: str) -> float | None:
@@ -222,7 +231,7 @@ def candidate_recency(
     last_ts: str,
     config: HarnessConfig | None = None,
 ) -> tuple[int, float, float]:
-  """Returns comparable recency tuple for a done/ask candidate."""
+  """Returns comparable recency tuple for a plan/done candidate."""
   iso_epoch = parse_iso_epoch(last_ts)
   file_mtime = conv_file_mtime(data_dir, conv_id, config=config)
   primary_ts = iso_epoch if iso_epoch is not None else file_mtime
@@ -255,8 +264,10 @@ def pick_done_winner(
     windows: list[dict],
     tmux: TmuxRunner,
     tmux_socket: str | None = None,
+    clients: Sequence[Mapping[str, Any]] | None = None,
+    get_clients: Callable[[], list[dict[str, Any]] | None] | None = None,
 ) -> dict:
-  """Picks the most recent done/ask candidate, breaking ties via F ordering."""
+  """Picks the most recent candidate, breaking ties via F ordering."""
   max_recency = max(c["recency"] for c in candidates)
   tied = [c for c in candidates if c["recency"] == max_recency]
   if len(tied) == 1:
@@ -266,7 +277,14 @@ def pick_done_winner(
   if len({c["session_name"] for c in tied}) > 1 or len(
       {c["win_idx"] for c in tied}
   ) > 1:
-    cur_sess, cur_win = current_window_location(tmux, tmux_socket=tmux_socket)
+    cur_clients = (
+        clients
+        if clients is not None
+        else (get_clients() if get_clients is not None else None)
+    )
+    cur_sess, cur_win = current_window_location(
+        tmux, tmux_socket=tmux_socket, clients=cur_clients
+    )
     if cur_sess is not None and cur_win is not None:
       for idx, win in enumerate(windows):
         if win["session_name"] == cur_sess and win["window_index"] == cur_win:
@@ -283,8 +301,70 @@ def pick_done_winner(
   return max(tied, key=rank_key)
 
 
+def format_urgent_segments(
+    perm_sessions: list[str],
+    ask_sessions: list[str],
+    max_width: int,
+    plain: bool,
+) -> str:
+  """Formats urgent `! <perm>` and `? <ask>` segments within `max_width`."""
+  if (not perm_sessions and not ask_sessions) or max_width <= 0:
+    return ""
+
+  def esc(text: str) -> str:
+    return text if plain else text.replace("#", "##")
+
+  def style_perm(vis: str) -> str:
+    if not vis:
+      return ""
+    if plain:
+      return f"{vis} "
+    return f"#[fg=colour203,bold]{esc(vis)}#[nobold] "
+
+  def style_ask(vis: str) -> str:
+    if not vis:
+      return ""
+    if plain:
+      return f"{vis} "
+    return f"#[fg=colour220,bold]{esc(vis)}#[nobold] "
+
+  if perm_sessions and not ask_sessions:
+    return style_perm(
+        truncate_left_with_prefix("! ", " ".join(perm_sessions), max_width)
+    )
+  if ask_sessions and not perm_sessions:
+    return style_ask(
+        truncate_left_with_prefix("? ", " ".join(ask_sessions), max_width)
+    )
+
+  perm_body = " ".join(perm_sessions)
+  ask_body = " ".join(ask_sessions)
+  raw_perm = f"! {perm_body}"
+  raw_ask = f"? {ask_body}"
+  if len(raw_perm) + 1 + len(raw_ask) <= max_width:
+    vis_perm, vis_ask = raw_perm, raw_ask
+  elif max_width < 8:
+    vis_perm = truncate_left_with_prefix("! ", perm_body, max_width)
+    vis_ask = ""
+  else:
+    ask_budget = min(len(raw_ask), max(4, max_width // 3))
+    perm_budget = max_width - ask_budget - 1
+    if len(raw_perm) < perm_budget:
+      ask_budget = min(
+          len(raw_ask), ask_budget + (perm_budget - len(raw_perm))
+      )
+      perm_budget = len(raw_perm)
+    vis_perm = truncate_left_with_prefix("! ", perm_body, perm_budget)
+    vis_ask = truncate_left_with_prefix("? ", ask_body, ask_budget)
+
+  return style_perm(vis_perm) + style_ask(vis_ask)
+
+
 def format_status_line(
     perm_sessions: list[str],
+    ask_sessions: list[str],
+    plan_candidates: list[dict],
+    plan_count: int,
     done_candidates: list[dict],
     done_count: int,
     work_count: int,
@@ -293,6 +373,8 @@ def format_status_line(
     tmux_socket: str | None,
     max_width: int,
     plain: bool,
+    clients: Sequence[Mapping[str, Any]] | None = None,
+    get_clients: Callable[[], list[dict[str, Any]] | None] | None = None,
 ) -> str:
   """Formats the tmux status-right coding-agent indicator string."""
   parts: list[str] = []
@@ -300,36 +382,49 @@ def format_status_line(
   def esc(text: str) -> str:
     return text if plain else text.replace("#", "##")
 
-  if perm_sessions:
-    vis = truncate_left_with_prefix("! ", " ".join(perm_sessions), max_width)
+  urgent = format_urgent_segments(perm_sessions, ask_sessions, max_width, plain)
+  if urgent:
+    parts.append(urgent)
+  elif plan_candidates:
+    winner = pick_done_winner(
+        plan_candidates,
+        windows,
+        tmux,
+        tmux_socket=tmux_socket,
+        clients=clients,
+        get_clients=get_clients,
+    )
+    vis = truncate_left_with_prefix("◆ ", winner["session_name"], max_width)
     if vis:
       if plain:
         parts.append(f"{vis} ")
       else:
-        parts.append(f"#[fg=colour203,bold]{esc(vis)}#[nobold] ")
+        parts.append(f"#[fg=colour206,bold]{esc(vis)}#[nobold] ")
   elif done_candidates:
     winner = pick_done_winner(
-        done_candidates, windows, tmux, tmux_socket=tmux_socket
+        done_candidates,
+        windows,
+        tmux,
+        tmux_socket=tmux_socket,
+        clients=clients,
+        get_clients=get_clients,
     )
-    if winner["category"] == "ask":
-      vis = truncate_left_with_prefix("? ", winner["session_name"], max_width)
-      if vis:
-        if plain:
-          parts.append(f"{vis} ")
-        else:
-          parts.append(f"#[fg=colour220,bold]{esc(vis)}#[nobold] ")
-    else:
-      vis = truncate_left_with_prefix("", winner["session_name"], max_width)
-      if vis:
-        if plain:
-          parts.append(f"{vis} ")
-        else:
-          parts.append(f"#[fg=colour78]{esc(vis)} ")
+    vis = truncate_left_with_prefix("", winner["session_name"], max_width)
+    if vis:
+      if plain:
+        parts.append(f"{vis} ")
+      else:
+        parts.append(f"#[fg=colour78]{esc(vis)} ")
 
   if plain:
+    parts.append(f"◆ {plan_count} ")
     parts.append(f"● {done_count} ")
     parts.append(f"◐ {work_count} ")
   else:
+    if plan_count > 0:
+      parts.append(f"#[fg=colour206,bold]◆ {plan_count}#[nobold] ")
+    else:
+      parts.append("#[fg=colour206]◆ 0 ")
     if done_count > 0:
       parts.append(f"#[fg=colour78,bold]● {done_count}#[nobold] ")
     else:
@@ -340,6 +435,216 @@ def format_status_line(
       parts.append("#[fg=colour75]◐ 0 #[default]")
 
   return "".join(parts)
+
+
+def notify_state_path(tmux_socket: str | None = None) -> str:
+  """Returns per-server state JSON path for OSC 777 prompt deduplication."""
+  override = os.environ.get("CODE_HARNESS_TMUX_NOTIFY_STATE")
+  if override:
+    return override
+  xdg_rt = os.environ.get("XDG_RUNTIME_DIR") or ""
+  if xdg_rt:
+    base_dir = xdg_rt
+  else:
+    xdg_st = os.environ.get("XDG_STATE_HOME") or os.path.expanduser(
+        "~/.local/state"
+    )
+    base_dir = os.path.join(xdg_st, "code-harness-tmux")
+  eff_socket = tmux_socket
+  if not eff_socket:
+    tmux_env = os.environ.get("TMUX") or ""
+    if tmux_env:
+      eff_socket = tmux_env.split(",", 1)[0]
+  if eff_socket:
+    try:
+      norm_sock = os.path.realpath(eff_socket)
+    except OSError:
+      norm_sock = os.path.abspath(eff_socket)
+    digest = hashlib.sha256(norm_sock.encode("utf-8")).hexdigest()[:12]
+    fname = f"code-harness-tmux-notify-{digest}.json"
+  else:
+    fname = "code-harness-tmux-notify.json"
+  return os.path.join(base_dir, fname)
+
+
+def _load_seen_state(
+    state_path: str, now: float | None = None
+) -> tuple[dict[tuple[str, ...], float], bool]:
+  if now is None:
+    now = time.time()
+  try:
+    with open(state_path, encoding="utf-8") as f:
+      data = json.load(f)
+  except (OSError, ValueError):
+    return {}, False
+  if not isinstance(data, dict):
+    return {}, False
+
+  out: dict[tuple[str, ...], float] = {}
+  pruned = False
+  raw_entries = data.get("seen_entries")
+  if isinstance(raw_entries, list):
+    for item in raw_entries:
+      if not isinstance(item, dict):
+        pruned = True
+        continue
+      k = item.get("key")
+      ts = item.get("ts")
+      if (
+          not isinstance(k, list)
+          or len(k) != 4
+          or not all(isinstance(x, str) for x in k)
+          or isinstance(ts, bool)
+          or not isinstance(ts, (int, float))
+      ):
+        pruned = True
+        continue
+      ts_f = float(ts)
+      if now - ts_f > NOTIFY_SEEN_GRACE_SEC:
+        pruned = True
+        continue
+      out[tuple(k)] = ts_f
+    return out, pruned
+
+  raw_seen = data.get("seen")
+  if not isinstance(raw_seen, list):
+    return {}, False
+  for item in raw_seen:
+    if (
+        isinstance(item, list)
+        and len(item) == 4
+        and all(isinstance(x, str) for x in item)
+    ):
+      out[tuple(item)] = float(now)
+  return out, False
+
+
+def _load_seen_keys(
+    state_path: str, now: float | None = None
+) -> dict[tuple[str, ...], float]:
+  seen_map, _ = _load_seen_state(state_path, now=now)
+  return seen_map
+
+
+def _save_seen_keys(
+    state_path: str,
+    seen_map: Mapping[tuple[str, ...], float] | Sequence[tuple[str, ...]],
+) -> None:
+  if isinstance(seen_map, Mapping):
+    items = sorted(seen_map.items(), key=lambda kv: kv[1], reverse=True)[:256]
+  else:
+    now = time.time()
+    items = [(tuple(k), now) for k in list(seen_map)[:256]]
+  parent = os.path.dirname(os.path.abspath(state_path))
+  tmp_path = None
+  try:
+    os.makedirs(parent, mode=0o700, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp-", dir=parent)
+    try:
+      os.fchmod(fd, 0o600)
+    except OSError:
+      pass
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+      json.dump(
+          {
+              "seen": [list(k) for k, _ in items],
+              "seen_entries": [{"key": list(k), "ts": ts} for k, ts in items],
+          },
+          f,
+      )
+    os.replace(tmp_path, state_path)
+  except OSError:
+    if tmp_path:
+      try:
+        os.unlink(tmp_path)
+      except OSError:
+        pass
+
+
+def format_urgent_toast(new_items: Sequence[Mapping[str, Any]]) -> tuple[str, str]:
+  """Returns (title, body) for newly observed urgent agent prompts."""
+  if len(new_items) == 1:
+    it = new_items[0]
+    kind = "permission" if it["category"] == "perm" else "question"
+    title = f"Agent {kind}: {it['session_name']}"
+    reason = it.get("reason") or f"waiting on {kind}"
+    body = f"{reason} (C-Space f)"
+    return title, body
+  sessions = ", ".join(dict.fromkeys(str(i["session_name"]) for i in new_items))
+  title = f"Agent attention: {sessions}"
+  body = f"{len(new_items)} prompts waiting (C-Space f)"
+  return title, body
+
+
+def urgent_prompt_token(
+    cli_dir: str | None,
+    conv_id: str | None,
+    cat: str,
+    reason: str,
+    last_ts: str,
+    open_dbs: set[str] | tuple[str, ...] = (),
+    cli_start_epoch: float | None = None,
+    config: HarnessConfig | None = None,
+) -> str:
+  """Returns stable dedup token for an urgent prompt."""
+  del cat
+  if cli_dir and conv_id and os.path.isdir(cli_dir):
+    sig = urgent_waiting_signature(
+        cli_dir,
+        conv_id,
+        open_dbs=open_dbs,
+        cli_start_epoch=cli_start_epoch,
+        config=config,
+    )
+    if sig:
+      return sig
+  return last_ts or reason
+
+
+def maybe_send_urgent_notifications(
+    tmux: TmuxRunner,
+    urgent_items: Sequence[Mapping[str, Any]],
+    tmux_socket: str | None,
+    notify_enabled: bool,
+    get_clients: Callable[[], list[dict[str, Any]] | None],
+    now: float | None = None,
+    notify_mod: Any = tmux_notify,
+) -> None:
+  """Emits OSC 777 notifications once per urgent prompt when unfocused."""
+  if not notify_enabled or notify_mod is None:
+    return
+  if now is None:
+    now = time.time()
+  state_path = notify_state_path(tmux_socket)
+  seen_map, pruned = _load_seen_state(state_path, now=now)
+  current_keys = [it["key"] for it in urgent_items]
+  need_save = pruned
+  for k in current_keys:
+    if k in seen_map:
+      if now - seen_map[k] > 5.0:
+        need_save = True
+      seen_map[k] = now
+
+  new_items = [it for it in urgent_items if it["key"] not in seen_map]
+  mark_new_seen = False
+  if new_items:
+    clients = get_clients()
+    attached = [c for c in (clients or []) if c.get("tty")]
+    if attached:
+      title, body = format_urgent_toast(new_items)
+      sent = notify_mod.send_tmux_notification(
+          tmux, title, body, if_unfocused=True, clients=clients
+      )
+      if sent > 0 or notify_mod.any_client_focused(attached):
+        mark_new_seen = True
+
+  if mark_new_seen:
+    for it in new_items:
+      seen_map[it["key"]] = now
+    need_save = True
+
+  if need_save:
+    _save_seen_keys(state_path, seen_map)
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -365,6 +670,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
       "--plain",
       action="store_true",
       help="Emit plain visible text without tmux #[...] style tags.",
+  )
+  p.add_argument(
+      "--no-notify",
+      action="store_true",
+      help="Disable OSC 777 notifications for newly urgent prompts.",
   )
   return p.parse_args(argv)
 
@@ -396,6 +706,11 @@ def cmd_tmux_status(
 
   perm_sessions: list[str] = []
   perm_seen: set[str] = set()
+  ask_sessions: list[str] = []
+  ask_seen: set[str] = set()
+  urgent_items: list[dict[str, Any]] = []
+  plan_candidates: list[dict] = []
+  plan_count = 0
   done_candidates: list[dict] = []
   done_count = 0
   work_count = 0
@@ -428,13 +743,44 @@ def cmd_tmux_status(
           config=config,
       )
       cat = classify_ui_category(state, reason, conv_id)
-      if cat == "perm":
-        if sname not in perm_seen:
-          perm_seen.add(sname)
-          perm_sessions.append(sname)
-      elif cat in ("done", "ask"):
+      if cat in ("perm", "ask"):
+        tok = urgent_prompt_token(
+            cli_dir,
+            conv_id,
+            cat,
+            reason,
+            last_ts,
+            open_dbs=open_dbs,
+            cli_start_epoch=cli_proc.get("start_epoch"),
+            config=config,
+        )
+        urgent_items.append({
+            "key": (pane["pane_id"], conv_id or "", cat, tok),
+            "category": cat,
+            "session_name": sname,
+            "reason": reason,
+        })
+        if cat == "perm":
+          if sname not in perm_seen:
+            perm_seen.add(sname)
+            perm_sessions.append(sname)
+        elif sname not in ask_seen:
+          ask_seen.add(sname)
+          ask_sessions.append(sname)
+      elif cat == "plan":
+        plan_count += 1
+        plan_candidates.append({
+            "session_name": sname,
+            "category": cat,
+            "win_idx": win_idx,
+            "pane_pos": pane_pos,
+            "recency": candidate_recency(
+                cli_dir, conv_id, last_ts, config=config
+            ),
+        })
+      elif cat == "done":
         done_count += 1
-        if cat == "ask" or win.get("bell", False):
+        if win.get("bell", False):
           done_candidates.append({
               "session_name": sname,
               "category": cat,
@@ -447,9 +793,32 @@ def cmd_tmux_status(
       elif cat == "work":
         work_count += 1
 
+  ask_sessions = [s for s in ask_sessions if s not in perm_seen]
+
+  clients_cache: list[list[dict[str, Any]] | None] = [None]
+
+  def get_clients() -> list[dict[str, Any]] | None:
+    if clients_cache[0] is None:
+      clients_cache[0] = tmux_notify.list_tmux_clients(tmux)
+    return clients_cache[0]
+
+  notify_enabled = (
+      not args.no_notify and os.environ.get("CODE_HARNESS_TMUX_NOTIFY") != "0"
+  )
+  maybe_send_urgent_notifications(
+      tmux,
+      urgent_items,
+      args.tmux_socket,
+      notify_enabled,
+      get_clients,
+  )
+
   sys.stdout.write(
       format_status_line(
           perm_sessions,
+          ask_sessions,
+          plan_candidates,
+          plan_count,
           done_candidates,
           done_count,
           work_count,
@@ -458,6 +827,7 @@ def cmd_tmux_status(
           args.tmux_socket,
           args.max_width,
           args.plain,
+          get_clients=get_clients,
       )
       + "\n"
   )

@@ -154,13 +154,16 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
         },
     ]
     out = tmux_status.format_status_line(
-        [], cands, 2, 1, wins, tmux, None, 32, plain=True
+        [], [], [], 0, cands, 2, 1, wins, tmux, None, 32, plain=True
     )
-    self.assertEqual(out, "s2 ● 2 ◐ 1 ")
+    self.assertEqual(out, "s2 ◆ 0 ● 2 ◐ 1 ")
 
-    # Permission overrides done/ask, truncates from left, and escapes `#`.
+    # Permission overrides done, truncates from left, and escapes `#`.
     styled = tmux_status.format_status_line(
         ["proj#one", "proj#two"],
+        [],
+        [],
+        0,
         cands,
         2,
         0,
@@ -171,23 +174,161 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
         plain=False,
     )
     self.assertIn("#[fg=colour203,bold]! …roj##two#[nobold] ", styled)
+    self.assertIn("#[fg=colour206]◆ 0 ", styled)
     self.assertIn("#[fg=colour78,bold]● 2#[nobold] ", styled)
     self.assertIn("#[fg=colour75]◐ 0 #[default]", styled)
 
-    # Ask uses ? prefix in gold bold.
-    ask_cands = [{
-        "session_name": "a#b",
-        "category": "ask",
-        "win_idx": 0,
-        "pane_pos": 0,
-        "recency": (1, 20.0, 20.0),
-    }]
+    # Ask alone uses ? prefix in gold bold.
     ask_styled = tmux_status.format_status_line(
-        [], ask_cands, 1, 0, wins, tmux, None, max_width=32, plain=False
+        [],
+        ["a#b"],
+        [],
+        0,
+        [],
+        0,
+        0,
+        wins,
+        tmux,
+        None,
+        max_width=32,
+        plain=False,
     )
     self.assertTrue(
         ask_styled.startswith("#[fg=colour220,bold]? a##b#[nobold] ")
     )
+
+  def test_plan_precedence_and_counter_rendering(self) -> None:
+    wins = [
+        {
+            "session_name": "s_plan1",
+            "window_index": "0",
+            "bell": False,
+            "panes": [],
+        },
+        {
+            "session_name": "s_plan2",
+            "window_index": "0",
+            "bell": False,
+            "panes": [],
+        },
+        {
+            "session_name": "s_done",
+            "window_index": "0",
+            "bell": True,
+            "panes": [],
+        },
+    ]
+    tmux = _FakeTmux(client_loc=("s_done", "0"))
+    plan_cands = [
+        {
+            "session_name": "s_plan1",
+            "category": "plan",
+            "win_idx": 0,
+            "pane_pos": 0,
+            "recency": (1, 10.0, 10.0),
+        },
+        {
+            "session_name": "s_plan2",
+            "category": "plan",
+            "win_idx": 1,
+            "pane_pos": 0,
+            "recency": (1, 20.0, 20.0),
+        },
+    ]
+    done_cands = [
+        {
+            "session_name": "s_done",
+            "category": "done",
+            "win_idx": 2,
+            "pane_pos": 0,
+            "recency": (1, 99.0, 99.0),
+        },
+    ]
+
+    plain_plan = tmux_status.format_status_line(
+        [],
+        [],
+        plan_cands,
+        2,
+        done_cands,
+        1,
+        0,
+        wins,
+        tmux,
+        None,
+        32,
+        plain=True,
+    )
+    self.assertEqual(plain_plan, "◆ s_plan2 ◆ 2 ● 1 ◐ 0 ")
+
+    styled_plan = tmux_status.format_status_line(
+        [],
+        [],
+        [plan_cands[0]],
+        1,
+        done_cands,
+        1,
+        0,
+        wins,
+        tmux,
+        None,
+        32,
+        plain=False,
+    )
+    self.assertEqual(
+        styled_plan,
+        "#[fg=colour206,bold]◆ s_plan1#[nobold] "
+        "#[fg=colour206,bold]◆ 1#[nobold] "
+        "#[fg=colour78,bold]● 1#[nobold] "
+        "#[fg=colour75]◐ 0 #[default]",
+    )
+
+    with_ask = tmux_status.format_status_line(
+        [],
+        ["s_ask"],
+        plan_cands,
+        2,
+        done_cands,
+        1,
+        0,
+        wins,
+        tmux,
+        None,
+        32,
+        plain=True,
+    )
+    self.assertEqual(with_ask, "? s_ask ◆ 2 ● 1 ◐ 0 ")
+
+    with_perm = tmux_status.format_status_line(
+        ["s_perm"],
+        [],
+        [plan_cands[0]],
+        1,
+        done_cands,
+        1,
+        0,
+        wins,
+        tmux,
+        None,
+        32,
+        plain=True,
+    )
+    self.assertEqual(with_perm, "! s_perm ◆ 1 ● 1 ◐ 0 ")
+
+  def test_urgent_width_sharing_and_ask_budget(self) -> None:
+    fmt = tmux_status.format_urgent_segments
+    self.assertEqual(fmt(["p1"], ["a1"], 10, plain=True), "! p1 ? a1 ")
+    styled = fmt(["p#1"], ["a#1"], 20, plain=False)
+    self.assertEqual(
+        styled,
+        "#[fg=colour203,bold]! p##1#[nobold] "
+        "#[fg=colour220,bold]? a##1#[nobold] ",
+    )
+    shared = fmt(["x"], ["verylongname"], 12, plain=True)
+    self.assertEqual(shared, "! x ? …gname ")
+    narrow = fmt(["alpha"], ["beta"], 7, plain=True)
+    self.assertEqual(narrow, "! alpha ")
+    self.assertNotIn("?", narrow)
 
   def test_cmd_filters_done_by_bell_but_keeps_perm_ask_and_counts(self) -> None:
     wins = [
@@ -262,11 +403,12 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
           ),
           mock.patch("sys.stdout", out),
       ):
-        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain"])
+        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain", "--no-notify"])
       self.assertEqual(rc, 0)
-      self.assertEqual(out.getvalue(), "s_old_bell ● 2 ◐ 0 \n")
+      self.assertEqual(out.getvalue(), "s_old_bell ◆ 0 ● 2 ◐ 0 \n")
 
-      # Verify perm and ask show even with bell=False.
+      # Verify perm and ask both surface without bells and ask does not inflate
+      # done_count.
       wins_perm_ask = [
           {
               "session_name": "s_ask",
@@ -333,9 +475,145 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
           ),
           mock.patch("sys.stdout", out_pa),
       ):
-        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain"])
+        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain", "--no-notify"])
       self.assertEqual(rc, 0)
-      self.assertEqual(out_pa.getvalue(), "! s_perm ● 1 ◐ 0 \n")
+      self.assertEqual(out_pa.getvalue(), "! s_perm ? s_ask ◆ 0 ● 0 ◐ 0 \n")
+
+  def test_status_notification_dedup_and_env_suppression(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      state_file = os.path.join(tmp, "notify-state.json")
+      clients = [{"tty": "/dev/pts/1", "focused": False, "activity": 1}]
+      items = [{
+          "key": ("%0", "c1", "perm", "2026-11-17T01:00:00Z"),
+          "category": "perm",
+          "session_name": "proj",
+          "reason": "waiting on permission check",
+      }]
+      with (
+          mock.patch.dict(
+              os.environ, {"CODE_HARNESS_TMUX_NOTIFY_STATE": state_file}
+          ),
+          mock.patch.object(
+              tmux_status.tmux_notify,
+              "send_tmux_notification",
+              return_value=1,
+          ) as mock_send,
+      ):
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: clients
+        )
+        mock_send.assert_called_once()
+        self.assertEqual(
+            mock_send.call_args[0][1:],
+            ("Agent permission: proj", "waiting on permission check (C-Space f)"),
+        )
+        self.assertTrue(mock_send.call_args[1]["if_unfocused"])
+
+        # Repeat poll with same item does not resend.
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: clients
+        )
+        self.assertEqual(mock_send.call_count, 1)
+
+        # Disabled via notify_enabled=False does not send.
+        items2 = [{
+            "key": ("%0", "c1", "perm", "2026-11-17T01:05:00Z"),
+            "category": "perm",
+            "session_name": "proj",
+            "reason": "waiting on permission check",
+        }]
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items2, None, False, lambda: clients
+        )
+        self.assertEqual(mock_send.call_count, 1)
+
+        # Multiple new items format combined attention toast.
+        multi = items2 + [{
+            "key": ("%1", "c2", "ask", "2026-11-17T01:06:00Z"),
+            "category": "ask",
+            "session_name": "other",
+            "reason": "waiting on user question",
+        }]
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), multi, None, True, lambda: clients
+        )
+        self.assertEqual(mock_send.call_count, 2)
+        self.assertEqual(
+            mock_send.call_args[0][1:],
+            ("Agent attention: proj, other", "2 prompts waiting (C-Space f)"),
+        )
+
+  def test_notify_state_path_grace_and_unattached_clients(self) -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+      rt_dir = os.path.join(tmp, "rt")
+      sock_a = os.path.join(tmp, "sock-a")
+      sock_b = os.path.join(tmp, "sock-b")
+      open(sock_a, "w", encoding="utf-8").close()
+      open(sock_b, "w", encoding="utf-8").close()
+      with mock.patch.dict(
+          os.environ,
+          {"XDG_RUNTIME_DIR": rt_dir, "TMUX": f"{sock_a},100,0"},
+          clear=True,
+      ):
+        path_a = tmux_status.notify_state_path(None)
+        path_a_explicit = tmux_status.notify_state_path(sock_a)
+      with mock.patch.dict(
+          os.environ,
+          {"XDG_RUNTIME_DIR": rt_dir, "TMUX": f"{sock_b},101,0"},
+          clear=True,
+      ):
+        path_b = tmux_status.notify_state_path(None)
+      self.assertNotEqual(path_a, path_b)
+      self.assertEqual(path_a, path_a_explicit)
+
+      state_file = os.path.join(tmp, "grace-state.json")
+      clients = [{"tty": "/dev/pts/1", "focused": False, "activity": 1}]
+      items = [{
+          "key": ("%0", "c1", "perm", "tok1"),
+          "category": "perm",
+          "session_name": "proj",
+          "reason": "waiting on permission check",
+      }]
+      with (
+          mock.patch.dict(
+              os.environ, {"CODE_HARNESS_TMUX_NOTIFY_STATE": state_file}
+          ),
+          mock.patch.object(
+              tmux_status.tmux_notify,
+              "send_tmux_notification",
+              return_value=1,
+          ) as mock_send,
+      ):
+        # 0 attached clients -> do not mark seen until a client attaches.
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: [], now=100.0
+        )
+        self.assertEqual(mock_send.call_count, 0)
+        self.assertFalse(os.path.exists(state_file))
+
+        # Unfocused client attaches -> sends and marks seen.
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: clients, now=101.0
+        )
+        self.assertEqual(mock_send.call_count, 1)
+
+        # Transient 1-tick drop within 15s grace window -> stays suppressed.
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), [], None, True, lambda: clients, now=105.0
+        )
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: clients, now=110.0
+        )
+        self.assertEqual(mock_send.call_count, 1)
+
+        # Missing > 15s grace window -> expires and re-notifies.
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), [], None, True, lambda: clients, now=130.0
+        )
+        tmux_status.maybe_send_urgent_notifications(
+            _FakeTmux(), items, None, True, lambda: clients, now=131.0
+        )
+        self.assertEqual(mock_send.call_count, 2)
 
   def test_waiting_step_timestamp_and_classify_with_ts(self) -> None:
     conv_id = "11111111-1111-1111-1111-111111111111"

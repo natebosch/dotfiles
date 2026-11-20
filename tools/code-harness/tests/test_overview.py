@@ -109,7 +109,7 @@ class OverviewHelpersTests(unittest.TestCase):
       self.assertEqual(repos["wrapped-repo"]["branch"], "main")
 
   def test_classify_ui_state(self) -> None:
-    self.assertEqual(overview.classify_ui_state(None), ("none", 6))
+    self.assertEqual(overview.classify_ui_state(None), ("none", overview.PRIO_NONE))
     self.assertEqual(
         overview.classify_ui_state({"state": "permission"}), ("perm", 1)
     )
@@ -118,11 +118,22 @@ class OverviewHelpersTests(unittest.TestCase):
     )
     self.assertEqual(
         overview.classify_ui_state({
+            "state": "plan",
+            "conversation_id": "11111111-1111-1111-1111-111111111111",
+            "reason": "waiting for plan approval",
+        }),
+        ("plan", 3),
+    )
+    self.assertEqual(
+        overview.classify_ui_state({
             "state": "settled",
             "conversation_id": "11111111-1111-1111-1111-111111111111",
             "reason": "done",
         }),
-        ("done", 3),
+        ("done", 4),
+    )
+    self.assertEqual(
+        overview.classify_ui_state({"state": "working"}), ("work", 5)
     )
     self.assertEqual(
         overview.classify_ui_state({
@@ -130,11 +141,102 @@ class OverviewHelpersTests(unittest.TestCase):
             "conversation_id": None,
             "reason": "empty prompt (no conversation yet)",
         }),
-        ("new", 5),
+        ("new", 6),
     )
+    self.assertGreater(overview.PRIO_PROJ_WORK, overview.PRIO_NONE)
+    self.assertGreater(overview.PRIO_PROJ_DONE, overview.PRIO_PROJ_WORK)
+    self.assertGreater(overview.PRIO_UNSTARTED, overview.PRIO_PROJ_DONE)
+
+  def test_format_state_col_filter_and_summary_for_plan(self) -> None:
+    col = overview.format_state_col("plan")
+    self.assertIn(overview.C_PLAN, col)
+    self.assertIn("◆ PLAN", col)
+
+    rows = [
+        {
+            "key": "1",
+            "priority": 1,
+            "ui_state": "perm",
+            "tmux_active": True,
+            "kind": "S",
+            "session_name": "s1",
+            "target_display": "s1",
+            "is_current_session": False,
+            "ctx": {},
+            "conversation_live": True,
+            "detail_main": "p",
+            "branch_str": "",
+        },
+        {
+            "key": "2",
+            "priority": 2,
+            "ui_state": "ask",
+            "tmux_active": True,
+            "kind": "S",
+            "session_name": "s2",
+            "target_display": "s2",
+            "is_current_session": False,
+            "ctx": {},
+            "conversation_live": True,
+            "detail_main": "a",
+            "branch_str": "",
+        },
+        {
+            "key": "3",
+            "priority": 3,
+            "ui_state": "plan",
+            "tmux_active": True,
+            "kind": "S",
+            "session_name": "s3",
+            "target_display": "s3",
+            "is_current_session": False,
+            "ctx": {},
+            "conversation_live": True,
+            "detail_main": "pl",
+            "branch_str": "",
+        },
+        {
+            "key": "4",
+            "priority": 4,
+            "ui_state": "done",
+            "tmux_active": True,
+            "kind": "S",
+            "session_name": "s4",
+            "target_display": "s4",
+            "is_current_session": False,
+            "ctx": {},
+            "conversation_live": True,
+            "detail_main": "d",
+            "branch_str": "",
+        },
+        {
+            "key": "5",
+            "priority": 5,
+            "ui_state": "work",
+            "tmux_active": True,
+            "kind": "S",
+            "session_name": "s5",
+            "target_display": "s5",
+            "is_current_session": False,
+            "ctx": {},
+            "conversation_live": True,
+            "detail_main": "w",
+            "branch_str": "",
+        },
+    ]
+    attn = overview.filter_rows(rows, "attention")
     self.assertEqual(
-        overview.classify_ui_state({"state": "working"}), ("work", 4)
+        [r["ui_state"] for r in attn], ["perm", "ask", "plan", "done"]
     )
+
+    lines = overview.render_table_lines({"rows": rows, "limits_enabled": False})
+    header = lines[0]
+    self.assertIn(f"{overview.C_PLAN}1 plan{overview.RESET}", header)
+    ask_idx = header.index("1 ask")
+    plan_idx = header.index("1 plan")
+    done_idx = header.index("1 done")
+    self.assertLess(ask_idx, plan_idx)
+    self.assertLess(plan_idx, done_idx)
 
   def test_filter_mode_cycle(self) -> None:
     with tempfile.TemporaryDirectory() as tmp:

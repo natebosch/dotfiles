@@ -1,11 +1,12 @@
 """Cycle through tmux windows running coding-agent CLIs needing attention.
 
 Modes:
-  --permission  Cycle windows where a coding-agent CLI (or live subagent) is
-                blocked on a permission check or MCP elicitation popup.
-  (default)     Cycle windows matching --permission, or where a coding-agent
-                CLI has paused on ask_question or settled waiting for user
-                input.
+  --urgent      Cycle windows where a coding-agent CLI (or live child agent)
+                needs urgent attention: blocked on a permission check, MCP
+                elicitation, or ask_question prompt. (`--permission` is an
+                alias.)
+  (default)     Cycle windows matching --urgent, or where a coding-agent CLI's
+                turn has finished and is waiting for user input.
 
 When no matching window (or no other matching window) exists, keeps focus where
 it is and shows a brief centered tmux popup toast (visible with `status off`).
@@ -20,9 +21,8 @@ import subprocess
 
 from code_harness.config import HarnessConfig
 from code_harness.snapshot import (
-    CLI_STATE_PERMISSION,
-    CLI_STATE_QUESTION,
-    CLI_STATE_SETTLED,
+    CLI_SETTLED_STATES,
+    CLI_URGENT_STATES,
     TmuxRunner,
     classify_cli_state,
     default_data_dir,
@@ -146,15 +146,21 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
   p = argparse.ArgumentParser(
       prog="code-harness tmux-next",
       description=(
-          "Focus the next tmux window with a coding-agent CLI waiting on a "
-          "permission check (--permission) or waiting for user input."
+          "Focus the next tmux window with a coding-agent CLI needing urgent "
+          "attention (--urgent) or waiting for user input."
       ),
   )
   p.add_argument(
+      "-u",
+      "--urgent",
       "-p",
       "--permission",
+      dest="urgent",
       action="store_true",
-      help="Only match coding-agent CLIs waiting on a permission check.",
+      help=(
+          "Only match coding-agent CLIs needing urgent attention "
+          "(permission check or ask_question)."
+      ),
   )
   p.add_argument(
       "--list",
@@ -186,16 +192,12 @@ def cmd_tmux_next(
   args = parse_args(argv)
   tmux = TmuxRunner(find_tmux_bin(), args.tmux_socket)
 
-  if args.permission:
-    target_states = frozenset({CLI_STATE_PERMISSION})
-    empty_msg = "No agent waiting on permission"
-    no_other_msg = "No other agent waiting on permission"
+  if args.urgent:
+    target_states = CLI_URGENT_STATES
+    empty_msg = "No agent needing urgent attention"
+    no_other_msg = "No other agent needing urgent attention"
   else:
-    target_states = frozenset({
-        CLI_STATE_PERMISSION,
-        CLI_STATE_QUESTION,
-        CLI_STATE_SETTLED,
-    })
+    target_states = CLI_URGENT_STATES | CLI_SETTLED_STATES
     empty_msg = "No agent waiting for input"
     no_other_msg = "No other agent waiting for input"
 

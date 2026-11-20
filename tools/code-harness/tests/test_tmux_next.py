@@ -79,12 +79,20 @@ class TmuxNextHiddenCommandTests(unittest.TestCase):
     self.assertEqual(rc, 0)
     self.assertNotIn("tmux-next", stdout.getvalue())
 
-  def test_list_filters_permission_vs_all_attention_states(self) -> None:
+  def test_parse_args_urgent_and_permission_aliases(self) -> None:
+    self.assertTrue(tmux_next.parse_args(["--urgent"]).urgent)
+    self.assertTrue(tmux_next.parse_args(["-u"]).urgent)
+    self.assertTrue(tmux_next.parse_args(["--permission"]).urgent)
+    self.assertTrue(tmux_next.parse_args(["-p"]).urgent)
+    self.assertFalse(tmux_next.parse_args([]).urgent)
+
+  def test_list_filters_urgent_vs_all_attention_states(self) -> None:
     panes_out = "\n".join([
         _make_pane_line("s1", 0, 0, 1, 0, "%1", 101, 1),
         _make_pane_line("s1", 1, 0, 1, 0, "%2", 102, 1),
         _make_pane_line("s1", 2, 0, 1, 0, "%3", 103, 1),
         _make_pane_line("s1", 3, 0, 1, 0, "%4", 104, 1),
+        _make_pane_line("s1", 4, 0, 1, 0, "%5", 105, 1),
     ])
     fake_tmux = FakeTmuxRunner(panes_out)
     procs = {
@@ -92,12 +100,14 @@ class TmuxNextHiddenCommandTests(unittest.TestCase):
         102: {"pid": 102, "ppid": 1, "argv": ["agy"], "exe": ""},
         103: {"pid": 103, "ppid": 1, "argv": ["agy"], "exe": ""},
         104: {"pid": 104, "ppid": 1, "argv": ["agy"], "exe": ""},
+        105: {"pid": 105, "ppid": 1, "argv": ["agy"], "exe": ""},
     }
     state_by_pane = {
         "%1": (snapshot.CLI_STATE_WORKING, "generating"),
         "%2": (snapshot.CLI_STATE_PERMISSION, "waiting on permission check"),
         "%3": (snapshot.CLI_STATE_QUESTION, "waiting on user question"),
-        "%4": (snapshot.CLI_STATE_SETTLED, "waiting for user input"),
+        "%4": (snapshot.CLI_STATE_PLAN, "waiting for plan approval"),
+        "%5": (snapshot.CLI_STATE_SETTLED, "waiting for user input"),
     }
 
     def fake_resolve(cli_info, pane_id, data_dir=None, config=None):
@@ -135,18 +145,26 @@ class TmuxNextHiddenCommandTests(unittest.TestCase):
           rc = tmux_next.cmd_tmux_next(cfg, None, ["--list"])
         self.assertEqual(rc, 0)
         lines_all = out_all.getvalue().splitlines()
-        self.assertEqual(len(lines_all), 3)
+        self.assertEqual(len(lines_all), 4)
         self.assertIn("%2\tpermission\tconv-%2", lines_all[0])
         self.assertIn("%3\tquestion\tconv-%3", lines_all[1])
-        self.assertIn("%4\tsettled\tconv-%4", lines_all[2])
+        self.assertIn("%4\tplan\tconv-%4", lines_all[2])
+        self.assertIn("%5\tsettled\tconv-%5", lines_all[3])
+
+        out_urgent = io.StringIO()
+        with mock.patch("sys.stdout", out_urgent):
+          rc = tmux_next.cmd_tmux_next(cfg, None, ["--urgent", "--list"])
+        self.assertEqual(rc, 0)
+        lines_urgent = out_urgent.getvalue().splitlines()
+        self.assertEqual(len(lines_urgent), 2)
+        self.assertIn("%2\tpermission\tconv-%2", lines_urgent[0])
+        self.assertIn("%3\tquestion\tconv-%3", lines_urgent[1])
 
         out_perm = io.StringIO()
         with mock.patch("sys.stdout", out_perm):
           rc = tmux_next.cmd_tmux_next(cfg, None, ["--permission", "--list"])
         self.assertEqual(rc, 0)
-        lines_perm = out_perm.getvalue().splitlines()
-        self.assertEqual(len(lines_perm), 1)
-        self.assertIn("%2\tpermission\tconv-%2", lines_perm[0])
+        self.assertEqual(out_perm.getvalue().splitlines(), lines_urgent)
 
   def test_cycles_wrapping_unzooms_and_switches_session(self) -> None:
     panes_out = "\n".join([
@@ -293,7 +311,7 @@ class TmuxNextHiddenCommandTests(unittest.TestCase):
       self.assertEqual(rc, 0)
       self.assertEqual(
           pathlib.Path(toast_log).read_text(encoding="utf-8").strip(),
-          "No other agent waiting on permission",
+          "No other agent needing urgent attention",
       )
       self.assertEqual(fake_tmux_alone.commands[-1][0], "display-popup")
 
