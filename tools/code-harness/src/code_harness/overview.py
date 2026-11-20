@@ -1094,7 +1094,29 @@ def render_preview(
     if ctx.get("enabled") and ctx.get("tokens", 0) > 0:
       lims = ctx.get("limits") or cache.get("limits") or {}
       sev = ctx.get("severity")
-      tok_s = f"{ctx['tokens']:,} tokens ({ctx['formatted']})"
+      detail = ctx["formatted"]
+      child_count = int(ctx.get("child_count") or 0)
+      if child_count > 0:
+        self_fmt = ctx.get("self_formatted") or "0"
+        child_fmt = ctx.get("child_formatted") or "0"
+        if child_count == 1:
+          ctype = (ctx.get("children") or [{}])[0].get("type")
+          label = (
+              "worker"
+              if ctype == "worker"
+              else ("swarm" if ctype == "swarm" else "child")
+          )
+          detail = f"{detail}: {self_fmt} main + {child_fmt} {label}"
+        else:
+          detail = (
+              f"{detail}: {self_fmt} main + {child_fmt} "
+              f"across {child_count} children"
+          )
+      compactions = int(ctx.get("compactions") or 0)
+      if compactions > 0:
+        comp_word = "compaction" if compactions == 1 else "compactions"
+        detail = f"{detail}, {compactions} {comp_word}"
+      tok_s = f"{ctx['tokens']:,} tokens ({detail})"
       if sev == "high":
         out.append(
             f"Context: {C_HIGH}! HIGH — {tok_s}{RESET} "

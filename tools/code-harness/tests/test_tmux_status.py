@@ -899,6 +899,81 @@ class TmuxStatusHiddenCommandTests(unittest.TestCase):
       self.assertIn("-qup -t %3 @code_harness_context", joined)
       self.assertIn("-qup -t %4 @code_harness_context", joined)
 
+  def test_cmd_passes_open_dbs_to_inspect_conversation_context(self) -> None:
+    sep = "\x1f"
+    root = "f0000000-0000-0000-0000-000000000001"
+    wf = "f0000000-0000-0000-0000-000000000002"
+    open_dbs = {root, wf}
+    status_left = (
+        "#{?client_prefix,#[reverse],}#[fg=colour129][#S]#[default]"
+        "#{?@code_harness_context,#{@code_harness_context},"
+        "#{@code_harness_context_pad}}"
+    )
+    list_out = (
+        sep.join(["s1", "0", "0", "0", "%0", "100", "", "", status_left]) + "\n"
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+      cfg_file = pathlib.Path(tmp) / "config.json"
+      cfg_file.write_text(
+          json.dumps({"context_limits": {"warn": 250000, "high": 400000}}),
+          encoding="utf-8",
+      )
+      cfg = load_config(config_path=cfg_file)
+      fake_tmux = _FakeTmux(stdout=list_out)
+      out = io.StringIO()
+      with (
+          mock.patch.object(tmux_status, "TmuxRunner", return_value=fake_tmux),
+          mock.patch.object(
+              tmux_status, "load_process_table", return_value=({}, {})
+          ),
+          mock.patch.object(
+              tmux_status, "default_data_dir", return_value=tmp
+          ),
+          mock.patch.object(
+              tmux_status, "load_mcp_commands", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status, "self_ignored_pids", return_value=set()
+          ),
+          mock.patch.object(
+              tmux_status,
+              "find_pane_cli",
+              return_value=({"pid": 100, "argv": ["agy"]}, False),
+          ),
+          mock.patch.object(
+              tmux_status,
+              "resolve_cli_conversation_and_dir",
+              return_value=(root, open_dbs, tmp),
+          ),
+          mock.patch.object(
+              context,
+              "inspect_conversation_context",
+              return_value={"tokens": 310_000, "is_subagent": False},
+          ) as mock_inspect,
+          mock.patch.object(
+              tmux_status,
+              "classify_cli_state_with_ts",
+              return_value=("settled", "done", ""),
+          ),
+          mock.patch("sys.stdout", out),
+      ):
+        rc = tmux_status.cmd_tmux_status(cfg, None, ["--plain", "--no-notify"])
+      self.assertEqual(rc, 0)
+      mock_inspect.assert_called_once_with(
+          root,
+          data_dir=tmp,
+          limits={"warn": 250000, "high": 400000},
+          config=cfg,
+          flavor="agy",
+          extra_child_ids=open_dbs,
+      )
+      set_calls = [c for c in fake_tmux.calls if c and c[0] == "set-option"]
+      self.assertEqual(len(set_calls), 1)
+      self.assertIn(
+          " #[fg=black,bg=colour214,bold] ctx: 310K #[default]",
+          " ".join(set_calls[0]),
+      )
+
 
 if __name__ == "__main__":
   unittest.main()

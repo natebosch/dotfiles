@@ -457,5 +457,110 @@ class ConversationLabelsTests(unittest.TestCase):
       self.assertEqual(labels[cid_tx], "First prompt text")
 
 
+class OverviewPreviewContextTests(unittest.TestCase):
+
+  def _render_ctx_line(
+      self, ctx: dict, limits: dict[str, int] | None = None
+  ) -> str:
+    limits = limits or {"warn": 250_000, "high": 400_000}
+    row = {
+        "key": "r1",
+        "kind": "S",
+        "name": "s1",
+        "tmux_active": True,
+        "session_name": "s1",
+        "launch_dir": "/tmp",
+        "branch_str": "",
+        "project": None,
+        "conversation_live": True,
+        "ui_state": "done",
+        "state_reason": "settled",
+        "window_index": 0,
+        "pane_id": "%0",
+        "conversation_id": "11111111-1111-1111-1111-111111111111",
+        "conversation_title": "demo",
+        "ctx": {"enabled": True, "limits": limits, **ctx},
+        "windows": [],
+    }
+    cache = {
+        "limits_enabled": True,
+        "limits": limits,
+        "data_dir": "/tmp/nonexistent",
+        "rows": [row],
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+      with open(os.path.join(tmp, "cache.json"), "w", encoding="utf-8") as f:
+        json.dump(cache, f)
+      text = overview.render_preview(tmp, "r1")
+    for line in text.splitlines():
+      if line.startswith("Context:"):
+        return line
+    self.fail(f"Context line not found in preview:\n{text}")
+
+  def test_preview_context_breakdown_and_compactions(self) -> None:
+    single_worker = self._render_ctx_line({
+        "tokens": 320_000,
+        "formatted": "320K",
+        "severity": "warn",
+        "self_tokens": 115_000,
+        "self_formatted": "115K",
+        "child_tokens": 205_000,
+        "child_formatted": "205K",
+        "child_count": 1,
+        "compactions": 1,
+        "children": [{"type": "worker"}],
+    })
+    self.assertIn(
+        "320,000 tokens (320K: 115K main + 205K worker, 1 compaction)",
+        single_worker,
+    )
+
+    multi_children = self._render_ctx_line({
+        "tokens": 450_000,
+        "formatted": "450K",
+        "severity": "high",
+        "self_tokens": 100_000,
+        "self_formatted": "100K",
+        "child_tokens": 350_000,
+        "child_formatted": "350K",
+        "child_count": 3,
+        "compactions": 2,
+        "children": [{"type": "swarm"}, {"type": "swarm"}, {"type": "worker"}],
+    })
+    self.assertIn(
+        "450,000 tokens (450K: 100K main + 350K across 3 children, "
+        "2 compactions)",
+        multi_children,
+    )
+
+    single_swarm = self._render_ctx_line({
+        "tokens": 200_000,
+        "formatted": "200K",
+        "severity": "ok",
+        "self_tokens": 120_000,
+        "self_formatted": "120K",
+        "child_tokens": 80_000,
+        "child_formatted": "80K",
+        "child_count": 1,
+        "compactions": 0,
+        "children": [{"type": "swarm"}],
+    })
+    self.assertIn("200,000 tokens (200K: 120K main + 80K swarm)", single_swarm)
+
+    compacted_single = self._render_ctx_line({
+        "tokens": 48_000,
+        "formatted": "48K",
+        "severity": "ok",
+        "self_tokens": 48_000,
+        "self_formatted": "48K",
+        "child_tokens": 0,
+        "child_formatted": "",
+        "child_count": 0,
+        "compactions": 1,
+        "children": [],
+    })
+    self.assertIn("48,000 tokens (48K, 1 compaction)", compacted_single)
+
+
 if __name__ == "__main__":
   unittest.main()

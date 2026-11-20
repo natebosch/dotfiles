@@ -867,6 +867,7 @@ def cmd_tmux_status(
               limits=pane_limits,
               config=config,
               flavor=pane_flavor,
+              extra_child_ids=open_dbs,
           )
           desired = (
               ""
