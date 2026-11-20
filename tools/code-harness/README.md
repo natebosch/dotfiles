@@ -18,6 +18,9 @@ code-harness [--flavor NAME] [--builtin] <command> [args...]
 - `--builtin` (or `CODE_HARNESS_NO_PLUGINS=1`) skips `PATH` subcommand
   overrides and invokes the built-in command handler.
 
+This package also installs `git-enhance` on `PATH` (invoked as `git enhance`)
+for configuring per-repo dev shells and `.agents/skills/` hardlinks.
+
 ## Layering in another harness
 
 Keep harness-specific names, paths, and defaults out of this repository. There
