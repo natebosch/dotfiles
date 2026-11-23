@@ -608,6 +608,7 @@ def is_self_script_proc(info: Mapping) -> bool:
           "tmux-next",
           "tmux-notify",
           "tmux-status",
+          "tmux-yank-id",
           "overview",
       )
   ):

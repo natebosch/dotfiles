@@ -21,6 +21,7 @@ from code_harness.tmux_editor import cmd_tmux_editor
 from code_harness.tmux_next import cmd_tmux_next
 from code_harness.tmux_notify import cmd_tmux_notify
 from code_harness.tmux_status import cmd_tmux_status
+from code_harness.tmux_yank_id import cmd_tmux_yank_id
 
 CommandHandler = Callable[[HarnessConfig, str | None, list[str]], int]
 
@@ -58,6 +59,7 @@ HIDDEN_COMMANDS: dict[str, CommandHandler] = {
     "tmux-next": cmd_tmux_next,
     "tmux-notify": cmd_tmux_notify,
     "tmux-status": cmd_tmux_status,
+    "tmux-yank-id": cmd_tmux_yank_id,
 }
 
 
