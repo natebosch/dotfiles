@@ -1432,7 +1432,7 @@ class SwarmStateClassificationTests(unittest.TestCase):
 
 class WindowTitleAndRestoreTests(unittest.TestCase):
 
-  def test_is_self_script_proc_ignores_auto_title_and_diff_pane(self) -> None:
+  def test_is_self_script_proc_ignores_auto_title(self) -> None:
     self.assertTrue(
         snapshot.is_self_script_proc({
             "comm": "auto-title",
@@ -1448,12 +1448,6 @@ class WindowTitleAndRestoreTests(unittest.TestCase):
                 "--worker",
                 "/tmp/job.json",
             ],
-        })
-    )
-    self.assertTrue(
-        snapshot.is_self_script_proc({
-            "comm": "auto-diff-pane",
-            "argv": ["/home/u/.config/hooks/auto-diff-pane"],
         })
     )
     self.assertFalse(

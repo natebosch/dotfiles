@@ -584,13 +584,10 @@ def descendants_of(
 def is_self_script_proc(info: Mapping) -> bool:
   """True if `info` is an invocation of `code-harness` tmux helpers."""
   comm = info.get("comm") or ""
-  if comm in ("auto-title", "auto-diff-p"):
+  if comm == "auto-title":
     return True
   argv = info.get("argv") or ()
-  if any(
-      os.path.basename(tok) in ("auto-title", "auto-diff-pane")
-      for tok in argv[:3]
-  ):
+  if any(os.path.basename(tok) == "auto-title" for tok in argv[:3]):
     return True
   has_cmd = any(
       os.path.basename(tok) in ("code-harness", ".code-harness-wrapped")
